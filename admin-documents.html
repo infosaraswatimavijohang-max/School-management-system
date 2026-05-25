@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Documents Management - Admin Panel</title>
+  <style>
+    :root {
+      --primary: #1e1b4b;
+      --accent: #7c3aed;
+      --accent-hover: #6d28d9;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --warning: #ea580c;
+      --bg-light: #f5f3ff;
+      --text-main: #1f2937;
+      --text-muted: #6b7280;
+      --border: #e5e7eb;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-light); color: var(--text-main); }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+
+    .page-header {
+      margin-bottom: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .page-header h1 {
+      font-size: 2rem;
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .page-header p { color: var(--text-muted); }
+
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 0.95rem;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .btn-primary:hover { background: var(--accent-hover); }
+
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-danger:hover { background: #b91c1c; }
+
+    .btn-small {
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
+    }
+
+    /* ── UPLOAD SECTION ── */
+    .upload-card {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      border: 1px solid var(--border);
+    }
+
+    .upload-card h2 {
+      font-size: 1.3rem;
+      margin-bottom: 1.5rem;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--text-main);
+      font-size: 0.95rem;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      transition: border-color 0.3s ease;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    /* ── FILE UPLOAD ZONE ── */
+    .file-upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      padding: 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: #f9f5ff;
+    }
+
+    .file-upload-zone:hover {
+      border-color: var(--accent);
+      background: #f5f0ff;
+    }
+
+    .file-upload-zone.active {
+      border-color: var(--accent);
+      background: rgba(124, 58, 237, 0.05);
+    }
+
+    .file-upload-zone input[type="file"] {
+      display: none;
+    }
+
+    .file-upload-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .file-upload-zone p {
+      color: var(--text-muted);
+      margin: 0.5rem 0;
+    }
+
+    .file-upload-zone .main-text {
+      font-weight: 600;
+      color: var(--text-main);
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+
+    .file-name-display {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #e0e7ff;
+      border-radius: 8px;
+      color: var(--primary);
+      display: none;
+    }
+
+    /* ── DOCUMENTS TABLE ── */
+    .documents-section {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      border: 1px solid var(--border);
+    }
+
+    .documents-section h2 {
+      font-size: 1.3rem;
+      margin-bottom: 1.5rem;
+      color: var(--primary);
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+
+    table thead {
+      background: var(--bg-light);
+      border-bottom: 2px solid var(--border);
+    }
+
+    table th {
+      padding: 1rem;
+      text-align: left;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    table td {
+      padding: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    table tbody tr:hover {
+      background: #f9f5ff;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.35rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .badge-active { background: rgba(22, 163, 74, 0.1); color: var(--success); }
+    .badge-inactive { background: rgba(107, 114, 128, 0.1); color: var(--text-muted); }
+
+    .action-btns {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .loading { color: var(--text-muted); font-style: italic; }
+    .error { color: var(--danger); }
+    .success { color: var(--success); }
+
+    .alert {
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      display: none;
+    }
+
+    .alert.show { display: block; }
+
+    .alert-success {
+      background: rgba(22, 163, 74, 0.1);
+      color: var(--success);
+      border: 1px solid rgba(22, 163, 74, 0.2);
+    }
+
+    .alert-error {
+      background: rgba(220, 38, 38, 0.1);
+      color: var(--danger);
+      border: 1px solid rgba(220, 38, 38, 0.2);
+    }
+
+    .file-info {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 768px) {
+      .form-row { grid-template-columns: 1fr; }
+      .page-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="page-header">
+      <div>
+        <h1>📄 Documents Management</h1>
+        <p>Upload and manage school documents for students and parents</p>
+      </div>
+    </div>
+
+    <!-- Alert Messages -->
+    <div class="alert alert-success" id="successAlert"></div>
+    <div class="alert alert-error" id="errorAlert"></div>
+
+    <!-- Upload Section -->
+    <div class="upload-card">
+      <h2>📤 Upload New Document</h2>
+      
+      <form id="uploadForm">
+        <div class="form-group">
+          <label for="docTitle">Document Title *</label>
+          <input type="text" id="docTitle" placeholder="e.g., Class 10 Physics Syllabus" required>
+        </div>
+
+        <div class="form-group">
+          <label for="docDescription">Description</label>
+          <textarea id="docDescription" placeholder="Brief description of the document..."></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="docCategory">Category *</label>
+            <select id="docCategory" required>
+              <option value="">Select Category</option>
+              <option value="Syllabus">Syllabus</option>
+              <option value="Admission">Admission</option>
+              <option value="Calendar">Calendar</option>
+              <option value="Guidelines">Guidelines</option>
+              <option value="Notes">Notes</option>
+              <option value="Announcements">Announcements</option>
+              <option value="Reports">Reports</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="docDisplayOrder">Display Order</label>
+            <input type="number" id="docDisplayOrder" placeholder="0" value="0" min="0">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Choose File *</label>
+          <div class="file-upload-zone" id="uploadZone">
+            <div class="file-upload-icon">📁</div>
+            <span class="main-text">Click to upload or drag and drop</span>
+            <p>PDF, DOC, DOCX, XLS, XLSX (Max 50MB)</p>
+            <input type="file" id="docFile" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.ppt,.pptx" required>
+          </div>
+          <div class="file-name-display" id="fileDisplay"></div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Upload Document</button>
+      </form>
+    </div>
+
+    <!-- Documents List -->
+    <div class="documents-section">
+      <h2>📚 Uploaded Documents</h2>
+      <div class="table-wrapper">
+        <table id="documentsTable">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Category</th>
+              <th>File</th>
+              <th>Uploaded By</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="documentsList">
+            <tr><td colspan="6" class="loading">Loading documents...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.38.4"></script>
+  <script src="supabase-client.js"></script>
+  <script src="document-handler.js"></script>
+
+  <script>
+    // Initialize
+    let documentHandler;
+    const uploadForm = document.getElementById('uploadForm');
+    const uploadZone = document.getElementById('uploadZone');
+    const docFile = document.getElementById('docFile');
+    const fileDisplay = document.getElementById('fileDisplay');
+    const successAlert = document.getElementById('successAlert');
+    const errorAlert = document.getElementById('errorAlert');
+    let selectedFile = null;
+
+    // Initialize DocumentHandler
+    if (typeof DocumentHandler !== 'undefined') {
+      documentHandler = new DocumentHandler();
+    }
+
+    // ── FILE UPLOAD HANDLING ──
+    uploadZone.addEventListener('click', () => docFile.click());
+
+    uploadZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadZone.classList.add('active');
+    });
+
+    uploadZone.addEventListener('dragleave', () => {
+      uploadZone.classList.remove('active');
+    });
+
+    uploadZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadZone.classList.remove('active');
+      if (e.dataTransfer.files.length > 0) {
+        docFile.files = e.dataTransfer.files;
+        handleFileSelect();
+      }
+    });
+
+    docFile.addEventListener('change', handleFileSelect);
+
+    function handleFileSelect() {
+      selectedFile = docFile.files[0];
+      if (selectedFile) {
+        const size = (selectedFile.size / 1024 / 1024).toFixed(2);
+        fileDisplay.innerHTML = `✓ Selected: <strong>${selectedFile.name}</strong> (${size} MB)`;
+        fileDisplay.style.display = 'block';
+      }
+    }
+
+    // ── FORM SUBMISSION ──
+    uploadForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const title = document.getElementById('docTitle').value.trim();
+      const description = document.getElementById('docDescription').value.trim();
+      const category = document.getElementById('docCategory').value;
+      const displayOrder = parseInt(document.getElementById('docDisplayOrder').value) || 0;
+
+      if (!title || !category || !selectedFile) {
+        showError('Please fill in all required fields and select a file');
+        return;
+      }
+
+      // Disable submit button
+      const submitBtn = uploadForm.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Uploading...';
+
+      try {
+        // Upload file
+        const uploadResult = await documentHandler.uploadFile(selectedFile, 'school-documents');
+
+        if (!uploadResult.success) {
+          showError('File upload failed: ' + uploadResult.error);
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Upload Document';
+          return;
+        }
+
+        // Add document to database
+        const docData = {
+          title: title,
+          description: description,
+          category: category,
+          file_name: selectedFile.name,
+          file_url: uploadResult.fileUrl,
+          file_size: selectedFile.size,
+          file_type: selectedFile.type,
+          icon_type: getIconType(selectedFile.type),
+          uploaded_by: 'Admin',
+          display_order: displayOrder,
+          is_active: true
+        };
+
+        const addResult = await documentHandler.addDocument(docData);
+
+        if (!addResult.success) {
+          showError('Failed to save document: ' + addResult.error);
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Upload Document';
+          return;
+        }
+
+        // Success
+        showSuccess('Document uploaded successfully!');
+        uploadForm.reset();
+        selectedFile = null;
+        fileDisplay.style.display = 'none';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Upload Document';
+
+        // Reload documents list
+        loadDocuments();
+      } catch (error) {
+        showError('Error: ' + error.message);
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Upload Document';
+      }
+    });
+
+    // ── LOAD DOCUMENTS ──
+    async function loadDocuments() {
+      const documentsList = document.getElementById('documentsList');
+      documentsList.innerHTML = '<tr><td colspan="6" class="loading">Loading documents...</td></tr>';
+
+      try {
+        const result = await documentHandler.getPublicDocuments();
+
+        if (!result.success) {
+          documentsList.innerHTML = `<tr><td colspan="6" class="error">Error loading documents: ${result.error}</td></tr>`;
+          return;
+        }
+
+        const documents = result.data || [];
+
+        if (documents.length === 0) {
+          documentsList.innerHTML = '<tr><td colspan="6" class="loading">No documents uploaded yet</td></tr>';
+          return;
+        }
+
+        documentsList.innerHTML = documents.map(doc => `
+          <tr>
+            <td><strong>${escapeHtml(doc.title)}</strong></td>
+            <td><span class="badge badge-active">${escapeHtml(doc.category)}</span></td>
+            <td><span class="file-info">${escapeHtml(doc.file_name)}</span></td>
+            <td>${escapeHtml(doc.uploaded_by)}</td>
+            <td><span class="badge ${doc.is_active ? 'badge-active' : 'badge-inactive'}">
+              ${doc.is_active ? 'Active' : 'Inactive'}
+            </span></td>
+            <td>
+              <div class="action-btns">
+                <button class="btn btn-primary btn-small" onclick="downloadDocument('${doc.file_url}', '${escapeHtml(doc.file_name)}')">Download</button>
+                <button class="btn btn-danger btn-small" onclick="deleteDocumentUI(${doc.id})">Delete</button>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+      } catch (error) {
+        documentsList.innerHTML = `<tr><td colspan="6" class="error">Error: ${error.message}</td></tr>`;
+      }
+    }
+
+    // ── DELETE DOCUMENT ──
+    async function deleteDocumentUI(docId) {
+      if (!confirm('Are you sure you want to delete this document?')) return;
+
+      try {
+        const result = await documentHandler.deleteDocument(docId);
+
+        if (result.success) {
+          showSuccess('Document deleted successfully');
+          loadDocuments();
+        } else {
+          showError('Failed to delete document: ' + result.error);
+        }
+      } catch (error) {
+        showError('Error: ' + error.message);
+      }
+    }
+
+    // ── DOWNLOAD DOCUMENT ──
+    function downloadDocument(url, fileName) {
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName || 'document';
+      link.click();
+    }
+
+    // ── UTILITY FUNCTIONS ──
+    function getIconType(mimeType) {
+      if (!mimeType) return 'document';
+      if (mimeType.includes('pdf')) return 'pdf';
+      if (mimeType.includes('word') || mimeType.includes('document')) return 'word';
+      if (mimeType.includes('sheet') || mimeType.includes('excel')) return 'excel';
+      if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) return 'powerpoint';
+      return 'document';
+    }
+
+    function showSuccess(message) {
+      successAlert.textContent = '✓ ' + message;
+      successAlert.classList.add('show');
+      setTimeout(() => successAlert.classList.remove('show'), 4000);
+    }
+
+    function showError(message) {
+      errorAlert.textContent = '✗ ' + message;
+      errorAlert.classList.add('show');
+      setTimeout(() => errorAlert.classList.remove('show'), 4000);
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Load documents on page load
+    loadDocuments();
+  </script>
+
+</body>
+</html>

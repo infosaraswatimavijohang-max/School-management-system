@@ -1,0 +1,1986 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Portal | Shree Saraswati Secondary School</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap');
+
+    :root {
+      --primary: #1a3a6b;
+      --primary-light: #2c5494;
+      --accent: #d4af37;
+      --accent-light: #f9f1d8;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --white: #ffffff;
+      --bg-color: #f4f7fe;
+      --text-main: #334155;
+      --text-muted: #64748b;
+      --sidebar-width: 280px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--white);
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #e2e8f0;
+      z-index: 100;
+      transition: transform 0.3s ease;
+      overflow-y: auto;
+    }
+
+    .sidebar::-webkit-scrollbar { width: 6px; }
+    .sidebar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+    .sidebar-brand {
+      padding: 2rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      border-bottom: 1px solid #e2e8f0;
+      position: sticky;
+      top: 0;
+      background: var(--white);
+      z-index: 2;
+    }
+
+    .sidebar-brand img { width: 45px; height: 45px; }
+    .sidebar-brand-text h2 { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--primary); line-height: 1.2; }
+    .sidebar-brand-text span { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+
+    .sidebar-nav {
+      flex-grow: 1;
+      padding: 2rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .nav-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      font-weight: 800;
+      color: #94a3b8;
+      letter-spacing: 1.5px;
+      margin: 1.2rem 0 0.4rem 1rem;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.8rem 1.5rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .nav-link:hover { background: var(--bg-color); color: var(--primary); }
+    .nav-link.active { background: var(--primary); color: var(--white); }
+    .nav-link svg { width: 20px; height: 20px; stroke-width: 2.2; }
+
+    .sidebar-footer { padding: 1.5rem; border-top: 1px solid #e2e8f0; }
+    .logout-btn {
+      display: flex; align-items: center; gap: 1rem; color: var(--danger);
+      text-decoration: none; font-weight: 600; padding: 1rem 1.5rem;
+      border-radius: 12px; transition: all 0.3s;
+    }
+    .logout-btn:hover { background: #fef2f2; }
+
+    /* ── MAIN CONTENT ── */
+    .main-content {
+      margin-left: var(--sidebar-width);
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      width: calc(100% - var(--sidebar-width));
+    }
+
+    /* ── TOP NAV ── */
+    .top-nav {
+      height: 80px; background: var(--white); padding: 0 3rem;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 90;
+    }
+
+    .search-bar { display: flex; align-items: center; background: var(--bg-color); padding: 0.6rem 1.5rem; border-radius: 30px; width: 300px; }
+    .search-bar input { border: none; background: none; outline: none; padding-left: 0.8rem; width: 100%; color: var(--text-main); font-weight: 500; }
+    .nav-actions { display: flex; align-items: center; gap: 2rem; }
+    .notification { position: relative; cursor: pointer; }
+    .notification svg { width: 24px; height: 24px; color: var(--text-muted); }
+    .badge { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; font-size: 0.65rem; font-weight: bold; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    
+    /* ── NOTIFICATION DROPDOWN PANEL ── */
+    .notification-dropdown {
+      position: absolute;
+      top: 40px;
+      right: -80px;
+      width: 340px;
+      background: var(--white);
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      box-shadow: 0 15px 35px rgba(15, 23, 42, 0.15);
+      display: none;
+      z-index: 999;
+      overflow: hidden;
+      cursor: default;
+      animation: slideDownNoti 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .notification-dropdown.active {
+      display: block;
+    }
+    @keyframes slideDownNoti {
+      from { transform: translateY(-10px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .notification-header {
+      padding: 1rem 1.2rem;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f8fafc;
+    }
+    .notification-header h4 {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .notification-header span {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent);
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .notification-header span:hover {
+      color: var(--primary);
+    }
+    .notification-list {
+      max-height: 290px;
+      overflow-y: auto;
+    }
+    .notification-item {
+      padding: 1rem 1.2rem;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex;
+      gap: 1rem;
+      transition: background 0.2s;
+    }
+    .notification-item:hover {
+      background: var(--bg-color);
+    }
+    .notification-item:last-child {
+      border-bottom: none;
+    }
+    .notification-icon-wrapper {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+    .notification-icon-wrapper.green { background: #dcfce7; color: #16a34a; }
+    .notification-icon-wrapper.blue { background: #e0f2fe; color: #0284c7; }
+    .notification-icon-wrapper.orange { background: #ffedd5; color: #ea580c; }
+    .notification-info {
+      flex-grow: 1;
+    }
+    .notification-info h5 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 0.15rem;
+    }
+    .notification-info p {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+    .notification-info span {
+      font-size: 0.7rem;
+      color: #94a3b8;
+      font-weight: 600;
+      margin-top: 0.3rem;
+      display: block;
+    }
+    .notification-footer {
+      padding: 0.8rem;
+      text-align: center;
+      background: #f8fafc;
+      border-top: 1px solid #f1f5f9;
+    }
+    .notification-footer a {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--primary);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .notification-footer a:hover {
+      color: var(--accent);
+    }
+    
+    .profile-dropdown { display: flex; align-items: center; gap: 1rem; cursor: pointer; }
+    .profile-dropdown img,
+    .profile-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; }
+    .profile-avatar { background: linear-gradient(135deg, #1a3a6b, #2c5494); color: white; font-weight: 700; font-size: 1.1rem; }
+    .profile-avatar-large { width: 120px; height: 120px; border-radius: 50%; border: 4px solid var(--accent); display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a3a6b, #2c5494); color: white; font-weight: 700; font-size: 2rem; }
+    .profile-info h4 { font-size: 0.95rem; color: var(--primary); }
+    .profile-info span { font-size: 0.75rem; color: var(--text-muted); }
+
+    /* ── PAGES AND TABS ── */
+    .dashboard-container { padding: 2.5rem 3rem; flex-grow: 1; }
+    .page-view { display: none; }
+    .page-view.active { display: block; animation: fadeIn 0.4s ease; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Welcome Banner */
+    .welcome-banner {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      border-radius: 20px; padding: 2.5rem; color: var(--white);
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 2rem; box-shadow: 0 15px 30px rgba(26, 58, 107, 0.15);
+      position: relative; overflow: hidden;
+    }
+    .welcome-banner::after {
+      content: ''; position: absolute; right: -50px; top: -50px; width: 300px; height: 300px;
+      background: radial-gradient(circle, rgba(212, 175, 55, 0.2) 0%, transparent 70%); border-radius: 50%;
+    }
+    .welcome-text h1 { font-family: 'Playfair Display', serif; font-size: 2.2rem; margin-bottom: 0.5rem; }
+    .welcome-text p { color: rgba(255, 255, 255, 0.85); font-size: 1.05rem; }
+
+    /* Quick Actions */
+    .quick-actions-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2rem; }
+    .action-btn {
+      background: var(--white); padding: 1.2rem; border-radius: 16px;
+      display: flex; flex-direction: column; align-items: center; gap: 0.8rem;
+      text-decoration: none; color: var(--primary); font-weight: 700;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid #edf2f7;
+      transition: all 0.3s ease; cursor: pointer;
+    }
+    .action-btn:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.06); border-color: rgba(212,175,55,0.3); }
+    .action-icon {
+      width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+      background: var(--bg-color); color: var(--primary); transition: all 0.3s;
+    }
+    .action-btn:hover .action-icon { background: var(--primary); color: var(--white); }
+
+    /* Stats Grid */
+    .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-bottom: 2rem; }
+    .stat-card { background: var(--white); padding: 1.5rem; border-radius: 16px; display: flex; align-items: center; gap: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid #edf2f7; }
+    .stat-badge-icon { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+    .stat-badge-icon.blue { background: #e0e7ff; color: #4f46e5; }
+    .stat-badge-icon.green { background: #dcfce7; color: #15803d; }
+    .stat-badge-icon.gold { background: var(--accent-light); color: #a16207; }
+    .stat-details h3 { font-size: 1.5rem; color: var(--primary); font-weight: 800; }
+    .stat-details p { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; }
+
+    /* Layout Grids */
+    .main-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2rem; }
+    .panel {
+      background: var(--white); border-radius: 20px; padding: 2rem;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.03); border: 1px solid #edf2f7;
+      display: flex; flex-direction: column; gap: 1.5rem;
+    }
+    .panel-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.8rem; }
+    .panel-header h3 { font-size: 1.15rem; color: var(--primary); font-weight: 700; }
+    .panel-header a { color: var(--accent); text-decoration: none; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
+
+    /* Schedule Timeline */
+    .schedule-list { display: flex; flex-direction: column; gap: 1rem; }
+    .schedule-item { display: flex; gap: 1rem; align-items: center; padding: 1rem; border-radius: 12px; background: var(--bg-color); border-left: 4px solid var(--primary); }
+    .schedule-time { font-weight: 700; color: var(--primary); min-width: 75px; font-size: 0.9rem;}
+    .schedule-details h4 { font-size: 1rem; color: var(--text-main); margin-bottom: 0.2rem; }
+    .schedule-details p { font-size: 0.8rem; color: var(--text-muted); }
+
+    /* Notice Board */
+    .announcement-list { display: flex; flex-direction: column; gap: 1rem; }
+    .announcement-item { padding-bottom: 1rem; border-bottom: 1px dashed #cbd5e1; }
+    .announcement-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .announcement-item .date { font-size: 0.75rem; color: var(--accent); font-weight: 800; margin-bottom: 0.3rem; display: block; }
+    .announcement-item h4 { font-size: 0.95rem; color: var(--primary); margin-bottom: 0.4rem; line-height: 1.4; }
+    .announcement-item p { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; }
+
+    /* Fee Widget & Portal View */
+    .fee-card { background: linear-gradient(to right, #f8fafc, #f1f5f9); border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; }
+    .fee-amount { font-size: 2rem; font-weight: 800; color: var(--primary); margin-bottom: 0.2rem; }
+    .fee-subtitle { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; margin-bottom: 1rem; }
+    .progress-bar-bg { width: 100%; height: 8px; background: #e2e8f0; border-radius: 10px; overflow: hidden; margin-bottom: 0.5rem; }
+    .progress-fill { height: 100%; background: var(--success); width: 60%; border-radius: 10px; }
+    .progress-text { display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
+    .pay-btn {
+      display: block; width: 100%; padding: 0.8rem; text-align: center;
+      background: var(--primary); color: var(--white); border-radius: 8px;
+      font-weight: 700; text-decoration: none; margin-top: 1.5rem; transition: background 0.3s; cursor: pointer;
+    }
+    .pay-btn:hover { background: var(--accent); color: var(--primary); }
+
+    /* Leave Requests Widget */
+    .leave-list { display: flex; flex-direction: column; gap: 1rem; }
+    .leave-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1rem; border-radius: 12px; background: var(--bg-color); border: 1px solid #e2e8f0;
+    }
+    .leave-info h4 { font-size: 0.95rem; color: var(--text-main); margin-bottom: 0.2rem; }
+    .leave-info p { font-size: 0.8rem; color: var(--text-muted); }
+    .status-badge { padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+    .status-badge.approved { background: #dcfce7; color: #16a34a; }
+    .status-badge.pending { background: #fef3c7; color: #d97706; }
+
+    /* ── FORM CONTROL STYLES ── */
+    .form-group { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.2rem; }
+    .form-group label { font-size: 0.9rem; font-weight: 600; color: var(--primary); }
+    .form-control {
+      padding: 0.8rem 1rem; border: 1px solid #cbd5e1; border-radius: 8px;
+      font-size: 0.95rem; outline: none; transition: border-color 0.3s;
+    }
+    .form-control:focus { border-color: var(--primary); }
+    .submit-btn {
+      padding: 0.9rem; background: var(--primary); color: var(--white);
+      border: none; border-radius: 8px; font-weight: 700; cursor: pointer;
+      font-size: 1rem; transition: background 0.3s;
+    }
+    .submit-btn:hover { background: var(--primary-light); }
+
+    /* ── TABLES ── */
+    .custom-table-wrapper { overflow-x: auto; border-radius: 12px; border: 1px solid #e2e8f0; }
+    .custom-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .custom-table th { background: #f8fafc; padding: 1rem; font-weight: 700; color: var(--primary); border-bottom: 2px solid #e2e8f0; }
+    .custom-table td { padding: 1rem; border-bottom: 1px solid #e2e8f0; color: var(--text-main); font-size: 0.95rem; }
+    .custom-table tr:last-child td { border-bottom: none; }
+
+    /* ── CARDS GRID (COURSES & LIBRARY) ── */
+    .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 2rem; }
+    .resource-card {
+      background: var(--white); border-radius: 16px; border: 1px solid #e2e8f0;
+      padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.01); transition: all 0.3s;
+    }
+    .resource-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.04); border-color: rgba(212,175,55,0.3); }
+    .resource-card-header { display: flex; justify-content: space-between; align-items: flex-start; }
+    .resource-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: #e0e7ff; color: var(--primary); font-size: 1.3rem; }
+    .resource-meta h4 { font-size: 1.1rem; color: var(--primary); }
+    .resource-meta p { font-size: 0.85rem; color: var(--text-muted); }
+    .download-link {
+      display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+      padding: 0.7rem; background: var(--bg-color); color: var(--primary);
+      text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 0.9rem;
+      transition: all 0.3s;
+    }
+    .download-link:hover { background: var(--primary); color: var(--white); }
+
+    /* ── POPUP/MODAL ── */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+    }
+    .modal-overlay.active { opacity: 1; pointer-events: auto; }
+    .modal-content {
+      background: var(--white); border-radius: 20px; padding: 2.5rem;
+      width: 100%; max-width: 480px; box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+      animation: modalSlide 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes modalSlide {
+      from { transform: scale(0.9) translateY(20px); opacity: 0; }
+      to { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    .modal-title { font-family: 'Playfair Display', serif; color: var(--primary); font-size: 1.8rem; margin-bottom: 0.5rem; }
+    .modal-close-btn {
+      float: right; background: none; border: none; font-size: 1.5rem;
+      cursor: pointer; color: var(--text-muted); transition: color 0.3s;
+    }
+    .modal-close-btn:hover { color: var(--danger); }
+
+    /* Responsive */
+    .mobile-menu-btn { display: none; background: none; border: none; cursor: pointer; color: var(--primary); }
+    @media (max-width: 1200px) {
+      .main-grid { grid-template-columns: 1fr; }
+      .quick-actions-row { grid-template-columns: repeat(2, 1fr); }
+      .stat-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.active { transform: translateX(0); }
+      .main-content { margin-left: 0; width: 100%; }
+      .mobile-menu-btn { display: block; }
+      .search-bar { display: none; }
+      .top-nav { padding: 0 1.5rem; }
+      .dashboard-container { padding: 1.5rem; }
+    }
+
+    /* ── QR PAYMENT MODAL EXTENSIONS ── */
+    #payment-modal .modal-content {
+      max-width: 720px;
+    }
+    .payment-modal-layout {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 2rem;
+      margin-top: 1.2rem;
+    }
+    .payment-qr-section {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 1rem;
+    }
+    .payment-bank-details {
+      width: 100%;
+      text-align: left;
+      background: #fff;
+      border: 1px solid #edf2f7;
+      padding: 1rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+    }
+    .payment-bank-details p {
+      margin-bottom: 0.4rem;
+      color: var(--text-main);
+      font-size: 0.85rem;
+    }
+    .payment-bank-details strong {
+      color: var(--primary);
+    }
+    .payment-form-section {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .file-upload-preview {
+      margin-top: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--success);
+      font-weight: 600;
+      display: none;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .status-badge.pending-verification {
+      background: #ffedd5;
+      color: #ea580c;
+    }
+    @media (max-width: 680px) {
+      .payment-modal-layout {
+        grid-template-columns: 1fr;
+      }
+      #payment-modal .modal-content {
+        max-width: 100%;
+      }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-client.js"></script>
+</head>
+<body>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <img src="logo.png" alt="Logo" onerror="this.src='https://via.placeholder.com/45x45?text=Logo'">
+      <div class="sidebar-brand-text">
+        <h2>Shree Saraswati</h2>
+        <span>Student Portal</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <span class="nav-label">Academics</span>
+      <a class="nav-link active" data-page="dashboard" onclick="switchPage('dashboard', this)">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+        Dashboard
+      </a>
+      <a class="nav-link" data-page="courses" onclick="switchPage('courses', this)">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+        My Courses
+      </a>
+      <a class="nav-link" data-page="assignments" onclick="switchPage('assignments', this)">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+        Assignments
+      </a>
+      <a class="nav-link" data-page="results" onclick="switchPage('results', this)">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+        Exam Results
+      </a>
+
+      <span class="nav-label">Administration</span>
+      <a class="nav-link" data-page="fees" onclick="switchPage('fees', this)">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        Fees & Payments
+      </a>
+      <a class="nav-link" data-page="leaves" onclick="switchPage('leaves', this)">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+        Leave Requests
+      </a>
+
+      <span class="nav-label">Resources</span>
+      <a class="nav-link" data-page="library" onclick="switchPage('library', this)">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+        E-Library
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="#" onclick="handleStudentLogout(event)" class="logout-btn">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+        Logout
+      </a>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    
+    <!-- Top Nav -->
+    <header class="top-nav">
+      <button class="mobile-menu-btn" onclick="document.getElementById('sidebar').classList.toggle('active')">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="28" height="28"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+      </button>
+      
+      <div class="search-bar">
+        <svg fill="none" stroke="#94a3b8" viewBox="0 0 24 24" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        <input type="text" id="global-search" placeholder="Search courses, library..." oninput="handleGlobalSearch()">
+      </div>
+
+      <div class="nav-actions">
+        <div class="notification" onclick="toggleNotificationDropdown(event)">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+          <span class="badge" id="noti-badge">2</span>
+          
+          <!-- Dropdown Panel -->
+          <div class="notification-dropdown" id="notification-dropdown" onclick="event.stopPropagation()">
+            <div class="notification-header">
+              <h4>Notifications</h4>
+              <span onclick="clearNotifications()">Mark all read</span>
+            </div>
+            <div class="notification-list" id="notification-list">
+              <div class="notification-item">
+                <div class="notification-icon-wrapper green">✔️</div>
+                <div class="notification-info">
+                  <h5>Leave Approved</h5>
+                  <p>Your sick leave application for Oct 12 - Oct 14 has been approved by the Principal.</p>
+                  <span>10 minutes ago</span>
+                </div>
+              </div>
+              <div class="notification-item">
+                <div class="notification-icon-wrapper blue">📋</div>
+                <div class="notification-info">
+                  <h5>Exam Routing Published</h5>
+                  <p>First Term Exam routing PDF is now available for download under Results.</p>
+                  <span>1 hour ago</span>
+                </div>
+              </div>
+            </div>
+            <div class="notification-footer">
+              <a href="#" onclick="alert('Viewing all historic notifications... Close dropdown.')">View All Activities</a>
+            </div>
+          </div>
+        </div>
+        <div class="profile-dropdown" onclick="showStudentProfile()">
+          <div class="profile-avatar" id="header-profile-avatar">A</div>
+          <div class="profile-info">
+            <h4 id="header-student-name">Loading...</h4>
+            <span id="header-student-class">Loading...</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Page Views Container -->
+    <div class="dashboard-container">
+
+      <!-- ================= PAGE: DASHBOARD ================= -->
+      <div class="page-view active" id="page-dashboard">
+        <div class="welcome-banner">
+          <div class="welcome-text">
+            <h1 id="welcome-message">Welcome back! 👋</h1>
+            <p id="welcome-subtitle">Loading your dashboard...</p>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions-row">
+          <div class="action-btn" onclick="switchPage('fees')">
+            <div class="action-icon">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="24" height="24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+            Pay Fees
+          </div>
+          <div class="action-btn" onclick="switchPage('leaves')">
+            <div class="action-icon">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="24" height="24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+            </div>
+            Apply Leave
+          </div>
+          <div class="action-btn" onclick="switchPage('library')">
+            <div class="action-icon">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="24" height="24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+            </div>
+            Library Books
+          </div>
+          <div class="action-btn" onclick="openDigitalId()">
+            <div class="action-icon">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="24" height="24"><path d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path></svg>
+            </div>
+            Digital ID
+          </div>
+        </div>
+
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-badge-icon blue">🎓</div>
+            <div class="stat-details">
+              <h3 id="student-overall-gpa-val">3.8</h3>
+              <p>Overall GPA</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-badge-icon green">📈</div>
+            <div class="stat-details">
+              <h3 id="student-attendance-val">0%</h3>
+              <p>Attendance</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-badge-icon gold">📝</div>
+            <div class="stat-details">
+              <h3 id="dash-pending-count">2</h3>
+              <p>Pending Assignments</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="main-grid">
+          <!-- Fee Widget & Recent Leaves -->
+          <div style="display: flex; flex-direction: column; gap: 2rem;">
+            <div class="panel">
+              <div class="panel-header">
+                <h3>Fee Status</h3>
+                <a onclick="switchPage('fees')">Details</a>
+              </div>
+              <div class="fee-card">
+                <div class="fee-subtitle">Next Installment Due (Mangsir)</div>
+                <div class="fee-amount" id="dash-due-amount">Rs. 5,000</div>
+                <p style="font-size:0.8rem; color:var(--danger); font-weight:700; margin-bottom:1.5rem;" id="dash-due-deadline">Due in 5 days</p>
+                <div class="progress-text">
+                  <span id="dash-paid-lbl">Paid: Rs. 15,000</span>
+                  <span>Total: Rs. 25,000</span>
+                </div>
+                <div class="progress-bar-bg">
+                  <div class="progress-fill" id="dash-progress-fill" style="width: 60%;"></div>
+                </div>
+                <button onclick="triggerPaymentFlow()" class="pay-btn" id="dash-pay-btn" style="border:none; width:100%;">Pay Online Now</button>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-header">
+                <h3>Recent Leaves</h3>
+                <a onclick="switchPage('leaves')">History</a>
+              </div>
+              <div class="leave-list" id="dash-leave-list">
+                <!-- Loaded dynamically -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Schedule -->
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Today's Timetable</h3>
+            </div>
+            <div class="schedule-list" id="student-schedule-list">
+              <!-- Dynamically populated from localStorage school_timetables -->
+            </div>
+          </div>
+
+          <!-- Notices -->
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Notice Board</h3>
+            </div>
+            <div class="announcement-list" id="announcement-list-container">
+              <!-- Dynamically populated from global localStorage announcements -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= PAGE: MY COURSES ================= -->
+      <div class="page-view" id="page-courses">
+        <h2 style="font-family:'Playfair Display', serif; margin-bottom: 2rem; color: var(--primary);">My Active Courses</h2>
+        <div class="cards-grid">
+          <div class="resource-card">
+            <div class="resource-card-header">
+              <div class="resource-icon" style="background:#e0f2fe; color:#0369a1;">📐</div>
+            </div>
+            <div class="resource-meta">
+              <h4>Advanced Mathematics</h4>
+              <p>Instructor: Mr. D. Bhandari</p>
+            </div>
+            <div class="progress-bar-bg"><div class="progress-fill" style="width: 82%;"></div></div>
+            <p style="font-size:0.8rem; font-weight:600; color:var(--text-muted);">Syllabus Coverage: 82%</p>
+            <a href="#" onclick="alert('Downloading Mathematics Lecture Notes...')" class="download-link">📚 Download Syllabus</a>
+          </div>
+
+          <div class="resource-card">
+            <div class="resource-card-header">
+              <div class="resource-icon" style="background:#fef2f2; color:#b91c1c;">⚡</div>
+            </div>
+            <div class="resource-meta">
+              <h4>Physics Theory & Practical</h4>
+              <p>Instructor: Ms. R. Thapa</p>
+            </div>
+            <div class="progress-bar-bg"><div class="progress-fill" style="width: 70%;"></div></div>
+            <p style="font-size:0.8rem; font-weight:600; color:var(--text-muted);">Syllabus Coverage: 70%</p>
+            <a href="#" onclick="alert('Downloading Physics Lab Manuals...')" class="download-link">⚡ Download Labs</a>
+          </div>
+
+          <div class="resource-card">
+            <div class="resource-card-header">
+              <div class="resource-icon" style="background:#ecfdf5; color:#047857;">💻</div>
+            </div>
+            <div class="resource-meta">
+              <h4>Computer Networking (CTEVT)</h4>
+              <p>Instructor: Er. S. Bhandari</p>
+            </div>
+            <div class="progress-bar-bg"><div class="progress-fill" style="width: 90%;"></div></div>
+            <p style="font-size:0.8rem; font-weight:600; color:var(--text-muted);">Syllabus Coverage: 90%</p>
+            <a href="#" onclick="alert('Downloading Network Architecture Notes...')" class="download-link">📡 Download Material</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= PAGE: ASSIGNMENTS ================= -->
+      <div class="page-view" id="page-assignments">
+        <h2 style="font-family:'Playfair Display', serif; margin-bottom: 2rem; color: var(--primary);">Assignments Status</h2>
+        
+        <div class="panel" style="margin-bottom: 2rem;">
+          <div class="panel-header">
+            <h3>Active Academic Submissions</h3>
+          </div>
+          <div class="custom-table-wrapper">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Course</th>
+                  <th>Topic</th>
+                  <th>Due Date</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="assignments-tbody">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= PAGE: EXAM RESULTS ================= -->
+      <div class="page-view" id="page-results">
+        <h2 style="font-family:'Playfair Display', serif; margin-bottom: 2rem; color: var(--primary);">📊 My Exam Results & Grades</h2>
+        
+        <div style="display: grid; grid-template-columns: 1fr; gap: 2rem;">
+          <!-- Overall Performance Card -->
+          <div class="panel" style="background: linear-gradient(135deg, rgba(26,58,107,0.05) 0%, rgba(230,126,34,0.05) 100%); border: 2px solid rgba(26,58,107,0.1);">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 2rem; padding: 2rem;">
+              <div style="text-align: center;">
+                <p style="font-size: 0.85rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">Subjects Completed</p>
+                <h3 id="result-subjects-count" style="font-size: 2.2rem; color: var(--primary); font-weight: 800; margin: 0;">0</h3>
+              </div>
+              <div style="text-align: center;">
+                <p style="font-size: 0.85rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">Average Percentage</p>
+                <h3 id="result-avg-percentage" style="font-size: 2.2rem; color: var(--secondary); font-weight: 800; margin: 0;">0%</h3>
+              </div>
+              <div style="text-align: center;">
+                <p style="font-size: 0.85rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">Average GPA</p>
+                <h3 id="result-avg-gpa" style="font-size: 2.2rem; color: #10b981; font-weight: 800; margin: 0;">0.0</h3>
+              </div>
+              <div style="text-align: center;">
+                <p style="font-size: 0.85rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">Last Updated</p>
+                <p id="result-last-updated" style="font-size: 1rem; color: var(--primary); font-weight: 700; margin: 0;">N/A</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Results Table -->
+          <div class="panel">
+            <div class="panel-header">
+              <h3>📋 Subject-wise Results</h3>
+            </div>
+            <div id="result-no-data" style="padding: 3rem; text-align: center; color: var(--text-muted);">
+              <p style="font-size: 1.1rem; font-weight: 600;">🔔 No results published yet</p>
+              <p style="font-size: 0.9rem;">Your exam results will appear here once the admin publishes them.</p>
+            </div>
+            <div class="custom-table-wrapper" id="result-table-wrapper" style="display: none;">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Subject</th>
+                    <th>Exam Type</th>
+                    <th>Marks</th>
+                    <th>Total Marks</th>
+                    <th>Grade</th>
+                    <th>GPA</th>
+                    <th>Percentage</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody id="result-tbody">
+                  <!-- Results populated by JavaScript -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Download Report Card -->
+          <div class="panel">
+            <div class="panel-header">
+              <h3>📥 Download Report Card</h3>
+            </div>
+            <div style="padding: 2rem; text-align: center;">
+              <button onclick="downloadStudentResultCard()" style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; padding: 0.85rem 2rem; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 0.95rem; box-shadow: 0 6px 20px rgba(26,58,107,0.25); transition: all 0.3s ease; font-family: 'Nunito', sans-serif;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 10px 25px rgba(26,58,107,0.35)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 6px 20px rgba(26,58,107,0.25)'">
+                📄 Generate & Download PDF Report
+              </button>
+              <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 1rem;">Download your official result report card as PDF</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= PAGE: FEES & PAYMENTS ================= -->
+      <div class="page-view" id="page-fees">
+        <h2 style="font-family:'Playfair Display', serif; margin-bottom: 2rem; color: var(--primary);">Student Billing Ledger</h2>
+        
+        <div style="display:grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Dues Quick Summary</h3>
+            </div>
+            <div class="fee-card" style="background: white; border: none; padding:0;">
+              <p style="font-size:0.9rem; color:var(--text-muted); font-weight:600; margin-bottom:0.5rem;">Current Pending Amount</p>
+              <h1 id="billing-due-amount" style="font-size:2.5rem; color:var(--primary); font-weight:800; margin-bottom:1rem;">Rs. 5,000</h1>
+              
+              <div style="background:var(--bg-color); padding:1rem; border-radius:12px; margin-bottom:1.5rem;">
+                <p style="font-size:0.85rem; font-weight:700; color:var(--text-main);">📌 Billing Terms:</p>
+                <p style="font-size:0.8rem; color:var(--text-muted); margin-top:0.3rem;">Second Installment covering Tuition and Labs for Mangsir term.</p>
+              </div>
+
+              <button onclick="triggerPaymentFlow()" class="pay-btn" id="billing-pay-btn" style="border:none; width:100%;">Pay Dues Online</button>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Billing & Payment History</h3>
+            </div>
+            <div class="custom-table-wrapper">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Invoice No</th>
+                    <th>Payment Date</th>
+                    <th>Installment Name</th>
+                    <th>Paid Amount</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>#SS-9871</td>
+                    <td>10 Oct 2026</td>
+                    <td>First Term Installment</td>
+                    <td>Rs. 15,000</td>
+                    <td><span class="status-badge approved">Cleared</span></td>
+                  </tr>
+                  <tr>
+                    <td>#SS-8410</td>
+                    <td>01 Jun 2026</td>
+                    <td>Admission Dues</td>
+                    <td>Rs. 10,000</td>
+                    <td><span class="status-badge approved">Cleared</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= PAGE: LEAVE REQUESTS ================= -->
+      <div class="page-view" id="page-leaves">
+        <h2 style="font-family:'Playfair Display', serif; margin-bottom: 2rem; color: var(--primary);">Administrative Leave Requests</h2>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Submit Leave Form</h3>
+            </div>
+            <form id="leave-form" onsubmit="handleLeaveSubmit(event)">
+              <div class="form-group">
+                <label for="leave-type">Reason Category</label>
+                <select id="leave-type" class="form-control" required>
+                  <option value="Medical / Sick Leave">Medical / Sick Leave</option>
+                  <option value="Family Function">Family Function</option>
+                  <option value="Urgent Personal Work">Urgent Personal Work</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="leave-start">From Date</label>
+                <input type="date" id="leave-start" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label for="leave-end">To Date</label>
+                <input type="date" id="leave-end" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label for="leave-desc">Detail Reason Description</label>
+                <textarea id="leave-desc" rows="4" class="form-control" placeholder="Please elaborate the reason for leaves..." required></textarea>
+              </div>
+              <button type="submit" class="submit-btn">Submit Request</button>
+            </form>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <h3>My Leave Applications</h3>
+            </div>
+            <div class="leave-list" id="leaves-history-list">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= PAGE: E-LIBRARY ================= -->
+      <div class="page-view" id="page-library">
+        <h2 style="font-family:'Playfair Display', serif; margin-bottom: 2rem; color: var(--primary);">Digital Curriculum & Textbooks</h2>
+        <div class="cards-grid" id="library-grid">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ================= DIGITAL ID CARD MODAL ================= -->
+  <div class="modal-overlay" id="id-modal">
+    <div class="modal-content" style="max-width: 400px; padding:0; overflow:hidden;">
+      <div style="background:var(--primary); color:white; padding:1.5rem; text-align:center; position:relative;">
+        <button class="modal-close-btn" onclick="closeDigitalId()" style="color:white; position:absolute; right:1.5rem; top:1.2rem; outline:none;">&times;</button>
+        <h3 style="font-family:'Playfair Display', serif;">Shree Saraswati Secondary School</h3>
+        <p style="font-size:0.75rem; text-transform:uppercase; letter-spacing:1.5px; opacity:0.8; margin-top:0.3rem;">Student Identity Card</p>
+      </div>
+      <div style="padding:2rem; text-align:center; display:flex; flex-direction:column; align-items:center; gap:1rem;">
+        <div class="profile-avatar-large" id="digital-id-avatar">A</div>
+        <div>
+          <h2 style="color:var(--primary); font-size:1.4rem;" id="digital-id-student-name">Student Name</h2>
+          <p style="font-size:0.9rem; font-weight:700; color:var(--accent);">Grade 10 - Science</p>
+        </div>
+        <div style="width:100%; border-top:1px dashed #cbd5e1; padding-top:1rem; display:grid; grid-template-columns: 1fr 1fr; gap:0.5rem; text-align:left;">
+          <div>
+            <p style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">ROLL NO</p>
+            <p style="font-size:0.9rem; color:var(--text-main); font-weight:600;">12</p>
+          </div>
+          <div>
+            <p style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">ACADEMIC YEAR</p>
+            <p style="font-size:0.9rem; color:var(--text-main); font-weight:600;">2080 BS</p>
+          </div>
+          <div style="margin-top:0.5rem;">
+            <p style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">BLOOD GROUP</p>
+            <p style="font-size:0.9rem; color:var(--text-main); font-weight:600;">B+ Positive</p>
+          </div>
+          <div style="margin-top:0.5rem;">
+            <p style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">ID NUMBER</p>
+            <p style="font-size:0.9rem; color:var(--text-main); font-weight:600;">STD-2080-14</p>
+          </div>
+        </div>
+        <button onclick="alert('Printing ID card structure...')" style="margin-top:1rem; width:100%; padding:0.7rem; border:1px solid var(--primary); background:none; color:var(--primary); font-weight:700; border-radius:8px; cursor:pointer;">Print Digital ID</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= PAYMENT GATEWAY MODAL ================= -->
+  <div class="modal-overlay" id="payment-modal">
+    <div class="modal-content">
+      <button class="modal-close-btn" onclick="closePaymentModal()">&times;</button>
+      <h3 class="modal-title">School Fee Payment Desk</h3>
+      <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:0.5rem;">Please transfer Rs. 5,000 and submit verification credentials below</p>
+      
+      <div class="payment-modal-layout">
+        <!-- Left Section: Bank Details & QR -->
+        <div class="payment-qr-section">
+          <h4 style="font-size:0.95rem; color:var(--primary); font-weight:700;">Scan QR to Pay Instantly</h4>
+          
+          <svg class="qr-svg" viewBox="0 0 100 100" width="140" height="140" style="background:#fff; padding:8px; border:1px solid #e2e8f0; border-radius:8px;">
+            <rect x="10" y="10" width="20" height="20" fill="#1a3a6b"/>
+            <rect x="15" y="15" width="10" height="10" fill="#fff"/>
+            <rect x="70" y="10" width="20" height="20" fill="#1a3a6b"/>
+            <rect x="75" y="15" width="10" height="10" fill="#fff"/>
+            <rect x="10" y="70" width="20" height="20" fill="#1a3a6b"/>
+            <rect x="15" y="75" width="10" height="10" fill="#fff"/>
+            <rect x="35" y="10" width="5" height="15" fill="#1a3a6b"/>
+            <rect x="45" y="10" width="10" height="5" fill="#1a3a6b"/>
+            <rect x="60" y="15" width="5" height="10" fill="#1a3a6b"/>
+            <rect x="35" y="30" width="15" height="5" fill="#1a3a6b"/>
+            <rect x="55" y="30" width="10" height="15" fill="#1a3a6b"/>
+            <rect x="75" y="35" width="15" height="5" fill="#1a3a6b"/>
+            <rect x="10" y="35" width="5" height="25" fill="#1a3a6b"/>
+            <rect x="25" y="45" width="15" height="10" fill="#1a3a6b"/>
+            <rect x="45" y="50" width="25" height="5" fill="#1a3a6b"/>
+            <rect x="75" y="55" width="10" height="25" fill="#1a3a6b"/>
+            <rect x="35" y="60" width="5" height="20" fill="#1a3a6b"/>
+            <rect x="15" y="65" width="10" height="5" fill="#1a3a6b"/>
+            <rect x="45" y="70" width="15" height="10" fill="#1a3a6b"/>
+            <rect x="65" y="80" width="5" height="10" fill="#1a3a6b"/>
+            <rect x="42" y="42" width="16" height="16" rx="3" fill="#d4af37"/>
+            <text x="50" y="52" font-size="8" font-weight="bold" fill="#fff" text-anchor="middle">SSS</text>
+          </svg>
+          
+          <p style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">Supports: Fonepay, eSewa, Khalti, IPS</p>
+          
+          <div class="payment-bank-details">
+            <p><strong>Bank:</strong> Rastriya Banijya Bank</p>
+            <p><strong>A/C Name:</strong> Shree Saraswati Sec. School</p>
+            <p><strong>A/C Number:</strong> 1430100002561001</p>
+            <p><strong>Branch:</strong> Chabahil, Kathmandu</p>
+          </div>
+        </div>
+
+        <!-- Right Section: Verification Submission Form -->
+        <div class="payment-form-section">
+          <form id="payment-verify-form" onsubmit="handlePaymentVerifySubmit(event)">
+            <div class="form-group">
+              <label for="payment-txn-code">Transaction Reference / Txn ID</label>
+              <input type="text" id="payment-txn-code" class="form-control" placeholder="e.g. TXN-984710293" required>
+            </div>
+            
+            <div class="form-group" style="margin-bottom:1.5rem;">
+              <label>Upload Payment Screenshot</label>
+              <label for="payment-screenshot" style="display:flex; flex-direction:column; align-items:center; justify-content:center; border:2px dashed #cbd5e1; border-radius:10px; padding:1.2rem; cursor:pointer; background:#f8fafc; transition:all 0.3s;" id="upload-label">
+                <span style="font-size:1.5rem; margin-bottom:0.3rem;">📸</span>
+                <span style="font-size:0.8rem; font-weight:700; color:var(--primary);">Choose Screenshot File</span>
+                <span style="font-size:0.7rem; color:var(--text-muted); margin-top:0.1rem;">PNG, JPG up to 5MB</span>
+              </label>
+              <input type="file" id="payment-screenshot" style="display:none;" accept="image/*" required onchange="handleScreenshotSelect(this)">
+              <div class="file-upload-preview" id="file-preview-indicator">
+                <span>✔️ Selected:</span> <span id="file-preview-name" style="color:var(--primary); font-weight:700; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; max-width:180px;"></span>
+              </div>
+            </div>
+
+            <button type="submit" class="submit-btn" style="width:100%;">Submit Verification Proof</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= JAVASCRIPT LOGIC ================= -->
+  <script>
+    // ── AUTHENTICATION CHECK ──
+    (function() {
+      const studentSession = localStorage.getItem('student_session');
+      if (!studentSession) {
+        // No session, redirect to login
+        window.location.href = 'index.html';
+        return;
+      }
+      window.studentData = JSON.parse(studentSession);
+      // Load student data on page load
+      loadStudentPortalData();
+    })();
+
+    // ── LOAD ACTUAL STUDENT DATA FROM SUPABASE ──
+    async function loadStudentPortalData() {
+      try {
+        if (!window.studentData) return;
+        
+        const studentRoll = window.studentData.roll;
+        const studentName = window.studentData.name;
+        const studentClass = window.studentData.class;
+        const firstLetter = studentName.charAt(0).toUpperCase();
+        
+        // Update header and welcome message immediately from session
+        document.getElementById('header-student-name').textContent = studentName;
+        document.getElementById('header-student-class').textContent = studentClass || 'Loading...';
+        document.getElementById('welcome-message').textContent = `Welcome back, ${studentName.split(' ')[0]}! 👋`;
+        document.getElementById('digital-id-student-name').textContent = studentName;
+        
+        // Update profile avatars with first letter
+        document.getElementById('header-profile-avatar').textContent = firstLetter;
+        document.getElementById('digital-id-avatar').textContent = firstLetter;
+        
+        // Fetch full student record from Supabase
+        if (supabaseDb && studentRoll) {
+          const { data, error } = await supabaseDb
+            .from('students_registry')
+            .select('*')
+            .eq('roll', studentRoll)
+            .single();
+          
+          if (!error && data) {
+            // Update attendance
+            const attendance = data.attendance || '0%';
+            document.getElementById('student-attendance-val').textContent = attendance;
+            
+            // Update GPA
+            if (data.overall_gpa) {
+              document.getElementById('student-overall-gpa-val').textContent = data.overall_gpa;
+            }
+            
+            // Update welcome subtitle with pending assignments count
+            const pendingAssignments = assignmentsData.filter(a => a.status === 'Pending').length;
+            const billingState = data.billing_state || 'unpaid';
+            let dueText = '';
+            if (billingState === 'paid') {
+              dueText = 'All fees are paid. ✓';
+            } else if (billingState === 'pending') {
+              dueText = 'Your fee payment is under review.';
+            } else {
+              dueText = 'Your Mangsir fee installment is due soon.';
+            }
+            document.getElementById('welcome-subtitle').textContent = `You have ${pendingAssignments} pending assignments and ${dueText}`;
+            
+            // Store in window for later use
+            window.studentData.attendance = attendance;
+            window.studentData.gpa = data.overall_gpa;
+            window.studentData.billingState = billingState;
+          }
+        }
+        
+        // Sync leaves and GPA from database
+        syncGPAAndRemarks();
+        syncLeavesFromRegistry();
+        
+      } catch(err) {
+        console.error('Error loading student portal data:', err);
+      }
+    }
+
+    // ── SHOW STUDENT PROFILE ──
+    function showStudentProfile() {
+      if (!window.studentData) {
+        alert('Student data not available');
+        return;
+      }
+      const name = window.studentData.name || 'Unknown';
+      const roll = window.studentData.roll || 'N/A';
+      const cls = window.studentData.class || 'Unknown';
+      alert(`Student Profile Info:\nName: ${name}\nRoll No: ${roll}\nClass: ${cls}`);
+    }
+
+    // ── PORTAL MEMORY / STATE ──
+    let isFeePaid = false;
+    let leavesData = [
+      { id: 1, type: "Medical / Sick Leave", start: "2026-10-12", end: "2026-10-14", desc: "Severely down with viral fever.", status: "Approved" },
+      { id: 2, type: "Family Function", start: "2026-11-20", end: "2026-11-21", desc: "Attending sister's wedding ritual.", status: "Pending" }
+    ];
+
+    let assignmentsData = [
+      { id: 1, course: "Advanced Mathematics", topic: "Derivatives & Calculus Application", due: "Nov 25, 2026", status: "Pending" },
+      { id: 2, course: "Computer Networking", topic: "Subnetting & Dynamic routing labs", due: "Nov 30, 2026", status: "Pending" },
+      { id: 3, course: "Physics Practical", topic: "Semiconductors & Junction diodes validation", due: "Nov 12, 2026", status: "Submitted" }
+    ];
+
+    let libraryBooks = [
+      { id: 1, title: "Class 10 Advanced Mathematics", category: "Mathematics", icon: "📐" },
+      { id: 2, title: "Modern Theoretical Physics (Class 10)", category: "Physics", icon: "⚡" },
+      { id: 3, title: "Industrial Cisco Subnetting Manual", category: "Computer Science", icon: "💻" },
+      { id: 4, title: "Compulsory English Literature (2080 BS)", category: "English", icon: "📖" }
+    ];
+
+    // ── SWITCH TAB PAGE VIEW ──
+    function switchPage(pageId, element) {
+      document.querySelectorAll('.nav-link').forEach(link => {
+        link.classList.remove('active');
+      });
+
+      if (element) {
+        element.classList.add('active');
+      } else {
+        const targetLink = document.querySelector(`.nav-link[data-page="${pageId}"]`);
+        if (targetLink) targetLink.classList.add('active');
+      }
+
+      document.querySelectorAll('.page-view').forEach(view => {
+        view.classList.remove('active');
+      });
+
+      const activeView = document.getElementById('page-' + pageId);
+      if (activeView) activeView.classList.add('active');
+
+      document.getElementById('sidebar').classList.remove('active');
+    }
+
+    // ── DIGITAL STUDENT ID MODAL ──
+    function openDigitalId() { document.getElementById('id-modal').classList.add('active'); }
+    function closeDigitalId() { document.getElementById('id-modal').classList.remove('active'); }
+
+    // ── PAYMENT MODAL FLOW ──
+    let feePaymentState = 'unpaid'; // 'unpaid', 'pending', 'paid'
+    let submittedTxnCode = '';
+
+    function triggerPaymentFlow() {
+      if (feePaymentState === 'paid') {
+        alert("Your term fees are fully cleared. No outstanding dues!");
+        return;
+      }
+      if (feePaymentState === 'pending') {
+        alert("Your transaction is currently under review by the accounts branch!");
+        return;
+      }
+      document.getElementById('payment-modal').classList.add('active');
+    }
+    function closePaymentModal() { document.getElementById('payment-modal').classList.remove('active'); }
+
+    function handleScreenshotSelect(input) {
+      const filePreview = document.getElementById('file-preview-indicator');
+      const fileNameSpan = document.getElementById('file-preview-name');
+      const uploadLabel = document.getElementById('upload-label');
+      
+      if (input.files && input.files[0]) {
+        const file = input.files[0];
+        fileNameSpan.textContent = file.name;
+        filePreview.style.display = 'flex';
+        uploadLabel.style.borderColor = 'var(--success)';
+        uploadLabel.style.background = '#f0fdf4';
+      }
+    }
+
+    async function handlePaymentVerifySubmit(e) {
+      e.preventDefault();
+      const txnCode = document.getElementById('payment-txn-code').value.trim();
+      if (!txnCode) {
+        alert("Please enter a valid Transaction Reference Code.");
+        return;
+      }
+      submittedTxnCode = txnCode;
+      feePaymentState = 'pending';
+      localStorage.setItem('student_billing_state', 'pending');
+      
+      // Upload screenshot to Media DB if available
+      let proofUrl = "rbb_receipt_screenshot.png";
+      const screenshotInput = document.getElementById('payment-screenshot');
+      if (screenshotInput && screenshotInput.files[0]) {
+        try {
+          proofUrl = await uploadMediaFile(screenshotInput.files[0], `payments/${Date.now()}_${screenshotInput.files[0].name}`);
+        } catch(err) { console.warn('Screenshot upload failed:', err); }
+      }
+
+      // Insert into Supabase fee_payments table
+      if (supabaseDb) {
+        try {
+          const studentName = window.studentData?.name || 'Student';
+          const studentRoll = window.studentData?.roll || 12;
+          await supabaseDb.from('fee_payments').insert([{
+            name: studentName,
+            roll: studentRoll,
+            category: "Second Installment Dues (Rs. 5,000)",
+            txn_id: txnCode,
+            proof_file: proofUrl,
+            status: "pending",
+            submitted_time: "Just Now"
+          }]);
+          // Update student billing state in DB
+          await supabaseDb.from('students_registry').update({ billing_state: 'pending' }).eq('roll', studentRoll);
+        } catch(err) { console.error('Payment DB sync failed:', err); }
+      }
+
+      // Also update localStorage
+      const globalPayments = JSON.parse(localStorage.getItem('fee_payments') || '[]');
+      if (!globalPayments.find(p => p.txn_id === txnCode)) {
+        globalPayments.push({
+          id: Date.now(),
+          name: window.studentData?.name || 'Anil Gurung',
+          roll: window.studentData?.roll || 12,
+          category: "Second Installment Dues (Rs. 5,000)",
+          txn_id: txnCode,
+          proof_file: proofUrl,
+          status: "pending",
+          submitted_time: "Just Now"
+        });
+        localStorage.setItem('fee_payments', JSON.stringify(globalPayments));
+      }
+
+      closePaymentModal();
+      alert(`Verification Proof Submitted!\n\nReference ID: ${txnCode}\n\nOur accounts department will review the bank record and the screenshot within 24 hours. The portal will reflect a 'Pending Review' status in the ledger.`);
+      
+      renderPortalStates();
+    }
+
+    function triggerSuccessBeepToast(titleText, bodyText) {
+      const notificationToast = document.createElement('div');
+      notificationToast.style.position = 'fixed';
+      notificationToast.style.bottom = '2rem';
+      notificationToast.style.right = '2rem';
+      notificationToast.style.background = 'var(--white)';
+      notificationToast.style.boxShadow = '0 20px 40px rgba(0,0,0,0.12)';
+      notificationToast.style.borderRadius = '16px';
+      notificationToast.style.padding = '1.5rem';
+      notificationToast.style.borderLeft = '6px solid var(--success)';
+      notificationToast.style.display = 'flex';
+      notificationToast.style.alignItems = 'center';
+      notificationToast.style.gap = '1rem';
+      notificationToast.style.zIndex = '999';
+      notificationToast.style.animation = 'slideInToast 0.4s ease';
+
+      notificationToast.innerHTML = `
+        <div style="font-size:1.8rem;">🎉</div>
+        <div>
+          <h4 style="color:var(--primary); font-weight:800; margin-bottom:0.2rem;">${titleText}</h4>
+          <p style="font-size:0.8rem; color:var(--text-muted);">${bodyText}</p>
+        </div>
+      `;
+
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes slideInToast {
+          from { transform: translateX(100%) translateY(20px); opacity:0; }
+          to { transform: translateX(0) translateY(0); opacity:1; }
+        }
+      `;
+      document.head.appendChild(style);
+      document.body.appendChild(notificationToast);
+
+      // Web Audio Beep
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+        gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.15);
+      } catch(err) {}
+
+      setTimeout(() => {
+        notificationToast.style.opacity = '0';
+        notificationToast.style.transition = 'opacity 0.5s ease';
+        setTimeout(() => notificationToast.remove(), 500);
+      }, 6000);
+    }
+
+    // ── POPULATING ASSIGNMENTS ──
+    function renderAssignments() {
+      const tbody = document.getElementById('assignments-tbody');
+      tbody.innerHTML = '';
+      
+      // Calculate and render pending count dynamically
+      let pendingCount = 0;
+
+      assignmentsData.forEach(item => {
+        if (item.status === 'Pending') pendingCount++;
+        
+        let statusBadge = item.status === 'Pending' 
+          ? `<span class="status-badge pending">Pending</span>` 
+          : `<span class="status-badge approved">Submitted</span>`;
+
+        let actionBtn = item.status === 'Pending'
+          ? `<button onclick="submitAssignment(${item.id})" style="background:var(--primary); color:white; border:none; padding:0.4rem 0.8rem; border-radius:6px; cursor:pointer; font-weight:700;">Submit File</button>`
+          : `<span style="font-weight:700; color:var(--success); font-size:0.9rem;">✔️ File Sent</span>`;
+
+        tbody.innerHTML += `
+          <tr>
+            <td><strong>${item.course}</strong></td>
+            <td>${item.topic}</td>
+            <td>${item.due}</td>
+            <td>${statusBadge}</td>
+            <td>${actionBtn}</td>
+          </tr>
+        `;
+      });
+
+      document.getElementById('dash-pending-count').textContent = pendingCount;
+    }
+
+    function submitAssignment(id) {
+      const input = confirm("Upload mock file (PDF/Zip) from local drive?");
+      if (input) {
+        const item = assignmentsData.find(x => x.id === id);
+        if (item) {
+          item.status = 'Submitted';
+          renderAssignments();
+          alert("Assignment uploaded successfully!");
+        }
+      }
+    }
+
+    // ── LEAVE APPLICATIONS LOGIC ──
+    function renderLeaves() {
+      const dashList = document.getElementById('dash-leave-list');
+      const historyList = document.getElementById('leaves-history-list');
+      
+      if (!dashList || !historyList) return;
+
+      dashList.innerHTML = '';
+      historyList.innerHTML = '';
+
+      leavesData.forEach(leave => {
+        let badgeClass = leave.status.toLowerCase() === 'approved' ? 'approved' : leave.status.toLowerCase() === 'rejected' ? 'rejected' : 'pending';
+        let leaveHtml = `
+          <div class="leave-item">
+            <div class="leave-info">
+              <h4>${leave.type}</h4>
+              <p>${leave.start} to ${leave.end}</p>
+            </div>
+            <span class="status-badge ${badgeClass}">${leave.status}</span>
+          </div>
+        `;
+        
+        dashList.innerHTML += leaveHtml;
+        
+        let historyHtml = `
+          <div class="leave-item" style="display:block; margin-bottom:1rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <h4 style="color:var(--primary);">${leave.type}</h4>
+              <span class="status-badge ${badgeClass}">${leave.status}</span>
+            </div>
+            <p style="font-size:0.85rem; font-weight:600; color:var(--text-muted); margin-top:0.4rem;">Duration: ${leave.start} to ${leave.end}</p>
+            <p style="font-size:0.85rem; color:var(--text-main); margin-top:0.5rem; background:var(--white); padding:0.5rem; border-radius:6px; border:1px solid #e2e8f0;">"${leave.desc}"</p>
+          </div>
+        `;
+        historyList.innerHTML += historyHtml;
+      });
+    }
+
+    async function handleLeaveSubmit(e) {
+      e.preventDefault();
+      const type = document.getElementById('leave-type').value;
+      const start = document.getElementById('leave-start').value;
+      const end = document.getElementById('leave-end').value;
+      const desc = document.getElementById('leave-desc').value;
+
+      const newId = Date.now();
+      const studentName = window.studentData?.name || 'Student';
+      const newLeaveObj = {
+        name: studentName,
+        type: type,
+        range: start + " to " + end,
+        desc: desc,
+        proof_file: "",
+        emoji: "💌",
+        status: "pending"
+      };
+
+      // Insert into Supabase student_leaves table
+      if (supabaseDb) {
+        try {
+          await supabaseDb.from('student_leaves').insert([newLeaveObj]);
+        } catch(err) { console.error('Leave DB sync failed:', err); }
+      }
+
+      // Push to global student_leaves in localStorage
+      const dbLeaves = JSON.parse(localStorage.getItem('student_leaves') || '[]');
+      dbLeaves.unshift(newLeaveObj);
+      localStorage.setItem('student_leaves', JSON.stringify(dbLeaves));
+
+      // Push to local leavesData
+      leavesData.unshift({
+        id: newId,
+        type, start, end, desc, status: "Pending"
+      });
+
+      renderLeaves();
+      document.getElementById('leave-form').reset();
+      alert("Leave application sent successfully to the Principal Desk!");
+    }
+
+    // ── E-LIBRARY ──
+    function renderLibrary(filterText = '') {
+      const grid = document.getElementById('library-grid');
+      grid.innerHTML = '';
+
+      const filtered = libraryBooks.filter(book => 
+        book.title.toLowerCase().includes(filterText.toLowerCase()) || 
+        book.category.toLowerCase().includes(filterText.toLowerCase())
+      );
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `<p style="grid-column: 1/-1; text-align:center; padding:2rem; font-weight:600; color:var(--text-muted);">No books found matching search.</p>`;
+        return;
+      }
+
+      filtered.forEach(book => {
+        grid.innerHTML += `
+          <div class="resource-card">
+            <div class="resource-card-header">
+              <div class="resource-icon">${book.icon}</div>
+              <span style="font-size:0.75rem; background:var(--accent-light); color:#a16207; font-weight:700; padding:0.3rem 0.6rem; border-radius:20px; text-transform:uppercase;">${book.category}</span>
+            </div>
+            <div class="resource-meta">
+              <h4>${book.title}</h4>
+              <p>Publisher: Janak Education Materials</p>
+            </div>
+            <a href="#" onclick="alert('Downloading official book PDF from digital curriculum server...')" class="download-link">📥 Download E-Book</a>
+          </div>
+        `;
+      });
+    }
+
+    function handleGlobalSearch() {
+      const query = document.getElementById('global-search').value;
+      // If e-library tab is visible, trigger library filtering
+      if (document.getElementById('page-library').classList.contains('active')) {
+        renderLibrary(query);
+      }
+    }
+
+    // ── RENDER STATES ON ACTIONS ──
+    function renderPortalStates() {
+      const billingTbody = document.querySelector('#page-fees .custom-table tbody');
+      
+      if (feePaymentState === 'pending') {
+        // Dashboard
+        document.getElementById('dash-due-amount').textContent = "Reviewing...";
+        document.getElementById('dash-due-deadline').textContent = "Pending Accounts Check";
+        document.getElementById('dash-due-deadline').style.color = "var(--warning)";
+        document.getElementById('dash-pay-btn').textContent = "Under Review";
+        document.getElementById('dash-pay-btn').style.background = "var(--warning)";
+        
+        // Billing tab page
+        document.getElementById('billing-due-amount').textContent = "Pending Review";
+        document.getElementById('billing-pay-btn').textContent = "Under Review";
+        document.getElementById('billing-pay-btn').style.background = "var(--warning)";
+
+        // Append pending verification row to history table
+        if (!document.getElementById('ledger-pending-row')) {
+          const rowHtml = `
+            <tr id="ledger-pending-row">
+              <td>#SS-9872</td>
+              <td>Today</td>
+              <td>Second Term Installment</td>
+              <td>Rs. 5,000</td>
+              <td><span class="status-badge pending-verification">Pending Review</span></td>
+            </tr>
+          `;
+          billingTbody.insertAdjacentHTML('afterbegin', rowHtml);
+        }
+      } else if (feePaymentState === 'paid') {
+        // Dashboard
+        document.getElementById('dash-due-amount').textContent = "Rs. 0";
+        document.getElementById('dash-due-deadline').textContent = "Term fees fully cleared";
+        document.getElementById('dash-due-deadline').style.color = "var(--success)";
+        document.getElementById('dash-paid-lbl').textContent = "Paid: Rs. 20,000";
+        document.getElementById('dash-progress-fill').style.width = "80%";
+        document.getElementById('dash-pay-btn').textContent = "Receipt Issued";
+        document.getElementById('dash-pay-btn').style.background = "var(--success)";
+        
+        // Billing tab page
+        document.getElementById('billing-due-amount').textContent = "Rs. 0";
+        document.getElementById('billing-pay-btn').textContent = "Fee Ledger Cleared";
+        document.getElementById('billing-pay-btn').style.background = "var(--success)";
+
+        // Update the pending row to fully cleared
+        const pendingRow = document.getElementById('ledger-pending-row');
+        if (pendingRow) {
+          pendingRow.innerHTML = `
+            <td>#SS-9872</td>
+            <td>Today</td>
+            <td>Second Term Installment</td>
+            <td>Rs. 5,000</td>
+            <td><span class="status-badge approved">Cleared</span></td>
+          `;
+          pendingRow.removeAttribute('id'); // Remove pending ID so it stays in history
+        } else {
+          // If approved directly without pending phase, insert cleared row
+          const rowHtml = `
+            <tr>
+              <td>#SS-9872</td>
+              <td>Today</td>
+              <td>Second Term Installment</td>
+              <td>Rs. 5,000</td>
+              <td><span class="status-badge approved">Cleared</span></td>
+            </tr>
+          `;
+          billingTbody.insertAdjacentHTML('afterbegin', rowHtml);
+        }
+      }
+    }
+
+    // ── NOTIFICATION TOGGLE & ACTIONS ──
+    function toggleNotificationDropdown(event) {
+      event.stopPropagation();
+      document.getElementById('notification-dropdown').classList.toggle('active');
+    }
+    
+    function clearNotifications() {
+      const badge = document.getElementById('noti-badge');
+      if (badge) {
+        badge.style.display = 'none';
+      }
+      const list = document.getElementById('notification-list');
+      if (list) {
+        list.innerHTML = `
+          <div style="padding: 2.2rem 1.2rem; text-align:center; font-weight:600; color:var(--text-muted); font-size:0.85rem;">
+            🔔 No unread notifications
+          </div>
+        `;
+      }
+      alert("All notifications marked as read!");
+    }
+
+    // ── DYNAMIC ANNOUNCEMENT RENDERER ──
+    function renderAnnouncements() {
+      const container = document.getElementById('announcement-list-container');
+      if (!container) return;
+      
+      const notices = JSON.parse(localStorage.getItem('school_announcements') || '[]');
+      container.innerHTML = '';
+      
+      if (notices.length === 0) {
+        container.innerHTML = `<p style="padding:1rem; text-align:center; font-weight:600; color:var(--text-muted);">No circular notices posted.</p>`;
+        return;
+      }
+
+      notices.forEach(n => {
+        let labelClass = 'URGENT';
+        if (n.category === 'General') labelClass = 'GENERAL';
+        else if (n.category === 'Holiday') labelClass = 'HOLIDAY';
+
+        container.innerHTML += `
+          <div class="announcement-item" style="transition: transform 0.2s;">
+            <span class="date">${labelClass} (${n.date})</span>
+            <h4>${n.title}</h4>
+            <p>${n.desc}</p>
+          </div>
+        `;
+      });
+    }
+
+    // ── LEAVES STATUS AND GPA SYNCHRONIZER ──
+    function syncGPAAndRemarks() {
+      const students = JSON.parse(localStorage.getItem('students_registry') || '[]');
+      const studentRoll = window.studentData?.roll || 12;
+      const student = students.find(s => s.roll === studentRoll);
+      if (student && student.overallGPA) {
+        document.getElementById('student-overall-gpa-val').textContent = student.overallGPA;
+      }
+      
+      const remark = localStorage.getItem(`student_gpa_remark_${studentRoll}`);
+      if (remark) {
+        if (!document.getElementById('results-published-banner')) {
+          const panel = document.querySelector('#page-results .panel');
+          if (panel) {
+            panel.insertAdjacentHTML('afterbegin', `
+              <div id="results-published-banner" style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:1rem; margin-bottom:1.5rem; display:flex; align-items:center; gap:1rem;">
+                <span style="font-size:1.5rem;">🎉</span>
+                <div>
+                  <h4 style="color:#16a34a; font-weight:700;">Term Result GPA Published!</h4>
+                  <p style="font-size:0.85rem; color:#15803d; margin-top:0.15rem;">Admin Board Remark: <strong>"${remark}"</strong></p>
+                </div>
+              </div>
+            `);
+          }
+        }
+      }
+    }
+
+    function syncLeavesFromRegistry() {
+      const dbLeaves = JSON.parse(localStorage.getItem('student_leaves') || '[]');
+      if (dbLeaves.length > 0) {
+        const studentName = window.studentData?.name || 'Anil Gurung';
+        const studentLeaves = dbLeaves.filter(l => l.name === studentName);
+        if (studentLeaves.length > 0) {
+          leavesData = studentLeaves.map(l => {
+            return {
+              id: l.id,
+              type: l.type,
+              start: l.range.split(' to ')[0] || '2026-11-20',
+              end: l.range.split(' to ')[1] || '2026-11-21',
+              desc: l.desc,
+              status: l.status.charAt(0).toUpperCase() + l.status.slice(1)
+            };
+          });
+          renderLeaves();
+        }
+      }
+    }
+
+    function renderDynamicTimetable() {
+      const container = document.getElementById('student-schedule-list');
+      if (!container) return;
+
+      const timetables = JSON.parse(localStorage.getItem('school_timetables') || '[]');
+      const studentClass = window.studentData?.class || 'Grade 10 - A';
+      const filtered = timetables.filter(t => t.section === studentClass);
+      
+      if (filtered.length === 0) {
+        container.innerHTML = `<p style="padding:1rem; text-align:center; font-weight:600; color:var(--text-muted);">No scheduled lectures today.</p>`;
+        return;
+      }
+
+      container.innerHTML = '';
+      filtered.forEach(t => {
+        container.innerHTML += `
+          <div class="schedule-item" style="border-left-color: var(--primary);">
+            <div class="schedule-time">${t.time}</div>
+            <div class="schedule-details">
+              <h4>${t.subject}</h4>
+              <p>${t.details}</p>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    // ── CROSS TAB SYSTEM SYNCHRONIZER ──
+    function startCrossTabSynchronizer() {
+      setInterval(() => {
+        // Sync billing status
+        const dbState = localStorage.getItem('student_billing_state');
+        if (dbState && dbState !== feePaymentState) {
+          feePaymentState = dbState;
+          renderPortalStates();
+          
+          if (dbState === 'paid') {
+            triggerSuccessBeepToast("Payment Approved by Admin Cell!", "Rs. 5,000 cleared cleanly from outstanding dues!");
+          } else if (dbState === 'rejected') {
+            const comment = localStorage.getItem('student_billing_rejection_remark') || "Transaction mismatch.";
+            alert(`⚠️ Payment Proof Audit Rejected by Accounts!\n\nRemark: "${comment}"\n\nPlease re-upload proper transaction voucher.`);
+            feePaymentState = 'unpaid';
+            localStorage.setItem('student_billing_state', 'unpaid');
+            renderPortalStates();
+          }
+        }
+
+        // Sync dynamic items
+        syncGPAAndRemarks();
+        syncLeavesFromRegistry();
+        renderDynamicTimetable();
+        renderAnnouncements();
+      }, 1500);
+    }
+
+    // ── RENDER STUDENT RESULTS ──
+    function renderStudentResults() {
+      // Get current student symbol (in a real system, this would come from login session)
+      // For demo, we'll get the first student symbol from approved results
+      const approvedResults = JSON.parse(localStorage.getItem('approved_results') || '[]');
+      
+      if (approvedResults.length === 0) {
+        document.getElementById('result-no-data').style.display = 'block';
+        document.getElementById('result-table-wrapper').style.display = 'none';
+        document.getElementById('result-subjects-count').textContent = '0';
+        document.getElementById('result-avg-percentage').textContent = '0%';
+        document.getElementById('result-avg-gpa').textContent = '0.0';
+        return;
+      }
+      
+      // Get unique students and default to first student (in real app, get from login session)
+      const uniqueStudents = [];
+      const seenSymbols = new Set();
+      approvedResults.forEach(result => {
+        if (!seenSymbols.has(result.symbolNumber)) {
+          uniqueStudents.push(result.symbolNumber);
+          seenSymbols.add(result.symbolNumber);
+        }
+      });
+      
+      // Use first student's results for display
+      const currentStudentSymbol = uniqueStudents[0];
+      const studentResults = approvedResults.filter(r => r.symbolNumber === currentStudentSymbol);
+      
+      if (studentResults.length === 0) {
+        document.getElementById('result-no-data').style.display = 'block';
+        document.getElementById('result-table-wrapper').style.display = 'none';
+        return;
+      }
+      
+      // Show table and hide no-data message
+      document.getElementById('result-no-data').style.display = 'none';
+      document.getElementById('result-table-wrapper').style.display = 'block';
+      
+      // Populate results table
+      const tbody = document.getElementById('result-tbody');
+      tbody.innerHTML = '';
+      
+      let totalPercentage = 0;
+      let totalGPA = 0;
+      
+      studentResults.forEach(result => {
+        const gradeColor = result.gpa >= 3.0 ? '#10b981' : result.gpa >= 2.0 ? '#f59e0b' : '#ef4444';
+        tbody.innerHTML += `
+          <tr>
+            <td><strong>${result.subject}</strong></td>
+            <td>${result.examType}</td>
+            <td><strong>${result.marks}</strong></td>
+            <td>${result.totalMarks}</td>
+            <td><span style="color: ${gradeColor}; font-weight: 700; font-size: 1.1rem;">${result.grade}</span></td>
+            <td><strong style="color: ${gradeColor};">${result.gpa.toFixed(2)}</strong></td>
+            <td>${result.percentage}%</td>
+            <td>${result.approvalDate}</td>
+          </tr>
+        `;
+        totalPercentage += result.percentage;
+        totalGPA += result.gpa;
+      });
+      
+      // Calculate and display averages
+      const avgPercentage = Math.round(totalPercentage / studentResults.length);
+      const avgGPA = (totalGPA / studentResults.length).toFixed(2);
+      
+      document.getElementById('result-subjects-count').textContent = studentResults.length;
+      document.getElementById('result-avg-percentage').textContent = avgPercentage + '%';
+      document.getElementById('result-avg-gpa').textContent = avgGPA;
+      document.getElementById('result-last-updated').textContent = studentResults[0].approvalDate || new Date().toLocaleDateString();
+    }
+    
+    // ── DOWNLOAD STUDENT RESULT CARD ──
+    function downloadStudentResultCard() {
+      const approvedResults = JSON.parse(localStorage.getItem('approved_results') || '[]');
+      
+      if (approvedResults.length === 0) {
+        alert('No results available to download');
+        return;
+      }
+      
+      // Get first student's results
+      const uniqueSymbols = new Set();
+      let currentStudentSymbol = null;
+      for (let result of approvedResults) {
+        if (!uniqueSymbols.has(result.symbolNumber)) {
+          currentStudentSymbol = result.symbolNumber;
+          break;
+        }
+      }
+      
+      const studentResults = approvedResults.filter(r => r.symbolNumber === currentStudentSymbol);
+      if (studentResults.length === 0) {
+        alert('No results found');
+        return;
+      }
+      
+      const student = studentResults[0];
+      
+      // Create CSV content
+      let csvContent = 'data:text/csv;charset=utf-8,';
+      csvContent += 'SHREE SARASWATI SECONDARY SCHOOL\\n';
+      csvContent += 'EXAM RESULT REPORT CARD\\n\\n';
+      csvContent += `Student Name,${student.name}\\n`;
+      csvContent += `Symbol Number,${student.symbolNumber}\\n`;
+      csvContent += `Class,${student.class}\\n`;
+      csvContent += `Generated Date,${new Date().toLocaleDateString()}\\n\\n`;
+      
+      csvContent += 'Subject,Exam Type,Marks,Total,Grade,GPA,Percentage\\n';
+      let totalPerc = 0, totalGPA = 0;
+      studentResults.forEach(result => {
+        csvContent += `${result.subject},${result.examType},${result.marks},${result.totalMarks},${result.grade},${result.gpa},${result.percentage}%\\n`;
+        totalPerc += result.percentage;
+        totalGPA += result.gpa;
+      });
+      
+      const avgPerc = Math.round(totalPerc / studentResults.length);
+      const avgGPA = (totalGPA / studentResults.length).toFixed(2);
+      csvContent += `\\nAverage Percentage,${avgPerc}%\\n`;
+      csvContent += `Average GPA,${avgGPA}\\n`;
+      
+      // Create and trigger download
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `${student.symbolNumber}_ResultCard.csv`);
+      link.click();
+      
+      alert('Result card downloaded successfully!');
+    }
+
+    // ── RUN INIT ON MOUNT ──
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Pull all data from Supabase first
+      await pullAllFromSupabase();
+      await seedSupabaseIfEmpty();
+      await pullAllFromSupabase();
+
+      // Seed local announcements if needed
+      if (!localStorage.getItem('school_announcements')) {
+        localStorage.setItem('school_announcements', JSON.stringify([
+          { date: "19 MAY 2026", title: "First Term Examination Timetables Commencing", category: "Academic", desc: "Examination timelines published commencing Shrawan 15. Question sets due by Sunday." },
+          { date: "15 MAY 2026", title: "Staff Meeting & Curriculum Briefing Today", category: "General", desc: "Urgent briefing with the Principal in the lounge today at 3:30 PM." }
+        ]));
+      }
+
+      renderAssignments();
+      renderLeaves();
+      renderLibrary();
+      renderStudentResults();
+      renderAnnouncements();
+      renderDynamicTimetable();
+      syncGPAAndRemarks();
+      syncLeavesFromRegistry();
+      
+      // Pull initial billing state if exists
+      const initialBilling = localStorage.getItem('student_billing_state');
+      if (initialBilling) {
+        feePaymentState = initialBilling;
+        renderPortalStates();
+      }
+
+      startCrossTabSynchronizer();
+
+      // Close notification dropdown when clicking outside
+      window.addEventListener('click', (e) => {
+        const dropdown = document.getElementById('notification-dropdown');
+        if (dropdown && !e.target.closest('.notification')) {
+          dropdown.classList.remove('active');
+        }
+      });
+    });
+
+    // ── LOGOUT HANDLER ──
+    function handleStudentLogout(event) {
+      event.preventDefault();
+      if (confirm('Are you sure you want to logout?')) {
+        localStorage.removeItem('student_session');
+        localStorage.removeItem('student_remember_username');
+        window.location.href = 'student-login.html';
+      }
+    }
+  </script>
+</body>
+</html>
