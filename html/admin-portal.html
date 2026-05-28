@@ -5705,15 +5705,19 @@
               .order('timestamp', { ascending: false });
             if (!error && data) {
               pendingResults = data;
+              console.log('Loaded from Supabase:', pendingResults.length, 'results');
+            } else {
+              console.warn('Error fetching from Supabase:', error);
             }
           } catch(err) {
             console.warn('Error fetching submitted results:', err);
           }
         }
         
-        // Fallback to localStorage
+        // Fallback to localStorage if Supabase fetch returned nothing
         if (pendingResults.length === 0) {
           pendingResults = JSON.parse(localStorage.getItem('submitted_results') || '[]');
+          console.log('Loaded from localStorage:', pendingResults.length, 'results');
         }
 
         tbody.innerHTML = '';
@@ -5723,22 +5727,24 @@
           return;
         }
 
-        pendingResults.forEach(result => {
+        // Display all results
+        pendingResults.forEach((result, index) => {
           const studentCount = (result.students || []).length;
           const statusBadge = result.status === 'Pending' ? 'pending' : (result.status === 'Approved' ? 'approved' : 'rejected');
+          const examType = result.exam_type || result.examType || 'Unknown';
           
           tbody.innerHTML += `
             <tr>
-              <td><strong>${result.subject}</strong></td>
-              <td>${result.class}</td>
-              <td>${result.exam_type || result.examType}</td>
+              <td><strong>${result.subject || 'N/A'}</strong></td>
+              <td>${result.class || 'N/A'}</td>
+              <td>${examType}</td>
               <td>${studentCount}</td>
               <td>${result.submission_date || result.submissionDate || '-'}</td>
-              <td><span class="status-badge ${statusBadge}">${result.status}</span></td>
+              <td><span class="status-badge ${statusBadge}">${result.status || 'Pending'}</span></td>
               <td>
                 <div style="display: flex; gap: 0.5rem; justify-content: center;">
-                  <button class="submit-btn" style="padding: 0.3rem 0.8rem; font-size: 0.75rem; background: var(--accent);" onclick="viewSubmittedResult(${result.id})">View</button>
-                  <button class="submit-btn" style="padding: 0.3rem 0.8rem; font-size: 0.75rem; background: var(--success);" onclick="approveConfigResults(${result.id}, '${result.subject}', '${result.class}')">Approve</button>
+                  <button class="submit-btn" style="padding: 0.3rem 0.8rem; font-size: 0.75rem; background: var(--accent);" onclick="viewSubmittedResult(${result.id || index})">View</button>
+                  <button class="submit-btn" style="padding: 0.3rem 0.8rem; font-size: 0.75rem; background: var(--success);" onclick="approveConfigResults(${result.id || index}, '${result.subject || ''}', '${result.class || ''}')">Approve</button>
                 </div>
               </td>
             </tr>
@@ -6001,24 +6007,71 @@
           return;
        }
        
+       // Determine exam type (normalize to standard format)
+       let examType = data.exam_type || data.examType || 'theory';
+       
+       // Normalize exam type values
+       if (examType.toLowerCase() === 'theory' || examType === 'Theory Only') {
+         examType = 'Theory Only';
+       } else if (examType.toLowerCase() === 'theory+practical' || examType === 'Theory + Practical') {
+         examType = 'Theory + Practical';
+       } else if (examType.toLowerCase() === 'practical' || examType === 'Practical Only') {
+         examType = 'Practical Only';
+       }
+       
+       const theoryFullMarks = data.theory_full_marks || 75;
+       const practicalFullMarks = data.practical_full_marks || 0;
+       
+       // Build table headers based on exam type
+       let headerHTML = `
+         <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #e2e8f0;">Roll No</th>
+         <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #e2e8f0;">Name</th>`;
+       
+       if (examType === 'Theory Only') {
+         headerHTML += `<th style="padding: 0.75rem; text-align: center; border-bottom: 2px solid #e2e8f0;">Theory (FM: ${theoryFullMarks})</th>
+           <th style="padding: 0.75rem; text-align: center; border-bottom: 2px solid #e2e8f0;">Total</th>`;
+       } else if (examType === 'Practical Only') {
+         headerHTML += `<th style="padding: 0.75rem; text-align: center; border-bottom: 2px solid #e2e8f0;">Practical (FM: ${practicalFullMarks})</th>
+           <th style="padding: 0.75rem; text-align: center; border-bottom: 2px solid #e2e8f0;">Total</th>`;
+       } else {
+         headerHTML += `<th style="padding: 0.75rem; text-align: center; border-bottom: 2px solid #e2e8f0;">Theory (FM: ${theoryFullMarks})</th>
+           <th style="padding: 0.75rem; text-align: center; border-bottom: 2px solid #e2e8f0;">Practical (FM: ${practicalFullMarks})</th>
+           <th style="padding: 0.75rem; text-align: center; border-bottom: 2px solid #e2e8f0;">Total</th>`;
+       }
+       
        // Build HTML table for data.students
        let html = `<table class="custom-table" style="width: 100%; border-collapse: collapse;">
          <thead>
            <tr style="background: var(--surface);">
-             <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #e2e8f0;">Roll No</th>
-             <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #e2e8f0;">Name</th>
-             <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #e2e8f0;">Theory Marks</th>
-             <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #e2e8f0;">Practical Marks</th>
+             ${headerHTML}
            </tr>
          </thead>
          <tbody>`;
+       
        (data.students || []).forEach(s => {
-         html += `<tr>
+         let rowHTML = `<tr>
            <td style="border-bottom: 1px solid #e2e8f0; padding: 0.75rem;">${s.roll || s.symbolNumber}</td>
-           <td style="border-bottom: 1px solid #e2e8f0; padding: 0.75rem;">${s.name}</td>
-           <td style="border-bottom: 1px solid #e2e8f0; padding: 0.75rem; font-weight: 600;">${s.marks}</td>
-           <td style="border-bottom: 1px solid #e2e8f0; padding: 0.75rem;">${s.practicalMarks || 0}</td>
-         </tr>`;
+           <td style="border-bottom: 1px solid #e2e8f0; padding: 0.75rem;">${s.name}</td>`;
+         
+         if (examType === 'Theory Only') {
+           const theoryMarks = s.marks || 0;
+           rowHTML += `<td style="border-bottom: 1px solid #e2e8f0; padding: 0.75rem; text-align: center; font-weight: 600;">${theoryMarks}</td>
+             <td style="border-bottom: 1px solid #e2e8f0; padding: 0.75rem; text-align: center; font-weight: 600;">${theoryMarks}</td>`;
+         } else if (examType === 'Practical Only') {
+           const practicalMarks = s.practicalMarks || s.marks || 0;
+           rowHTML += `<td style="border-bottom: 1px solid #e2e8f0; padding: 0.75rem; text-align: center; font-weight: 600;">${practicalMarks}</td>
+             <td style="border-bottom: 1px solid #e2e8f0; padding: 0.75rem; text-align: center; font-weight: 600;">${practicalMarks}</td>`;
+         } else {
+           const theoryMarks = s.marks || 0;
+           const practicalMarks = s.practicalMarks || 0;
+           const totalMarks = theoryMarks + practicalMarks;
+           rowHTML += `<td style="border-bottom: 1px solid #e2e8f0; padding: 0.75rem; text-align: center; font-weight: 600;">${theoryMarks}</td>
+             <td style="border-bottom: 1px solid #e2e8f0; padding: 0.75rem; text-align: center; font-weight: 600;">${practicalMarks}</td>
+             <td style="border-bottom: 1px solid #e2e8f0; padding: 0.75rem; text-align: center; font-weight: 600;">${totalMarks}</td>`;
+         }
+         
+         rowHTML += `</tr>`;
+         html += rowHTML;
        });
        html += `</tbody></table>`;
        
@@ -6036,9 +6089,11 @@
              <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--primary); margin:0;">Result: ${data.subject} (${data.class})</h2>
              <button onclick="document.getElementById('${modalId}').style.display='none'" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color: var(--text-muted);">&times;</button>
            </div>
-           <div style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.95rem; display: flex; gap: 1rem;">
-             <span><strong>Exam:</strong> ${data.exam_type || data.examType}</span>
-             <span><strong>Total Marks:</strong> ${data.total_marks || data.totalMarks}</span>
+           <div style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.95rem; display: flex; gap: 2rem; flex-wrap: wrap;">
+             <span><strong>Exam Type:</strong> ${data.exam_type || data.examType}</span>
+             <span><strong>Theory FM:</strong> ${theoryFullMarks}</span>
+             ${practicalFullMarks > 0 ? `<span><strong>Practical FM:</strong> ${practicalFullMarks}</span>` : ''}
+             <span><strong>Total FM:</strong> ${data.total_marks || data.totalMarks}</span>
              <span><strong>Status:</strong> <span class="status-badge ${data.status.toLowerCase()}">${data.status}</span></span>
            </div>
            <div style="max-height: 50vh; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
@@ -6105,6 +6160,40 @@
       
       localStorage.setItem('published_results', JSON.stringify(newPublished));
       alert('Results successfully published! Students can now view them on the portal.');
+    }
+
+    // DOWNLOAD CURRENT LEDGER TO CSV
+    function downloadLeadersheet(className, examType, academicYear) {
+      const table = document.querySelector('.ledger-table');
+      if (!table) {
+        alert("No ledger table found to download.");
+        return;
+      }
+      
+      let csvContent = '\ufeff'; // UTF-8 BOM
+      csvContent += `"Shree Saraswati Secondary School"\r\n`;
+      csvContent += `"${examType} Ledger ${academicYear} - Class: ${className}"\r\n\r\n`;
+      
+      const rows = table.querySelectorAll('tr');
+      rows.forEach(row => {
+        const cols = row.querySelectorAll('th, td');
+        const rowData = [];
+        cols.forEach(col => {
+          let text = col.innerText.replace(/\r?\n|\r/g, ' ').replace(/"/g, '""').trim();
+          rowData.push(`"${text}"`);
+        });
+        csvContent += rowData.join(',') + '\r\n';
+      });
+      
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `${className.replace(/\s+/g, '_')}_${examType.replace(/\s+/g, '_')}_Ledger_${academicYear}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
 
     function viewMarksheet(symbolNumber) {
@@ -6235,15 +6324,14 @@
              
              let t1Raw = t1Obj && t1Obj.marks ? parseInt(t1Obj.marks) : 0;
              let t2Raw = t2Obj && t2Obj.marks ? parseInt(t2Obj.marks) : 0;
-             let finRaw = marks;
-             let t1 = t1Raw > 0 ? ((t1Raw / 100) * 7.5).toFixed(1) : '-';
-             let t2 = t2Raw > 0 ? ((t2Raw / 100) * 22.5).toFixed(1) : '-';
-             let fin = ((finRaw / 100) * 45).toFixed(1);
-             let t1Num = t1Raw > 0 ? parseFloat(((t1Raw / 100) * 7.5).toFixed(1)) : 0;
-             let t2Num = t2Raw > 0 ? parseFloat(((t2Raw / 100) * 22.5).toFixed(1)) : 0;
-             let finNum = parseFloat(((finRaw / 100) * 45).toFixed(1));
-             let prac = '-';
-             let tot = (t1Num + t2Num + finNum).toFixed(1);
+             let finRaw = result.theoryMarks !== undefined ? result.theoryMarks : marks;
+             let pracRaw = result.practicalMarks || 0;
+             
+             let t1 = t1Raw > 0 ? t1Raw.toFixed(1) : '-';
+             let t2 = t2Raw > 0 ? t2Raw.toFixed(1) : '-';
+             let fin = finRaw.toFixed(1);
+             let prac = result.practicalMarks > 0 ? pracRaw.toFixed(1) : '-';
+             let tot = marks.toFixed(1);
 
              tbody.innerHTML += `
                 <tr>
@@ -6256,7 +6344,7 @@
                    <td><strong>${tot}</strong></td>
                    <td>${gpaData.grade}</td>
                 </tr>
-             `;
+              `;
          } else {
              tbody.innerHTML += `
                 <tr>
@@ -6284,7 +6372,14 @@
          studentTotals[r.symbolNumber] += parseInt(r.marks) || 0;
       });
       const sortedStudents = Object.keys(studentTotals).sort((a, b) => studentTotals[b] - studentTotals[a]);
-      document.getElementById('ms-rank').innerText = rank;
+      
+      const studentKeysMatch = (k1, k2) => {
+        const n1 = String(k1).replace(/^SYM/i, '').trim();
+        const n2 = String(k2).replace(/^SYM/i, '').trim();
+        return parseInt(n1) === parseInt(n2) || n1.toLowerCase() === n2.toLowerCase();
+      };
+      const rank = sortedStudents.findIndex(s => studentKeysMatch(s, symbolNumber)) + 1;
+      document.getElementById('ms-rank').innerText = rank > 0 ? rank : '-';
 
       document.getElementById('marksheet-preview-modal').style.display = 'block';
     }
@@ -6399,6 +6494,8 @@
                 student_symbol,
                 student_name,
                 student_roll,
+                theory_marks,
+                practical_marks,
                 total_marks,
                 grade,
                 percentage,
@@ -6435,8 +6532,8 @@
                     examType: config.exam_type,
                     subject: config.subject,
                     marks: marksVal,
-                    theoryMarks: parseInt(result.theory_marks) || marksVal,
-                    practicalMarks: parseInt(result.practical_marks) || 0,
+                    theoryMarks: (result.theory_marks !== null && result.theory_marks !== undefined) ? parseInt(result.theory_marks) : marksVal,
+                    practicalMarks: (result.practical_marks !== null && result.practical_marks !== undefined) ? parseInt(result.practical_marks) : 0,
                     totalMarks: config.full_marks,
                     passMarks: passMarks,  // Store pass marks as 35% of total
                     grade: result.grade || '-',
@@ -6635,15 +6732,19 @@
 
         // Extract unique subjects and their full/pass marks
         const subjectsSet = new Set();
-        const subjectMarksMap = {}; // Map subject -> {fullMarks, passMarks}
+        const subjectMarksMap = {}; // Map subject -> {fullMarks, passMarks, hasPractical}
         
         allResults.forEach(r => {
           subjectsSet.add(r.subject);
           if (!subjectMarksMap[r.subject]) {
             subjectMarksMap[r.subject] = {
               fullMarks: parseInt(r.totalMarks) || 100,
-              passMarks: r.passMarks || Math.ceil((parseInt(r.totalMarks) || 100) * 0.35)
+              passMarks: r.passMarks || Math.ceil((parseInt(r.totalMarks) || 100) * 0.35),
+              hasPractical: false
             };
+          }
+          if (parseInt(r.practicalMarks) > 0) {
+            subjectMarksMap[r.subject].hasPractical = true;
           }
         });
         
@@ -6665,6 +6766,7 @@
           const practicalMarks = parseInt(r.practicalMarks) || 0;
           const theoryMarks = parseInt(r.theoryMarks) || parseInt(r.marks) || 0;
           const totalMarks = parseInt(r.totalMarks) || 100;
+          const hasPractical = subjectMarksMap[r.subject]?.hasPractical;
           
           studentMap[r.symbolNumber].marksBySubject[r.subject] = {
              marks: parseInt(r.marks) || 0,
@@ -6674,8 +6776,7 @@
              passMarks: r.passMarks || Math.ceil(totalMarks * 0.35)
           };
           
-          // For total marks obtained: if practical marks exist, add both; otherwise only theory
-          let subjectTotal = practicalMarks > 0 ? (theoryMarks + practicalMarks) : theoryMarks;
+          let subjectTotal = hasPractical ? (theoryMarks + practicalMarks) : theoryMarks;
           studentMap[r.symbolNumber].totalMarksObtained += subjectTotal;
           studentMap[r.symbolNumber].totalMaxMarks += totalMarks;
         });
@@ -6685,11 +6786,19 @@
         let term2Results = [];
         
         if (isFinalTerm) {
+          // Helper to match symbol keys robustly (e.g. SYM001, 001, 1)
+          const studentKeysMatch = (k1, k2) => {
+            const n1 = String(k1).replace(/^SYM/i, '').trim();
+            const n2 = String(k2).replace(/^SYM/i, '').trim();
+            return parseInt(n1) === parseInt(n2) || n1.toLowerCase() === n2.toLowerCase();
+          };
+
           // Fetch previous term results if available
           if (supabaseDb) {
             const { data: term1Data } = await supabaseDb
               .from('exam_configurations')
               .select(`
+                subject,
                 exam_sessions(academic_year),
                 exam_results(student_symbol, student_roll, student_name, total_marks)
               `)
@@ -6699,6 +6808,7 @@
             const { data: term2Data } = await supabaseDb
               .from('exam_configurations')
               .select(`
+                subject,
                 exam_sessions(academic_year),
                 exam_results(student_symbol, student_roll, student_name, total_marks)
               `)
@@ -6708,42 +6818,28 @@
             if (term1Data) {
               term1Data.forEach(config => {
                 if (config.exam_sessions && config.exam_sessions.academic_year === academicYear && config.exam_results) {
-                  term1Results.push(...config.exam_results);
+                  config.exam_results.forEach(r => {
+                    const matchedKey = Object.keys(studentMap).find(k => studentKeysMatch(k, r.student_symbol || r.student_roll));
+                    if (matchedKey && studentMap[matchedKey].marksBySubject[config.subject]) {
+                      studentMap[matchedKey].marksBySubject[config.subject].term1Marks = parseInt(r.total_marks) || 0;
+                    }
+                  });
                 }
               });
             }
             if (term2Data) {
               term2Data.forEach(config => {
                 if (config.exam_sessions && config.exam_sessions.academic_year === academicYear && config.exam_results) {
-                  term2Results.push(...config.exam_results);
+                  config.exam_results.forEach(r => {
+                    const matchedKey = Object.keys(studentMap).find(k => studentKeysMatch(k, r.student_symbol || r.student_roll));
+                    if (matchedKey && studentMap[matchedKey].marksBySubject[config.subject]) {
+                      studentMap[matchedKey].marksBySubject[config.subject].term2Marks = parseInt(r.total_marks) || 0;
+                    }
+                  });
                 }
               });
             }
           }
-          
-          term1Results.forEach(r => {
-            const studentKey = r.student_symbol || r.student_roll;
-            if (studentMap[studentKey]) {
-              // Set term1 marks for all subjects
-              Object.keys(studentMap[studentKey].marksBySubject).forEach(subject => {
-                if (!studentMap[studentKey].marksBySubject[subject].term1Marks) {
-                  studentMap[studentKey].marksBySubject[subject].term1Marks = parseInt(r.total_marks) || 0;
-                }
-              });
-            }
-          });
-          
-          term2Results.forEach(r => {
-            const studentKey = r.student_symbol || r.student_roll;
-            if (studentMap[studentKey]) {
-              // Set term2 marks for all subjects
-              Object.keys(studentMap[studentKey].marksBySubject).forEach(subject => {
-                if (!studentMap[studentKey].marksBySubject[subject].term2Marks) {
-                  studentMap[studentKey].marksBySubject[subject].term2Marks = parseInt(r.total_marks) || 0;
-                }
-              });
-            }
-          });
         }
 
         // Calculate ranks and summary
@@ -6781,24 +6877,21 @@
         subjects.forEach(sub => {
            const fullMarks = subjectMarksMap[sub]?.fullMarks || 100;
            const passMarks = subjectMarksMap[sub]?.passMarks || Math.ceil(fullMarks * 0.35);
+           const hasPractical = subjectMarksMap[sub]?.hasPractical;
            
            if (isFinalTerm) {
                // For final term: 1st term is 10%, 2nd term is 30%, Final is 60% of full marks (theory)
                // Practical is 25% of full marks
                const fm1 = (fullMarks * 0.10).toFixed(1);
                const fm2 = (fullMarks * 0.30).toFixed(1);
-               const fmTheoryTotal = (fullMarks * 0.75).toFixed(1);
-               const fmPractical = (fullMarks * 0.25).toFixed(1);
-               const pm1 = (passMarks * 0.10).toFixed(1);
-               const pm2 = (passMarks * 0.30).toFixed(1);
-               const pmTheoryTotal = (passMarks * 0.75).toFixed(1);
-               const pmPractical = (passMarks * 0.25).toFixed(1);
+               const fmTheoryTotal = hasPractical ? (fullMarks * 0.75).toFixed(1) : (fullMarks).toFixed(1);
+               const fmPractical = hasPractical ? (fullMarks * 0.25).toFixed(1) : '-';
                
                theadHtml += `<th>FM<br>${fm1}</th><th>FM<br>${fm2}</th><th>FM<br>${fullMarks}</th><th>FM<br>${fmTheoryTotal}</th><th>FM<br>${fmPractical}</th><th>FM<br>${fullMarks}</th>`;
            } else {
                // For other terms: Theory 75%, Practical 25%
-               const fmTheory = (fullMarks * 0.75).toFixed(1);
-               const fmPractical = (fullMarks * 0.25).toFixed(1);
+               const fmTheory = hasPractical ? (fullMarks * 0.75).toFixed(1) : (fullMarks).toFixed(1);
+               const fmPractical = hasPractical ? (fullMarks * 0.25).toFixed(1) : '-';
                theadHtml += `<th>FM<br>${fmTheory}</th><th>FM<br>${fmPractical}</th><th>FM<br>${fullMarks}</th><th>-</th>`;
            }
         });
@@ -6807,18 +6900,19 @@
         subjects.forEach(sub => {
            const fullMarks = subjectMarksMap[sub]?.fullMarks || 100;
            const passMarks = subjectMarksMap[sub]?.passMarks || Math.ceil(fullMarks * 0.35);
+           const hasPractical = subjectMarksMap[sub]?.hasPractical;
            
            if (isFinalTerm) {
                // Pass marks proportions
                const pm1 = (passMarks * 0.10).toFixed(1);
                const pm2 = (passMarks * 0.30).toFixed(1);
-               const pmTheoryTotal = (passMarks * 0.75).toFixed(1);
-               const pmPractical = (passMarks * 0.25).toFixed(1);
+               const pmTheoryTotal = hasPractical ? (passMarks * 0.75).toFixed(1) : (passMarks).toFixed(1);
+               const pmPractical = hasPractical ? (passMarks * 0.25).toFixed(1) : '-';
                theadHtml += `<th>PM<br>${pm1}</th><th>PM<br>${pm2}</th><th>PM<br>${passMarks}</th><th>PM<br>${pmTheoryTotal}</th><th>PM<br>${pmPractical}</th><th>PM<br>${passMarks}</th>`;
            } else {
                // Theory 75%, Practical 25% of pass marks
-               const pmTheory = (passMarks * 0.75).toFixed(1);
-               const pmPractical = (passMarks * 0.25).toFixed(1);
+               const pmTheory = hasPractical ? (passMarks * 0.75).toFixed(1) : (passMarks).toFixed(1);
+               const pmPractical = hasPractical ? (passMarks * 0.25).toFixed(1) : '-';
                theadHtml += `<th>PM<br>${pmTheory}</th><th>PM<br>${pmPractical}</th><th>PM<br>${passMarks}</th><th>-</th>`;
            }
         });
@@ -6835,65 +6929,41 @@
 
           subjects.forEach(sub => {
              const sm = student.marksBySubject[sub];
+             const hasPractical = subjectMarksMap[sub]?.hasPractical;
              if (sm) {
                 const fullMarks = sm.totalMarks || 100;
                 const passMarks = sm.passMarks || Math.ceil(fullMarks * 0.35);
                 
                 // Calculate actual obtained marks: if practical exists, add both; otherwise only theory
-                const obtainedMarks = sm.practicalMarks > 0 ? (sm.theoryMarks + sm.practicalMarks) : sm.theoryMarks;
+                const obtainedMarks = hasPractical ? (sm.theoryMarks + sm.practicalMarks) : sm.theoryMarks;
                 
                 // Check if student failed (obtained marks < pass marks)
                 if (obtainedMarks < passMarks) failedSubjects++;
 
                 if (isFinalTerm) {
-                    // Convert based on real full marks:
-                    // Theory is 75% of full marks, split into: 1st Term (10%), 2nd Term (30%), Final (60%)
-                    // Practical is 25% of full marks (only if entered by teacher)
-                    // Total = fullMarks if both theory and practical entered, otherwise = theory only
                     let t1Raw = sm.term1Marks || 0;
                     let t2Raw = sm.term2Marks || 0;
                     let finRaw = sm.theoryMarks || sm.marks || 0;
                     let pracRaw = sm.practicalMarks || 0;
                     
-                    // Get the original full marks for these terms (assume they were out of 100)
-                    const origFullMarks = 100;
-                    const origPracticalMarks = 25; // Practical marks are out of 25
+                    let t1 = t1Raw > 0 ? t1Raw.toFixed(1) : '-';
+                    let t2 = t2Raw > 0 ? t2Raw.toFixed(1) : '-';
+                    let fin = finRaw.toFixed(1);
+                    let prac = hasPractical ? (pracRaw > 0 ? pracRaw.toFixed(1) : '0.0') : '-';
+                    let tot = obtainedMarks.toFixed(1);
                     
-                    // Convert to teacher's entered full marks
-                    let t1 = t1Raw > 0 ? ((t1Raw / origFullMarks) * (fullMarks * 0.75 * 0.10)).toFixed(1) : '-';
-                    let t2 = t2Raw > 0 ? ((t2Raw / origFullMarks) * (fullMarks * 0.75 * 0.30)).toFixed(1) : '-';
-                    let fin = ((finRaw / origFullMarks) * fullMarks).toFixed(1);  // Out of full marks (teacher entered)
-                    let prac = pracRaw > 0 ? ((pracRaw / origPracticalMarks) * (fullMarks * 0.25)).toFixed(1) : '-';
-                    
-                    let t1Num = t1Raw > 0 ? parseFloat(((t1Raw / origFullMarks) * (fullMarks * 0.75 * 0.10)).toFixed(1)) : 0;
-                    let t2Num = t2Raw > 0 ? parseFloat(((t2Raw / origFullMarks) * (fullMarks * 0.75 * 0.30)).toFixed(1)) : 0;
-                    let finNum = parseFloat(((finRaw / origFullMarks) * fullMarks).toFixed(1));  // Out of full marks
-                    let pracNum = pracRaw > 0 ? parseFloat(((pracRaw / origPracticalMarks) * (fullMarks * 0.25)).toFixed(1)) : 0;
-                    
-                    // Th Total = Final exam (as Final now represents all theory marks)
-                    let thTotal = finNum.toFixed(1);
-                    // Total = if practical marks entered, add them; otherwise total = theory marks only
-                    let tot = pracRaw > 0 ? (finNum + pracNum).toFixed(1) : finNum.toFixed(1);
-                    rowHtml += `<td>${t1}</td><td>${t2}</td><td>${fin}</td><td>${thTotal}</td><td>${prac}</td><td><strong>${tot}</strong></td>`;
+                    rowHtml += `<td>${t1}</td><td>${t2}</td><td>${fin}</td><td>${finRaw.toFixed(1)}</td><td>${prac}</td><td><strong>${tot}</strong></td>`;
                 } else {
-                    // Convert theory and practical based on real full marks
-                    // Theory = 75%, Practical = 25% of total marks (only if entered)
-                    const origFullMarks = 100;
-                    const origPracticalMarks = 25;
-                    const theoryFullMarks = fullMarks * 0.75;
-                    const practicalFullMarks = fullMarks * 0.25;
-                    
                     let theory = sm.theoryMarks || sm.marks || 0;
-                    let theoryConverted = ((theory / origFullMarks) * theoryFullMarks).toFixed(1);
                     let practicalRaw = sm.practicalMarks || 0;
-                    let practical = practicalRaw > 0 ? ((practicalRaw / origPracticalMarks) * practicalFullMarks).toFixed(1) : '-';
-                    // If no practical marks, total = theory only; otherwise total = theory + practical
-                    let subjectTotal = practicalRaw > 0 ? (parseFloat(theoryConverted) + parseFloat(practical)).toFixed(1) : parseFloat(theoryConverted).toFixed(1);
+                    let practical = hasPractical ? (practicalRaw > 0 ? practicalRaw.toFixed(1) : '0.0') : '-';
+                    let subjectTotal = obtainedMarks.toFixed(1);
+                    
                     rowHtml += `
-                       <td>${theoryConverted}</td>
+                       <td>${theory.toFixed(1)}</td>
                        <td>${practical}</td>
                        <td><strong>${subjectTotal}</strong></td>
-                       <td>${calculateGPA(subPercentage).grade}</td>
+                       <td>${calculateGPA((obtainedMarks / fullMarks) * 100).grade}</td>
                     `;
                 }
              } else {
@@ -6943,6 +7013,9 @@
             <h3>${examType} Ledger ${academicYear}</h3>
             <button class="submit-btn" style="background: var(--primary); margin-top: 10px; padding: 0.5rem 1rem;" onclick="publishCurrentLedger('${className}', '${examType}')">
                <i class="fas fa-bullhorn"></i> Publish Result to Student Portal
+            </button>
+            <button class="submit-btn" style="background: var(--accent); margin-top: 10px; padding: 0.5rem 1rem; margin-left: 10px;" onclick="downloadLeadersheet('${className}', '${examType}', '${academicYear}')">
+               <i class="fas fa-download"></i> Download Ledger (CSV)
             </button>
           </div>
           <div class="ledger-container">

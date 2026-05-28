@@ -304,13 +304,13 @@ async function renderExamResultForm() {
           <!-- Full Marks -->
           <div class="form-group">
             <label>Full Marks <span style="color: red;">*</span></label>
-            <input type="number" id="exam-full-marks" class="form-control" placeholder="100" min="1" required>
+            <input type="number" id="exam-full-marks" class="form-control" placeholder="100" min="1" oninput="document.getElementById('exam-pass-marks').value = Math.ceil(this.value * 0.35)" required>
           </div>
 
           <!-- Pass Marks -->
           <div class="form-group">
             <label>Pass Marks <span style="color: red;">*</span></label>
-            <input type="number" id="exam-pass-marks" class="form-control" placeholder="40" min="1" required>
+            <input type="number" id="exam-pass-marks" class="form-control" placeholder="35" min="1" required>
           </div>
         </div>
 

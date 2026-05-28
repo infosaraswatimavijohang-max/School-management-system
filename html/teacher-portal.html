@@ -1348,11 +1348,11 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
               <div class="form-group">
                 <label>Total Theory Marks</label>
-                <input type="number" id="result-totalMarks" class="form-control" value="100" placeholder="100" required>
+                <input type="number" id="result-totalMarks" class="form-control" value="75" placeholder="75" required>
               </div>
               <div class="form-group" id="practical-marks-group" style="display: none;">
                 <label>Total Practical Marks</label>
-                <input type="number" id="result-practicalMarks" class="form-control" value="50" placeholder="50">
+                <input type="number" id="result-practicalMarks" class="form-control" value="25" placeholder="25">
               </div>
             </div>
 
@@ -3459,6 +3459,11 @@
       }
       if (!isValid) return;
 
+      // Get practical marks if applicable
+      const isPracticalIncluded = document.querySelector('input[name="exam-structure"]:checked').value === 'theory+practical';
+      const practicalMarksValue = isPracticalIncluded ? (parseInt(document.getElementById('result-practicalMarks').value) || 25) : 0;
+      const fullMarksTotal = totalMarks + practicalMarksValue;
+
       if (supabaseDb) {
         try {
           const { data, error } = await supabaseDb.from('submitted_results').insert([{
@@ -3466,7 +3471,9 @@
             class: className,
             exam_type: examType,
             academic_year: academicYear,
-            total_marks: totalMarks,
+            theory_full_marks: totalMarks,
+            practical_full_marks: practicalMarksValue,
+            total_marks: fullMarksTotal,
             students: studentResults,
             submission_date: new Date().toLocaleDateString(),
             status: 'Pending',
@@ -3492,7 +3499,9 @@
         subject: subject,
         class: className,
         examType: examType,
-        totalMarks: totalMarks,
+        theory_full_marks: totalMarks,
+        practical_full_marks: practicalMarksValue,
+        totalMarks: fullMarksTotal,
         students: studentResults,
         submissionDate: new Date().toLocaleDateString(),
         status: 'Pending',
