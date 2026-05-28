@@ -6850,18 +6850,21 @@
                     const origPracticalMarks = 25; // Practical marks are out of 25
                     
                     // Convert to teacher's entered full marks
+                    // For Final: show marks out of actual full marks (75), not just 60% portion
                     let t1 = t1Raw > 0 ? ((t1Raw / origFullMarks) * (fullMarks * 0.75 * 0.10)).toFixed(1) : '-';
                     let t2 = t2Raw > 0 ? ((t2Raw / origFullMarks) * (fullMarks * 0.75 * 0.30)).toFixed(1) : '-';
-                    let fin = ((finRaw / origFullMarks) * (fullMarks * 0.75 * 0.60)).toFixed(1);
+                    let fin = ((finRaw / origFullMarks) * fullMarks).toFixed(1);  // Out of full marks (teacher entered)
                     let prac = pracRaw > 0 ? ((pracRaw / origPracticalMarks) * (fullMarks * 0.25)).toFixed(1) : '-';
                     
                     let t1Num = t1Raw > 0 ? parseFloat(((t1Raw / origFullMarks) * (fullMarks * 0.75 * 0.10)).toFixed(1)) : 0;
                     let t2Num = t2Raw > 0 ? parseFloat(((t2Raw / origFullMarks) * (fullMarks * 0.75 * 0.30)).toFixed(1)) : 0;
-                    let finNum = parseFloat(((finRaw / origFullMarks) * (fullMarks * 0.75 * 0.60)).toFixed(1));
+                    let finNum = parseFloat(((finRaw / origFullMarks) * fullMarks).toFixed(1));  // Out of full marks
                     let pracNum = pracRaw > 0 ? parseFloat(((pracRaw / origPracticalMarks) * (fullMarks * 0.25)).toFixed(1)) : 0;
                     
-                    let thTotal = (t1Num + t2Num + finNum).toFixed(1);
-                    let tot = (t1Num + t2Num + finNum + pracNum).toFixed(1);
+                    // Th Total = Final exam (as Final now represents all theory marks)
+                    let thTotal = finNum.toFixed(1);
+                    // Total = theory marks converted to 75% portion + practical
+                    let tot = ((finNum * 0.75) + pracNum).toFixed(1);
                     rowHtml += `<td>${t1}</td><td>${t2}</td><td>${fin}</td><td>${thTotal}</td><td>${prac}</td><td><strong>${tot}</strong></td>`;
                 } else {
                     // Convert theory and practical based on real full marks
