@@ -6661,17 +6661,23 @@
               totalMaxMarks: 0
             };
           }
+          
+          const practicalMarks = parseInt(r.practicalMarks) || 0;
+          const theoryMarks = parseInt(r.theoryMarks) || parseInt(r.marks) || 0;
+          const totalMarks = parseInt(r.totalMarks) || 100;
+          
           studentMap[r.symbolNumber].marksBySubject[r.subject] = {
              marks: parseInt(r.marks) || 0,
-             theoryMarks: parseInt(r.theoryMarks) || parseInt(r.marks) || 0,
-             practicalMarks: parseInt(r.practicalMarks) || 0,
-             totalMarks: parseInt(r.totalMarks) || 100,
-             passMarks: r.passMarks || Math.ceil((parseInt(r.totalMarks) || 100) * 0.35)
+             theoryMarks: theoryMarks,
+             practicalMarks: practicalMarks,
+             totalMarks: totalMarks,
+             passMarks: r.passMarks || Math.ceil(totalMarks * 0.35)
           };
-          // For total marks obtained, sum theory + practical if practical is not 0, otherwise just marks
-          let subjectTotal = (parseInt(r.theoryMarks) || parseInt(r.marks) || 0) + (parseInt(r.practicalMarks) || 0);
+          
+          // For total marks obtained: if practical marks exist, add both; otherwise only theory
+          let subjectTotal = practicalMarks > 0 ? (theoryMarks + practicalMarks) : theoryMarks;
           studentMap[r.symbolNumber].totalMarksObtained += subjectTotal;
-          studentMap[r.symbolNumber].totalMaxMarks += parseInt(r.totalMarks) || 100;
+          studentMap[r.symbolNumber].totalMaxMarks += totalMarks;
         });
 
         const isFinalTerm = (examType === 'Final Term');
@@ -6832,14 +6838,18 @@
              if (sm) {
                 const fullMarks = sm.totalMarks || 100;
                 const passMarks = sm.passMarks || Math.ceil(fullMarks * 0.35);
-                const subPercentage = fullMarks > 0 ? (sm.marks / fullMarks) * 100 : 0;
-                if (subPercentage < 35) failedSubjects++; // NG is below 35%
+                
+                // Calculate actual obtained marks: if practical exists, add both; otherwise only theory
+                const obtainedMarks = sm.practicalMarks > 0 ? (sm.theoryMarks + sm.practicalMarks) : sm.theoryMarks;
+                
+                // Check if student failed (obtained marks < pass marks)
+                if (obtainedMarks < passMarks) failedSubjects++;
 
                 if (isFinalTerm) {
                     // Convert based on real full marks:
                     // Theory is 75% of full marks, split into: 1st Term (10%), 2nd Term (30%), Final (60%)
-                    // Practical is 25% of full marks
-                    // Total = fullMarks
+                    // Practical is 25% of full marks (only if entered by teacher)
+                    // Total = fullMarks if both theory and practical entered, otherwise = theory only
                     let t1Raw = sm.term1Marks || 0;
                     let t2Raw = sm.term2Marks || 0;
                     let finRaw = sm.theoryMarks || sm.marks || 0;
@@ -6850,7 +6860,6 @@
                     const origPracticalMarks = 25; // Practical marks are out of 25
                     
                     // Convert to teacher's entered full marks
-                    // For Final: show marks out of actual full marks (75), not just 60% portion
                     let t1 = t1Raw > 0 ? ((t1Raw / origFullMarks) * (fullMarks * 0.75 * 0.10)).toFixed(1) : '-';
                     let t2 = t2Raw > 0 ? ((t2Raw / origFullMarks) * (fullMarks * 0.75 * 0.30)).toFixed(1) : '-';
                     let fin = ((finRaw / origFullMarks) * fullMarks).toFixed(1);  // Out of full marks (teacher entered)
@@ -6863,12 +6872,12 @@
                     
                     // Th Total = Final exam (as Final now represents all theory marks)
                     let thTotal = finNum.toFixed(1);
-                    // Total = theory marks converted to 75% portion + practical
-                    let tot = ((finNum * 0.75) + pracNum).toFixed(1);
+                    // Total = if practical marks entered, add them; otherwise total = theory marks only
+                    let tot = pracRaw > 0 ? (finNum + pracNum).toFixed(1) : finNum.toFixed(1);
                     rowHtml += `<td>${t1}</td><td>${t2}</td><td>${fin}</td><td>${thTotal}</td><td>${prac}</td><td><strong>${tot}</strong></td>`;
                 } else {
                     // Convert theory and practical based on real full marks
-                    // Theory = 75%, Practical = 25% of total marks
+                    // Theory = 75%, Practical = 25% of total marks (only if entered)
                     const origFullMarks = 100;
                     const origPracticalMarks = 25;
                     const theoryFullMarks = fullMarks * 0.75;
@@ -6878,7 +6887,8 @@
                     let theoryConverted = ((theory / origFullMarks) * theoryFullMarks).toFixed(1);
                     let practicalRaw = sm.practicalMarks || 0;
                     let practical = practicalRaw > 0 ? ((practicalRaw / origPracticalMarks) * practicalFullMarks).toFixed(1) : '-';
-                    let subjectTotal = (parseFloat(theoryConverted) + (practicalRaw > 0 ? parseFloat(practical) : 0)).toFixed(1);
+                    // If no practical marks, total = theory only; otherwise total = theory + practical
+                    let subjectTotal = practicalRaw > 0 ? (parseFloat(theoryConverted) + parseFloat(practical)).toFixed(1) : parseFloat(theoryConverted).toFixed(1);
                     rowHtml += `
                        <td>${theoryConverted}</td>
                        <td>${practical}</td>
