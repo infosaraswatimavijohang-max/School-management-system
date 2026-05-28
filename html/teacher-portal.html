@@ -3659,36 +3659,61 @@
       syncLeavesAndFeeProofs();
     }
 
-    function renderDynamicTimetable() {
+    async function renderDynamicTimetable() {
       const container = document.getElementById('teacher-schedule-list');
       if (!container) return;
 
-      const timetables = JSON.parse(localStorage.getItem('school_timetables') || '[]');
-      
-      if (timetables.length === 0) {
-        container.innerHTML = `<p style="padding:1rem; text-align:center; font-weight:600; color:var(--text-muted);">No lecturing slots scheduled today.</p>`;
-        return;
-      }
+      try {
+        // Get teacher code from localStorage
+        const teacherCode = localStorage.getItem('loggedInTeacherCode') || 'TCH-2080-05';
+        
+        // Get today's day of week
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const today = days[new Date().getDay()];
 
-      container.innerHTML = '';
-      timetables.forEach(t => {
-        container.innerHTML += `
-          <div class="schedule-item" style="border-left-color: var(--primary);">
-            <div class="schedule-time">${t.time}</div>
-            <div class="schedule-details">
-              <h4>${t.subject} (${t.section})</h4>
-              <p>${t.details}</p>
+        // Fetch teacher's assigned subjects from database
+        const assignments = await timetableHandler.getTeacherAssignedSubjects(teacherCode);
+        
+        // Filter for today's schedule
+        const todaySchedule = assignments.filter(a => a.day_of_week === today);
+        
+        if (!todaySchedule || todaySchedule.length === 0) {
+          container.innerHTML = `<p style="padding:1rem; text-align:center; font-weight:600; color:var(--text-muted);">No lecturing slots scheduled today.</p>`;
+          return;
+        }
+
+        // Sort by start time
+        todaySchedule.sort((a, b) => a.start_time.localeCompare(b.start_time));
+
+        container.innerHTML = '';
+        todaySchedule.forEach(t => {
+          const startTime = t.start_time.substring(0, 5); // HH:MM format
+          const endTime = t.end_time.substring(0, 5);
+          const timeRange = `${startTime} - ${endTime}`;
+          const classInfo = `${t.grade_level}-${t.section_name}`;
+          const classroom = t.classroom_number ? `Room ${t.classroom_number}` : 'TBA';
+          
+          container.innerHTML += `
+            <div class="schedule-item" style="border-left-color: var(--primary);">
+              <div class="schedule-time">${timeRange}</div>
+              <div class="schedule-details">
+                <h4>${t.subject_name} (${classInfo})</h4>
+                <p>${classroom}</p>
+              </div>
             </div>
-          </div>
-        `;
-      });
+          `;
+        });
+      } catch (error) {
+        console.error('Error rendering timetable:', error);
+        container.innerHTML = `<p style="padding:1rem; text-align:center; font-weight:600; color:var(--text-muted);">Error loading schedule. Please refresh the page.</p>`;
+      }
     }
 
     // ── CROSS TAB SYSTEM SYNCHRONIZER ──
     function startCrossTabSynchronizer() {
-      setInterval(() => {
+      setInterval(async () => {
         syncStudentsFromRegistry();
-        renderDynamicTimetable();
+        await renderDynamicTimetable();
         renderAnnouncements();
       }, 1500);
     }
@@ -3730,7 +3755,7 @@
 
       syncStudentsFromRegistry();
       renderAnnouncements();
-      renderDynamicTimetable();
+      await renderDynamicTimetable();
 
       // Render counters and data registers on initialization
       renderAssignments();
