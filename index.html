@@ -4052,9 +4052,9 @@
       <h2>Check Your Exam Results</h2>
     </div>
     
-    <div style="max-width: 900px; margin: 3rem auto; background: var(--white); border-radius: 24px; padding: 3.5rem; box-shadow: 0 20px 50px rgba(26,58,107,.08); border: 1px solid rgba(26,58,107,.03);">
+    <div id="marksheet-outer-wrapper" style="max-width: 900px; margin: 3rem auto; background: var(--white); border-radius: 24px; padding: 3.5rem; box-shadow: 0 20px 50px rgba(26,58,107,.08); border: 1px solid rgba(26,58,107,.03);">
       
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2.5rem;">
+      <div id="marksheet-search-inputs" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2.5rem;">
         <!-- Symbol Number Input -->
         <div class="form-group">
           <label for="result-symbol" style="font-size: 0.95rem; font-weight: 700; color: var(--primary); margin-bottom: 0.6rem; display: block;">Symbol Number <span style="color: #ef4444;">*</span></label>
@@ -4071,7 +4071,7 @@
       </div>
       
       <!-- Search Button -->
-      <button onclick="checkStudentResult()" style="width: 100%; padding: 0.95rem; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: var(--white); font-weight: 700; border: none; border-radius: 12px; font-size: 1rem; cursor: pointer; box-shadow: 0 6px 20px rgba(26,58,107,.25); transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); font-family: 'Nunito', sans-serif;">
+      <button id="marksheet-search-btn" onclick="checkStudentResult()" style="width: 100%; padding: 0.95rem; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: var(--white); font-weight: 700; border: none; border-radius: 12px; font-size: 1rem; cursor: pointer; box-shadow: 0 6px 20px rgba(26,58,107,.25); transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); font-family: 'Nunito', sans-serif;">
         🔍 Search Results
       </button>
       
@@ -4089,12 +4089,34 @@
             <!-- CSS for printable marksheet -->
             <style>
               @media print {
-                 body * { visibility: hidden; }
-                 #printable-marksheet-container, #printable-marksheet-container * { visibility: visible; }
+                 /* Hide everything at body level except #check-result */
+                 body > *:not(#check-result) { display: none !important; }
+                 
+                 /* Inside #check-result, hide header */
+                 #check-result .section-head { display: none !important; }
+                 
+                 /* Hide inputs and search button */
+                 #marksheet-search-inputs, #marksheet-search-btn { display: none !important; }
+                 
+                 /* Hide result message and print button */
+                 #result-message, .no-print { display: none !important; }
+                 
+                 /* Reset margins, paddings, backgrounds */
+                 body, html { background: white !important; margin: 0 !important; padding: 0 !important; }
+                 #check-result { padding: 0 !important; background: white !important; margin: 0 !important; }
+                 #check-result .container { margin: 0 !important; padding: 0 !important; width: 100% !important; max-width: none !important; }
+                 #marksheet-outer-wrapper { margin: 0 !important; padding: 0 !important; box-shadow: none !important; border: none !important; max-width: none !important; }
+                 
                  #printable-marksheet-container {
-                    position: absolute; left: 0; top: 0; width: 100%; border: none; box-shadow: none; padding: 0;
+                    padding: 0 !important;
+                    margin: 0 !important;
+                    box-shadow: none !important;
+                    border: none !important;
+                    width: 100% !important;
+                    max-width: none !important;
                  }
-                 .no-print { display: none !important; }
+                 
+                 * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
               }
               .ms-header { text-align: center; position: relative; margin-bottom: 20px; }
               .ms-logo-left { position: absolute; left: 0; top: 0; width: 100px; }
@@ -4120,7 +4142,7 @@
 
             <div class="ms-header">
               <img src="images/logo.png" class="ms-logo-left" alt="Logo Left" onerror="this.style.display='none'">
-              <img src="images/img1.png" class="ms-logo-right" alt="Logo Right" onerror="this.style.display='none'">
+              <img src="images/saraswati.png" class="ms-logo-right" alt="Saraswati Logo" onerror="this.style.display='none'">
               <h1>Shree Saraswati Secondary School</h1>
               <h2>Satyawati - 6 Johang(Bidauri), Gulmi</h2>
               <h3>Grade Sheet</h3>
@@ -6129,17 +6151,12 @@
     }
 
     // ✅ Populate class dropdown for results form
-    const resultClassSelect = document.getElementById('result-class');
-    if (resultClassSelect) {
-      const publishedResults = JSON.parse(localStorage.getItem('published_results') || '[]');
-      const availableClasses = [...new Set(publishedResults.map(r => String(r.class).trim()))].filter(Boolean);
-      resultClassSelect.innerHTML = '<option value="" disabled selected>Select Class</option>';
-      availableClasses.sort((a, b) => parseInt(a) - parseInt(b)).forEach(cls => {
-        const option = document.createElement('option');
-        option.value = cls;
-        option.textContent = `Class ${cls}`;
-        resultClassSelect.appendChild(option);
-      });
+    if (window.classHandler) {
+      try {
+        await window.classHandler.populateClassDropdown('result-class');
+      } catch (error) {
+        console.warn("Could not populate result class dropdown:", error);
+      }
     }
   });
 

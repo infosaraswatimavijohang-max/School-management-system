@@ -6151,17 +6151,12 @@
     }
 
     // ✅ Populate class dropdown for results form
-    const resultClassSelect = document.getElementById('result-class');
-    if (resultClassSelect) {
-      const publishedResults = JSON.parse(localStorage.getItem('published_results') || '[]');
-      const availableClasses = [...new Set(publishedResults.map(r => String(r.class).trim()))].filter(Boolean);
-      resultClassSelect.innerHTML = '<option value="" disabled selected>Select Class</option>';
-      availableClasses.sort((a, b) => parseInt(a) - parseInt(b)).forEach(cls => {
-        const option = document.createElement('option');
-        option.value = cls;
-        option.textContent = `Class ${cls}`;
-        resultClassSelect.appendChild(option);
-      });
+    if (window.classHandler) {
+      try {
+        await window.classHandler.populateClassDropdown('result-class');
+      } catch (error) {
+        console.warn("Could not populate result class dropdown:", error);
+      }
     }
   });
 

@@ -728,14 +728,19 @@
         visibility: visible;
       }
       #printable-marksheet {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
         display: block !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
+        margin: 0 !important;
+        padding: 0 !important;
       }
+      .no-print, .sidebar, .header, #marksheet-preview-modal > div > div.no-print { display: none !important; }
+      body, main, div { position: static !important; }
+      body, html { margin: 0 !important; padding: 0 !important; height: auto !important; }
       .marksheet-table, .grading-table {
         page-break-inside: avoid;
       }
@@ -5744,7 +5749,11 @@
               <td>
                 <div style="display: flex; gap: 0.5rem; justify-content: center;">
                   <button class="submit-btn" style="padding: 0.3rem 0.8rem; font-size: 0.75rem; background: var(--accent);" onclick="viewSubmittedResult(${result.id || index})">View</button>
-                  <button class="submit-btn" style="padding: 0.3rem 0.8rem; font-size: 0.75rem; background: var(--success);" onclick="approveConfigResults(${result.id || index}, '${result.subject || ''}', '${result.class || ''}')">Approve</button>
+                  ${result.status !== 'Approved' 
+                    ? `<button class="submit-btn" style="padding: 0.3rem 0.8rem; font-size: 0.75rem; background: var(--success);" onclick="approveConfigResults(${result.id || index}, '${result.subject || ''}', '${result.class || ''}')">Approve</button>`
+                    : `<button class="submit-btn" style="padding: 0.3rem 0.8rem; font-size: 0.75rem; background: #3b82f6; color: #fff;" onclick="editConfigResults(${result.id || index})">✏️ Edit</button>`
+                  }
+                  <button class="submit-btn" style="padding: 0.3rem 0.8rem; font-size: 0.75rem; background: var(--danger); color: #fff;" onclick="deleteConfigResults(${result.id || index}, '${result.subject || ''}', '${result.class || ''}')">Delete</button>
                 </div>
               </td>
             </tr>
@@ -5990,6 +5999,187 @@
       }
     }
 
+    async function rejectConfigResults(resultId, subject, className) {
+      // Legacy - now redirects to edit
+      await editConfigResults(resultId);
+    }
+
+    async function editConfigResults(resultId) {
+      // Fetch result data
+      let data = null;
+      if (supabaseDb) {
+        const { data: resData, error } = await supabaseDb.from('submitted_results').select('*').eq('id', resultId).single();
+        if (!error && resData) data = resData;
+      }
+      if (!data) {
+        const submittedResults = JSON.parse(localStorage.getItem('submitted_results') || '[]');
+        data = submittedResults.find(r => r.id == resultId || r.id === resultId);
+      }
+      if (!data) {
+        alert('Could not load result data for editing.');
+        return;
+      }
+
+      const theoryFM = data.theory_full_marks || data.theoryFullMarks || 75;
+      const practicalFM = data.practical_full_marks || data.practicalFullMarks || 0;
+      const hasPractical = practicalFM > 0;
+      const students = data.students || [];
+
+      let rowsHtml = students.map((s, i) => {
+        const theoryVal = s.marks || s.theory_marks || 0;
+        const practicalVal = s.practicalMarks || s.practical_marks || 0;
+        return `
+          <tr style="border-bottom: 1px solid #e2e8f0;">
+            <td style="padding: 0.6rem 0.8rem; font-weight: 600; white-space: nowrap;">${s.roll || s.symbolNumber || (i+1)}</td>
+            <td style="padding: 0.6rem 0.8rem; white-space: nowrap;">${s.name}</td>
+            <td style="padding: 0.4rem 0.6rem;">
+              <input type="number" id="edit-theory-${i}" value="${theoryVal}" min="0" max="${theoryFM}"
+                style="width: 70px; padding: 0.3rem 0.5rem; border: 1.5px solid #cbd5e1; border-radius: 6px; text-align: center; font-size: 0.9rem;"
+                oninput="updateEditTotal(${i}, ${theoryFM}, ${practicalFM})">
+            </td>
+            ${hasPractical ? `
+            <td style="padding: 0.4rem 0.6rem;">
+              <input type="number" id="edit-practical-${i}" value="${practicalVal}" min="0" max="${practicalFM}"
+                style="width: 70px; padding: 0.3rem 0.5rem; border: 1.5px solid #cbd5e1; border-radius: 6px; text-align: center; font-size: 0.9rem;"
+                oninput="updateEditTotal(${i}, ${theoryFM}, ${practicalFM})">
+            </td>` : '<td style="padding: 0.4rem 0.6rem; text-align:center; color:#94a3b8;">-</td>'}
+            <td style="padding: 0.4rem 0.8rem; text-align:center;">
+              <strong id="edit-total-${i}">${hasPractical ? (theoryVal + practicalVal) : theoryVal}</strong>
+            </td>
+          </tr>`;
+      }).join('');
+
+      const modalId = 'edit-result-modal';
+      let modal = document.getElementById(modalId);
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = modalId;
+        modal.style.cssText = 'display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10001; padding:1rem; justify-content:center; align-items:center; backdrop-filter:blur(4px); overflow-y:auto;';
+        document.body.appendChild(modal);
+      }
+
+      modal.innerHTML = `
+        <div style="background:white; border-radius:18px; max-width:750px; width:100%; padding:2rem; margin:auto; box-shadow:0 25px 50px rgba(0,0,0,0.2); position:relative;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; padding-bottom:1rem; border-bottom:2px solid #e2e8f0;">
+            <div>
+              <h2 style="font-size:1.3rem; font-weight:800; color:var(--primary); margin:0;">✏️ Edit Marks</h2>
+              <p style="color:#64748b; margin:0.25rem 0 0; font-size:0.9rem;">${data.subject} &mdash; ${data.class} &mdash; ${data.exam_type || data.examType}</p>
+            </div>
+            <button onclick="document.getElementById('${modalId}').style.display='none'" style="background:none;border:none;font-size:1.8rem;cursor:pointer;color:#94a3b8;line-height:1;">&times;</button>
+          </div>
+
+          <div style="background:#eff6ff; border:1.5px solid #bfdbfe; border-radius:10px; padding:0.75rem 1rem; margin-bottom:1.5rem; font-size:0.85rem; color:#1e40af;">
+            <strong>ℹ️ Full Marks:</strong> Theory: ${theoryFM}${hasPractical ? ' | Practical: ' + practicalFM + ' | Total: ' + (theoryFM + practicalFM) : ''}
+          </div>
+
+          <div style="overflow-x:auto; border:1px solid #e2e8f0; border-radius:10px;">
+            <table style="width:100%; border-collapse:collapse;">
+              <thead>
+                <tr style="background:#f8fafc;">
+                  <th style="padding:0.75rem 0.8rem; text-align:left; font-size:0.85rem; color:#475569;">Roll No</th>
+                  <th style="padding:0.75rem 0.8rem; text-align:left; font-size:0.85rem; color:#475569;">Name</th>
+                  <th style="padding:0.75rem 0.8rem; text-align:center; font-size:0.85rem; color:#475569;">Theory (FM: ${theoryFM})</th>
+                  <th style="padding:0.75rem 0.8rem; text-align:center; font-size:0.85rem; color:#475569;">${hasPractical ? 'Practical (FM: ' + practicalFM + ')' : 'Practical'}</th>
+                  <th style="padding:0.75rem 0.8rem; text-align:center; font-size:0.85rem; color:#475569;">Total</th>
+                </tr>
+              </thead>
+              <tbody>${rowsHtml}</tbody>
+            </table>
+          </div>
+
+          <div style="margin-top:1.5rem; display:flex; justify-content:flex-end; gap:1rem;">
+            <button class="submit-btn" style="background:#94a3b8;" onclick="document.getElementById('${modalId}').style.display='none'">Cancel</button>
+            <button class="submit-btn" style="background:var(--primary); min-width:140px;" onclick="saveEditedResults(${resultId}, ${JSON.stringify(students).replace(/"/g, '&quot;')}, ${theoryFM}, ${practicalFM})">
+              💾 Save Changes
+            </button>
+          </div>
+        </div>`;
+
+      modal.style.display = 'flex';
+    }
+
+    function updateEditTotal(i, theoryFM, practicalFM) {
+      const th = parseFloat(document.getElementById(`edit-theory-${i}`)?.value) || 0;
+      const pr = practicalFM > 0 ? (parseFloat(document.getElementById(`edit-practical-${i}`)?.value) || 0) : 0;
+      const totalEl = document.getElementById(`edit-total-${i}`);
+      if (totalEl) totalEl.textContent = (th + pr).toFixed(1);
+    }
+
+    async function saveEditedResults(resultId, originalStudents, theoryFM, practicalFM) {
+      const hasPractical = practicalFM > 0;
+      const updatedStudents = originalStudents.map((s, i) => {
+        const theoryVal = parseFloat(document.getElementById(`edit-theory-${i}`)?.value) || 0;
+        const practicalVal = hasPractical ? (parseFloat(document.getElementById(`edit-practical-${i}`)?.value) || 0) : 0;
+        return {
+          ...s,
+          marks: theoryVal,
+          theory_marks: theoryVal,
+          theoryMarks: theoryVal,
+          practicalMarks: practicalVal,
+          practical_marks: practicalVal,
+          totalMarks: theoryVal + practicalVal
+        };
+      });
+
+      let success = true;
+      if (supabaseDb) {
+        const { error } = await supabaseDb.from('submitted_results')
+          .update({ students: updatedStudents, status: 'Approved', updated_at: new Date().toISOString() })
+          .eq('id', resultId);
+        if (error) {
+          console.error('Error saving edited results:', error);
+          success = false;
+        }
+      }
+
+      // Always update localStorage
+      let submittedResults = JSON.parse(localStorage.getItem('submitted_results') || '[]');
+      const idx = submittedResults.findIndex(r => r.id == resultId);
+      if (idx >= 0) {
+        submittedResults[idx].students = updatedStudents;
+        submittedResults[idx].status = 'Approved';
+        localStorage.setItem('submitted_results', JSON.stringify(submittedResults));
+        success = true;
+      }
+
+      if (success) {
+        document.getElementById('edit-result-modal').style.display = 'none';
+        alert('✅ Marks updated and result re-approved successfully!');
+        await renderPendingResults();
+        await renderResultsWithGPA();
+      } else {
+        alert('❌ Failed to save changes. Please try again.');
+      }
+    }
+
+    async function deleteConfigResults(resultId, subject, className) {
+      if (!confirm(`Are you sure you want to completely delete the results for ${subject} (${className})? This action cannot be undone and the teacher will have to re-upload.`)) return;
+      
+      let success = true;
+      if (supabaseDb) {
+        const { error } = await supabaseDb.from('submitted_results')
+           .delete()
+           .eq('id', resultId);
+           
+        if (error) {
+           console.error("Error deleting result:", error);
+           success = false;
+        }
+      }
+      
+      if (success) {
+        let submittedResults = JSON.parse(localStorage.getItem('submitted_results') || '[]');
+        const filteredSubmitted = submittedResults.filter(r => !(r.id == resultId || (r.subject === subject && r.class === className)));
+        localStorage.setItem('submitted_results', JSON.stringify(filteredSubmitted));
+
+        alert('Result deleted successfully!');
+        await renderPendingResults();
+        await renderResultsWithGPA();
+      } else {
+        alert('Failed to delete results. Please try again.');
+      }
+    }
+
     async function viewSubmittedResult(resultId) {
        // get the result from supabase
        let data = null;
@@ -6123,29 +6313,53 @@
       const approvedResults = JSON.parse(localStorage.getItem('approved_results') || '[]');
       const submittedResults = JSON.parse(localStorage.getItem('submitted_results') || '[]');
       
-      const allResults = [...approvedResults];
+      const normalizeExamType = (type) => type?.toLowerCase().replace(/exam/gi, '').trim() || '';
+      const examTypeMatches = (storedType, selectedType) => normalizeExamType(storedType) === normalizeExamType(selectedType);
+      
+      const allResults = [];
+      
+      approvedResults.forEach(app => {
+          if (String(app.class).trim() === String(className).trim() && examTypeMatches(app.examType || app.exam_type, examType)) {
+             allResults.push({
+                  symbolNumber: String(app.symbolNumber || app.symbol_number || '').replace(/^SYM/i, '').trim(),
+                  name: app.name,
+                  class: app.class,
+                  examType: app.examType || app.exam_type,
+                  subject: app.subject,
+                  marks: app.marks || 0,
+                  theoryMarks: app.theoryMarks || app.theory_marks || app.marks || 0,
+                  practicalMarks: app.practicalMarks || app.practical_marks || 0,
+                  totalMarks: app.totalMarks || app.total_marks || 100,
+                  theoryFullMarks: app.theory_full_marks !== undefined ? app.theory_full_marks : (app.theoryFullMarks !== undefined ? app.theoryFullMarks : (app.totalMarks || app.total_marks || 100)),
+                  practicalFullMarks: app.practical_full_marks !== undefined ? app.practical_full_marks : (app.practicalFullMarks !== undefined ? app.practicalFullMarks : 0)
+             });
+          }
+      });
+      
       submittedResults.forEach(sub => {
-         if (sub.status !== 'Approved') {
+         if (sub.status === 'Approved' && String(sub.class).trim() === String(className).trim() && examTypeMatches(sub.examType || sub.exam_type, examType)) {
             (sub.students || []).forEach(student => {
                allResults.push({
-                  symbolNumber: student.symbolNumber,
+                  symbolNumber: String(student.symbolNumber || student.symbol_number || student.roll || '').replace(/^SYM/i, '').trim(),
                   name: student.name,
                   class: sub.class,
-                  examType: sub.examType,
+                  examType: sub.examType || sub.exam_type,
                   subject: sub.subject,
-                  marks: student.marks,
-                  totalMarks: student.totalMarks || 100
+                  marks: student.marks || 0,
+                  theoryMarks: student.marks || 0,
+                  practicalMarks: student.practicalMarks || student.practical_marks || 0,
+                  totalMarks: sub.totalMarks || sub.total_marks || 100,
+                  theoryFullMarks: sub.theory_full_marks !== undefined ? sub.theory_full_marks : (sub.theoryFullMarks !== undefined ? sub.theoryFullMarks : (sub.totalMarks || sub.total_marks || 100)),
+                  practicalFullMarks: sub.practical_full_marks !== undefined ? sub.practical_full_marks : (sub.practicalFullMarks !== undefined ? sub.practicalFullMarks : 0)
                });
             });
          }
       });
 
-      const classResults = allResults.filter(r => r.class === className && r.examType === examType);
-      
       const academicYear = document.getElementById('leadersheet-year')?.value || new Date().getFullYear();
-      classResults.forEach(r => r.academicYear = academicYear);
+      allResults.forEach(r => r.academicYear = academicYear);
       
-      if (classResults.length === 0) {
+      if (allResults.length === 0) {
           alert("No results found to publish.");
           return;
       }
@@ -6153,10 +6367,10 @@
       const published = JSON.parse(localStorage.getItem('published_results') || '[]');
       
       // Remove previously published results for this class, exam, and year to overwrite
-      const newPublished = published.filter(r => !(r.class === className && r.examType === examType && r.academicYear === academicYear));
+      const newPublished = published.filter(r => !(String(r.class).trim() === String(className).trim() && examTypeMatches(r.examType, examType) && String(r.academicYear) === String(academicYear)));
       
       // Add new results
-      newPublished.push(...classResults);
+      newPublished.push(...allResults);
       
       localStorage.setItem('published_results', JSON.stringify(newPublished));
       alert('Results successfully published! Students can now view them on the portal.');
@@ -6596,20 +6810,21 @@
         function findStudentIdx(allResults, studentId, studentName, subject) {
           const normalizeId = (id) => String(id).replace(/^SYM/i, '').trim();
           const normStudentId = normalizeId(studentId);
+          const normSubject = (subject || '').trim().toLowerCase();
           
           // Try by exact symbolNumber first
-          let idx = allResults.findIndex(r => normalizeId(r.symbolNumber) === normStudentId && r.subject === subject);
+          let idx = allResults.findIndex(r => normalizeId(r.symbolNumber) === normStudentId && (r.subject || '').trim().toLowerCase() === normSubject);
           if (idx !== -1) return idx;
           
           // Try suffix match: e.g. '20831201' ends with '1201' or vice versa
           idx = allResults.findIndex(r => {
             const normExisting = normalizeId(r.symbolNumber);
-            return r.subject === subject && (normExisting.endsWith(normStudentId) || normStudentId.endsWith(normExisting));
+            return (r.subject || '').trim().toLowerCase() === normSubject && (normExisting.endsWith(normStudentId) || normStudentId.endsWith(normExisting));
           });
           if (idx !== -1) return idx;
           
           // Fallback: try by name + subject
-          idx = allResults.findIndex(r => r.name === studentName && r.subject === subject);
+          idx = allResults.findIndex(r => r.name === studentName && (r.subject || '').trim().toLowerCase() === normSubject);
           return idx;
         }
         
@@ -6621,6 +6836,8 @@
           const subExamType = sub.examType || sub.exam_type;
           const subSubject = sub.subject;
           const subTotalMarks = sub.totalMarks || sub.total_marks || 100;
+          const subTheoryFullMarks = sub.theory_full_marks !== undefined ? sub.theory_full_marks : (sub.theoryFullMarks !== undefined ? sub.theoryFullMarks : subTotalMarks);
+          const subPracticalFullMarks = sub.practical_full_marks !== undefined ? sub.practical_full_marks : (sub.practicalFullMarks !== undefined ? sub.practicalFullMarks : 0);
           const subYear = String(sub.academic_year || sub.academicYear || '').trim();
           
           console.log(`[DEBUG] submitted_result row: class="${subClass}", exam="${subExamType}", subject="${subSubject}", year="${subYear}", students=${(sub.students || []).length}`);
@@ -6640,6 +6857,8 @@
                 theoryMarks: student.marks,
                 practicalMarks: student.practicalMarks || student.practical_marks || 0,
                 totalMarks: subTotalMarks,
+                theoryFullMarks: subTheoryFullMarks,
+                practicalFullMarks: subPracticalFullMarks,
                 isTemplate: false
               };
               
@@ -6679,6 +6898,8 @@
               theoryMarks: approved.theoryMarks || approved.theory_marks || approved.marks || 0,
               practicalMarks: approved.practicalMarks || approved.practical_marks || 0,
               totalMarks: approved.totalMarks || approved.total_marks || 100,
+              theoryFullMarks: approved.theory_full_marks !== undefined ? approved.theory_full_marks : (approved.theoryFullMarks !== undefined ? approved.theoryFullMarks : (approved.totalMarks || approved.total_marks || 100)),
+              practicalFullMarks: approved.practical_full_marks !== undefined ? approved.practical_full_marks : (approved.practicalFullMarks !== undefined ? approved.practicalFullMarks : 0),
               isTemplate: false
             };
             
@@ -6735,16 +6956,35 @@
         const subjectMarksMap = {}; // Map subject -> {fullMarks, passMarks, hasPractical}
         
         allResults.forEach(r => {
-          subjectsSet.add(r.subject);
+          // Normalize subject name case-insensitively
+          let subjName = (r.subject || '').trim();
+          let existingSubj = Array.from(subjectsSet).find(s => s.toLowerCase() === subjName.toLowerCase());
+          if (existingSubj) {
+            r.subject = existingSubj;
+          } else {
+            subjectsSet.add(subjName);
+            r.subject = subjName;
+          }
+
           if (!subjectMarksMap[r.subject]) {
+            const tm = parseInt(r.totalMarks) || 100;
+            const pm = r.passMarks || Math.ceil(tm * 0.35);
+            let tfm = r.theoryFullMarks !== undefined ? parseInt(r.theoryFullMarks) : tm;
+            let pfm = r.practicalFullMarks !== undefined ? parseInt(r.practicalFullMarks) : 0;
+            
             subjectMarksMap[r.subject] = {
-              fullMarks: parseInt(r.totalMarks) || 100,
-              passMarks: r.passMarks || Math.ceil((parseInt(r.totalMarks) || 100) * 0.35),
-              hasPractical: false
+              fullMarks: tm,
+              passMarks: pm,
+              theoryFullMarks: tfm,
+              practicalFullMarks: pfm,
+              hasPractical: pfm > 0 || parseInt(r.practicalMarks) > 0
             };
           }
           if (parseInt(r.practicalMarks) > 0) {
             subjectMarksMap[r.subject].hasPractical = true;
+          }
+          if (r.practicalFullMarks > 0) {
+            subjectMarksMap[r.subject].practicalFullMarks = parseInt(r.practicalFullMarks);
           }
         });
         
@@ -6878,20 +7118,27 @@
            const fullMarks = subjectMarksMap[sub]?.fullMarks || 100;
            const passMarks = subjectMarksMap[sub]?.passMarks || Math.ceil(fullMarks * 0.35);
            const hasPractical = subjectMarksMap[sub]?.hasPractical;
+           let tfm = subjectMarksMap[sub]?.theoryFullMarks;
+           let pfm = subjectMarksMap[sub]?.practicalFullMarks;
+
+           if (hasPractical && (!pfm || pfm === 0)) {
+               tfm = fullMarks * 0.75;
+               pfm = fullMarks * 0.25;
+           } else if (!hasPractical) {
+               tfm = fullMarks;
+               pfm = 0;
+           }
            
            if (isFinalTerm) {
-               // For final term: 1st term is 10%, 2nd term is 30%, Final is 60% of full marks (theory)
-               // Practical is 25% of full marks
                const fm1 = (fullMarks * 0.10).toFixed(1);
                const fm2 = (fullMarks * 0.30).toFixed(1);
-               const fmTheoryTotal = hasPractical ? (fullMarks * 0.75).toFixed(1) : (fullMarks).toFixed(1);
-               const fmPractical = hasPractical ? (fullMarks * 0.25).toFixed(1) : '-';
+               const fmTheoryTotal = tfm.toFixed(1);
+               const fmPractical = hasPractical ? pfm.toFixed(1) : '-';
                
                theadHtml += `<th>FM<br>${fm1}</th><th>FM<br>${fm2}</th><th>FM<br>${fullMarks}</th><th>FM<br>${fmTheoryTotal}</th><th>FM<br>${fmPractical}</th><th>FM<br>${fullMarks}</th>`;
            } else {
-               // For other terms: Theory 75%, Practical 25%
-               const fmTheory = hasPractical ? (fullMarks * 0.75).toFixed(1) : (fullMarks).toFixed(1);
-               const fmPractical = hasPractical ? (fullMarks * 0.25).toFixed(1) : '-';
+               const fmTheory = tfm.toFixed(1);
+               const fmPractical = hasPractical ? pfm.toFixed(1) : '-';
                theadHtml += `<th>FM<br>${fmTheory}</th><th>FM<br>${fmPractical}</th><th>FM<br>${fullMarks}</th><th>-</th>`;
            }
         });
@@ -6901,18 +7148,26 @@
            const fullMarks = subjectMarksMap[sub]?.fullMarks || 100;
            const passMarks = subjectMarksMap[sub]?.passMarks || Math.ceil(fullMarks * 0.35);
            const hasPractical = subjectMarksMap[sub]?.hasPractical;
+           let tfm = subjectMarksMap[sub]?.theoryFullMarks;
+           let pfm = subjectMarksMap[sub]?.practicalFullMarks;
+
+           if (hasPractical && (!pfm || pfm === 0)) {
+               tfm = fullMarks * 0.75;
+               pfm = fullMarks * 0.25;
+           } else if (!hasPractical) {
+               tfm = fullMarks;
+               pfm = 0;
+           }
            
            if (isFinalTerm) {
-               // Pass marks proportions
                const pm1 = (passMarks * 0.10).toFixed(1);
                const pm2 = (passMarks * 0.30).toFixed(1);
-               const pmTheoryTotal = hasPractical ? (passMarks * 0.75).toFixed(1) : (passMarks).toFixed(1);
-               const pmPractical = hasPractical ? (passMarks * 0.25).toFixed(1) : '-';
+               const pmTheoryTotal = Math.ceil(tfm * 0.35).toFixed(1);
+               const pmPractical = hasPractical ? Math.ceil(pfm * 0.35).toFixed(1) : '-';
                theadHtml += `<th>PM<br>${pm1}</th><th>PM<br>${pm2}</th><th>PM<br>${passMarks}</th><th>PM<br>${pmTheoryTotal}</th><th>PM<br>${pmPractical}</th><th>PM<br>${passMarks}</th>`;
            } else {
-               // Theory 75%, Practical 25% of pass marks
-               const pmTheory = hasPractical ? (passMarks * 0.75).toFixed(1) : (passMarks).toFixed(1);
-               const pmPractical = hasPractical ? (passMarks * 0.25).toFixed(1) : '-';
+               const pmTheory = Math.ceil(tfm * 0.35).toFixed(1);
+               const pmPractical = hasPractical ? Math.ceil(pfm * 0.35).toFixed(1) : '-';
                theadHtml += `<th>PM<br>${pmTheory}</th><th>PM<br>${pmPractical}</th><th>PM<br>${passMarks}</th><th>-</th>`;
            }
         });
