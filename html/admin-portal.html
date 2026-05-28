@@ -6777,15 +6777,20 @@
            const passMarks = subjectMarksMap[sub]?.passMarks || Math.ceil(fullMarks * 0.35);
            
            if (isFinalTerm) {
-               // For final term: 1st term is 10%, 2nd term is 30%, Final is 60% of full marks
+               // For final term: 1st term is 10%, 2nd term is 30%, Final is 60% of full marks (theory)
+               // Practical is 25% of full marks
                const fm1 = (fullMarks * 0.10).toFixed(1);
                const fm2 = (fullMarks * 0.30).toFixed(1);
                const fmFinal = (fullMarks * 0.60).toFixed(1);
+               const fmTheoryTotal = (fullMarks * 0.75).toFixed(1);
+               const fmPractical = (fullMarks * 0.25).toFixed(1);
                const pm1 = (passMarks * 0.10).toFixed(1);
                const pm2 = (passMarks * 0.30).toFixed(1);
                const pmFinal = (passMarks * 0.60).toFixed(1);
+               const pmTheoryTotal = (passMarks * 0.75).toFixed(1);
+               const pmPractical = (passMarks * 0.25).toFixed(1);
                
-               theadHtml += `<th>FM<br>${fm1}</th><th>FM<br>${fm2}</th><th>FM<br>${fmFinal}</th><th>FM<br>${fullMarks}</th><th>Practical</th><th>FM<br>${fullMarks}</th>`;
+               theadHtml += `<th>FM<br>${fm1}</th><th>FM<br>${fm2}</th><th>FM<br>${fmFinal}</th><th>FM<br>${fmTheoryTotal}</th><th>FM<br>${fmPractical}</th><th>FM<br>${fullMarks}</th>`;
            } else {
                // For other terms: Theory 75%, Practical 25%
                const fmTheory = (fullMarks * 0.75).toFixed(1);
@@ -6804,7 +6809,9 @@
                const pm1 = (passMarks * 0.10).toFixed(1);
                const pm2 = (passMarks * 0.30).toFixed(1);
                const pmFinal = (passMarks * 0.60).toFixed(1);
-               theadHtml += `<th>PM<br>${pm1}</th><th>PM<br>${pm2}</th><th>PM<br>${pmFinal}</th><th>PM<br>${passMarks}</th><th>-</th><th>PM<br>${passMarks}</th>`;
+               const pmTheoryTotal = (passMarks * 0.75).toFixed(1);
+               const pmPractical = (passMarks * 0.25).toFixed(1);
+               theadHtml += `<th>PM<br>${pm1}</th><th>PM<br>${pm2}</th><th>PM<br>${pmFinal}</th><th>PM<br>${pmTheoryTotal}</th><th>PM<br>${pmPractical}</th><th>PM<br>${passMarks}</th>`;
            } else {
                // Theory 75%, Practical 25% of pass marks
                const pmTheory = (passMarks * 0.75).toFixed(1);
@@ -6833,39 +6840,45 @@
 
                 if (isFinalTerm) {
                     // Convert based on real full marks:
-                    // 1st Term = 10% of full marks
-                    // 2nd Term = 30% of full marks
-                    // Final = 60% of full marks
+                    // Theory is 75% of full marks, split into: 1st Term (10%), 2nd Term (30%), Final (60%)
+                    // Practical is 25% of full marks
+                    // Total = fullMarks
                     let t1Raw = sm.term1Marks || 0;
                     let t2Raw = sm.term2Marks || 0;
                     let finRaw = sm.theoryMarks || sm.marks || 0;
+                    let pracRaw = sm.practicalMarks || 0;
                     
                     // Get the original full marks for these terms (assume they were out of 100)
                     const origFullMarks = 100;
+                    const origPracticalMarks = 25; // Practical marks are out of 25
                     
-                    let t1 = t1Raw > 0 ? ((t1Raw / origFullMarks) * (fullMarks * 0.10)).toFixed(1) : '-';
-                    let t2 = t2Raw > 0 ? ((t2Raw / origFullMarks) * (fullMarks * 0.30)).toFixed(1) : '-';
-                    let fin = ((finRaw / origFullMarks) * (fullMarks * 0.60)).toFixed(1);
+                    // Convert to teacher's entered full marks
+                    let t1 = t1Raw > 0 ? ((t1Raw / origFullMarks) * (fullMarks * 0.75 * 0.10)).toFixed(1) : '-';
+                    let t2 = t2Raw > 0 ? ((t2Raw / origFullMarks) * (fullMarks * 0.75 * 0.30)).toFixed(1) : '-';
+                    let fin = ((finRaw / origFullMarks) * (fullMarks * 0.75 * 0.60)).toFixed(1);
+                    let prac = pracRaw > 0 ? ((pracRaw / origPracticalMarks) * (fullMarks * 0.25)).toFixed(1) : '-';
                     
-                    let t1Num = t1Raw > 0 ? parseFloat(((t1Raw / origFullMarks) * (fullMarks * 0.10)).toFixed(1)) : 0;
-                    let t2Num = t2Raw > 0 ? parseFloat(((t2Raw / origFullMarks) * (fullMarks * 0.30)).toFixed(1)) : 0;
-                    let finNum = parseFloat(((finRaw / origFullMarks) * (fullMarks * 0.60)).toFixed(1));
+                    let t1Num = t1Raw > 0 ? parseFloat(((t1Raw / origFullMarks) * (fullMarks * 0.75 * 0.10)).toFixed(1)) : 0;
+                    let t2Num = t2Raw > 0 ? parseFloat(((t2Raw / origFullMarks) * (fullMarks * 0.75 * 0.30)).toFixed(1)) : 0;
+                    let finNum = parseFloat(((finRaw / origFullMarks) * (fullMarks * 0.75 * 0.60)).toFixed(1));
+                    let pracNum = pracRaw > 0 ? parseFloat(((pracRaw / origPracticalMarks) * (fullMarks * 0.25)).toFixed(1)) : 0;
+                    
                     let thTotal = (t1Num + t2Num + finNum).toFixed(1);
-                    let pracNum = sm.practicalMarks || 0;
-                    let prac = pracNum > 0 ? pracNum : '-';
                     let tot = (t1Num + t2Num + finNum + pracNum).toFixed(1);
                     rowHtml += `<td>${t1}</td><td>${t2}</td><td>${fin}</td><td>${thTotal}</td><td>${prac}</td><td><strong>${tot}</strong></td>`;
                 } else {
                     // Convert theory and practical based on real full marks
-                    // Theory = 75%, Practical = 25%
+                    // Theory = 75%, Practical = 25% of total marks
                     const origFullMarks = 100;
+                    const origPracticalMarks = 25;
                     const theoryFullMarks = fullMarks * 0.75;
                     const practicalFullMarks = fullMarks * 0.25;
                     
                     let theory = sm.theoryMarks || sm.marks || 0;
                     let theoryConverted = ((theory / origFullMarks) * theoryFullMarks).toFixed(1);
-                    let practical = sm.practicalMarks > 0 ? ((sm.practicalMarks / 25) * practicalFullMarks).toFixed(1) : '-';
-                    let subjectTotal = (parseFloat(theoryConverted) + (sm.practicalMarks > 0 ? parseFloat(practical) : 0)).toFixed(1);
+                    let practicalRaw = sm.practicalMarks || 0;
+                    let practical = practicalRaw > 0 ? ((practicalRaw / origPracticalMarks) * practicalFullMarks).toFixed(1) : '-';
+                    let subjectTotal = (parseFloat(theoryConverted) + (practicalRaw > 0 ? parseFloat(practical) : 0)).toFixed(1);
                     rowHtml += `
                        <td>${theoryConverted}</td>
                        <td>${practical}</td>
