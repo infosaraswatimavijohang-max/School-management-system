@@ -6426,6 +6426,8 @@
                   const rawSym = result.student_symbol || result.student_roll || '';
                   const normalizedSym = String(rawSym).replace(/^SYM/i, '').trim();
                   const marksVal = parseInt(result.total_marks) || 0;
+                  // Calculate pass marks as 35% of full marks
+                  const passMarks = Math.ceil(config.full_marks * 0.35);
                   allResults.push({
                     symbolNumber: normalizedSym,
                     name: result.student_name,
@@ -6436,6 +6438,7 @@
                     theoryMarks: parseInt(result.theory_marks) || marksVal,
                     practicalMarks: parseInt(result.practical_marks) || 0,
                     totalMarks: config.full_marks,
+                    passMarks: passMarks,  // Store pass marks as 35% of total
                     grade: result.grade || '-',
                     percentage: result.percentage || 0,
                     approvalStatus: result.approval_status,
@@ -6630,9 +6633,20 @@
           return;
         }
 
-        // Extract unique subjects
+        // Extract unique subjects and their full/pass marks
         const subjectsSet = new Set();
-        allResults.forEach(r => subjectsSet.add(r.subject));
+        const subjectMarksMap = {}; // Map subject -> {fullMarks, passMarks}
+        
+        allResults.forEach(r => {
+          subjectsSet.add(r.subject);
+          if (!subjectMarksMap[r.subject]) {
+            subjectMarksMap[r.subject] = {
+              fullMarks: parseInt(r.totalMarks) || 100,
+              passMarks: r.passMarks || Math.ceil((parseInt(r.totalMarks) || 100) * 0.35)
+            };
+          }
+        });
+        
         const subjects = Array.from(subjectsSet);
 
         // Group by student
@@ -6651,7 +6665,8 @@
              marks: parseInt(r.marks) || 0,
              theoryMarks: parseInt(r.theoryMarks) || parseInt(r.marks) || 0,
              practicalMarks: parseInt(r.practicalMarks) || 0,
-             totalMarks: parseInt(r.totalMarks) || 100
+             totalMarks: parseInt(r.totalMarks) || 100,
+             passMarks: r.passMarks || Math.ceil((parseInt(r.totalMarks) || 100) * 0.35)
           };
           // For total marks obtained, sum theory + practical if practical is not 0, otherwise just marks
           let subjectTotal = (parseInt(r.theoryMarks) || parseInt(r.marks) || 0) + (parseInt(r.practicalMarks) || 0);
@@ -6746,9 +6761,9 @@
         subjects.forEach(sub => {
            theadHtml += `<th colspan="${colspan}">${sub}</th>`;
         });
-        theadHtml += '<th rowspan="4">Total<br>Marks</th><th rowspan="4">Pass<br>Marks</th><th rowspan="4">Obtained<br>Marks</th><th rowspan="4">Overall GPA</th><th rowspan="4">Grade</th><th rowspan="4">Remarks</th><th rowspan="4">Action</th></tr><tr>';
+        theadHtml += '<th rowspan="4">Total<br>Marks</th><th rowspan="4">Pass<br>Marks (35%)</th><th rowspan="4">Obtained<br>Marks</th><th rowspan="4">Overall GPA</th><th rowspan="4">Grade</th><th rowspan="4">Remarks</th><th rowspan="4">Action</th></tr><tr>';
 
-        subjects.forEach(() => {
+        subjects.forEach(sub => {
            if (isFinalTerm) {
                theadHtml += `<th>1st Term</th><th>2nd Term</th><th>Final</th><th>Th Total</th><th>Practical</th><th>Total</th>`;
            } else {
@@ -6757,20 +6772,44 @@
         });
         theadHtml += '</tr><tr>';
 
-        subjects.forEach(() => {
+        subjects.forEach(sub => {
+           const fullMarks = subjectMarksMap[sub]?.fullMarks || 100;
+           const passMarks = subjectMarksMap[sub]?.passMarks || Math.ceil(fullMarks * 0.35);
+           
            if (isFinalTerm) {
-               theadHtml += `<th>FM<br>7.5</th><th>FM<br>22.5</th><th>FM<br>45</th><th>FM<br>75</th><th>FM<br>25</th><th>FM<br>100</th>`;
+               // For final term: 1st term is 10%, 2nd term is 30%, Final is 60% of full marks
+               const fm1 = (fullMarks * 0.10).toFixed(1);
+               const fm2 = (fullMarks * 0.30).toFixed(1);
+               const fmFinal = (fullMarks * 0.60).toFixed(1);
+               const pm1 = (passMarks * 0.10).toFixed(1);
+               const pm2 = (passMarks * 0.30).toFixed(1);
+               const pmFinal = (passMarks * 0.60).toFixed(1);
+               
+               theadHtml += `<th>FM<br>${fm1}</th><th>FM<br>${fm2}</th><th>FM<br>${fmFinal}</th><th>FM<br>${fullMarks}</th><th>Practical</th><th>FM<br>${fullMarks}</th>`;
            } else {
-               theadHtml += `<th>FM<br>75</th><th>FM<br>25</th><th>FM<br>100</th><th>-</th>`;
+               // For other terms: Theory 75%, Practical 25%
+               const fmTheory = (fullMarks * 0.75).toFixed(1);
+               const fmPractical = (fullMarks * 0.25).toFixed(1);
+               theadHtml += `<th>FM<br>${fmTheory}</th><th>FM<br>${fmPractical}</th><th>FM<br>${fullMarks}</th><th>-</th>`;
            }
         });
         theadHtml += '</tr><tr>';
 
-        subjects.forEach(() => {
+        subjects.forEach(sub => {
+           const fullMarks = subjectMarksMap[sub]?.fullMarks || 100;
+           const passMarks = subjectMarksMap[sub]?.passMarks || Math.ceil(fullMarks * 0.35);
+           
            if (isFinalTerm) {
-               theadHtml += `<th>PM<br>2.7</th><th>PM<br>8</th><th>PM<br>16</th><th>PM<br>27</th><th>PM<br>10</th><th>PM<br>35</th>`;
+               // Pass marks proportions
+               const pm1 = (passMarks * 0.10).toFixed(1);
+               const pm2 = (passMarks * 0.30).toFixed(1);
+               const pmFinal = (passMarks * 0.60).toFixed(1);
+               theadHtml += `<th>PM<br>${pm1}</th><th>PM<br>${pm2}</th><th>PM<br>${pmFinal}</th><th>PM<br>${passMarks}</th><th>-</th><th>PM<br>${passMarks}</th>`;
            } else {
-               theadHtml += `<th>PM<br>27</th><th>PM<br>10</th><th>PM<br>35</th><th>-</th>`;
+               // Theory 75%, Practical 25% of pass marks
+               const pmTheory = (passMarks * 0.75).toFixed(1);
+               const pmPractical = (passMarks * 0.25).toFixed(1);
+               theadHtml += `<th>PM<br>${pmTheory}</th><th>PM<br>${pmPractical}</th><th>PM<br>${passMarks}</th><th>-</th>`;
            }
         });
         theadHtml += '</tr>';
@@ -6787,31 +6826,48 @@
           subjects.forEach(sub => {
              const sm = student.marksBySubject[sub];
              if (sm) {
-                const subPercentage = sm.totalMarks > 0 ? (sm.marks / sm.totalMarks) * 100 : 0;
+                const fullMarks = sm.totalMarks || 100;
+                const passMarks = sm.passMarks || Math.ceil(fullMarks * 0.35);
+                const subPercentage = fullMarks > 0 ? (sm.marks / fullMarks) * 100 : 0;
                 if (subPercentage < 35) failedSubjects++; // NG is below 35%
 
                 if (isFinalTerm) {
-                    // Convert: 1st Term out-of-100 → out-of-7.5, 2nd Term out-of-100 → out-of-22.5, Final out-of-100 → out-of-45
+                    // Convert based on real full marks:
+                    // 1st Term = 10% of full marks
+                    // 2nd Term = 30% of full marks
+                    // Final = 60% of full marks
                     let t1Raw = sm.term1Marks || 0;
                     let t2Raw = sm.term2Marks || 0;
                     let finRaw = sm.theoryMarks || sm.marks || 0;
-                    let t1 = t1Raw > 0 ? ((t1Raw / 100) * 7.5).toFixed(1) : '-';
-                    let t2 = t2Raw > 0 ? ((t2Raw / 100) * 22.5).toFixed(1) : '-';
-                    let fin = ((finRaw / 100) * 45).toFixed(1);
-                    let t1Num = t1Raw > 0 ? parseFloat(((t1Raw / 100) * 7.5).toFixed(1)) : 0;
-                    let t2Num = t2Raw > 0 ? parseFloat(((t2Raw / 100) * 22.5).toFixed(1)) : 0;
-                    let finNum = parseFloat(((finRaw / 100) * 45).toFixed(1));
+                    
+                    // Get the original full marks for these terms (assume they were out of 100)
+                    const origFullMarks = 100;
+                    
+                    let t1 = t1Raw > 0 ? ((t1Raw / origFullMarks) * (fullMarks * 0.10)).toFixed(1) : '-';
+                    let t2 = t2Raw > 0 ? ((t2Raw / origFullMarks) * (fullMarks * 0.30)).toFixed(1) : '-';
+                    let fin = ((finRaw / origFullMarks) * (fullMarks * 0.60)).toFixed(1);
+                    
+                    let t1Num = t1Raw > 0 ? parseFloat(((t1Raw / origFullMarks) * (fullMarks * 0.10)).toFixed(1)) : 0;
+                    let t2Num = t2Raw > 0 ? parseFloat(((t2Raw / origFullMarks) * (fullMarks * 0.30)).toFixed(1)) : 0;
+                    let finNum = parseFloat(((finRaw / origFullMarks) * (fullMarks * 0.60)).toFixed(1));
                     let thTotal = (t1Num + t2Num + finNum).toFixed(1);
                     let pracNum = sm.practicalMarks || 0;
                     let prac = pracNum > 0 ? pracNum : '-';
                     let tot = (t1Num + t2Num + finNum + pracNum).toFixed(1);
                     rowHtml += `<td>${t1}</td><td>${t2}</td><td>${fin}</td><td>${thTotal}</td><td>${prac}</td><td><strong>${tot}</strong></td>`;
                 } else {
+                    // Convert theory and practical based on real full marks
+                    // Theory = 75%, Practical = 25%
+                    const origFullMarks = 100;
+                    const theoryFullMarks = fullMarks * 0.75;
+                    const practicalFullMarks = fullMarks * 0.25;
+                    
                     let theory = sm.theoryMarks || sm.marks || 0;
-                    let practical = sm.practicalMarks > 0 ? sm.practicalMarks : '-';
-                    let subjectTotal = theory + (sm.practicalMarks || 0);
+                    let theoryConverted = ((theory / origFullMarks) * theoryFullMarks).toFixed(1);
+                    let practical = sm.practicalMarks > 0 ? ((sm.practicalMarks / 25) * practicalFullMarks).toFixed(1) : '-';
+                    let subjectTotal = (parseFloat(theoryConverted) + (sm.practicalMarks > 0 ? parseFloat(practical) : 0)).toFixed(1);
                     rowHtml += `
-                       <td>${theory}</td>
+                       <td>${theoryConverted}</td>
                        <td>${practical}</td>
                        <td><strong>${subjectTotal}</strong></td>
                        <td>${calculateGPA(subPercentage).grade}</td>
@@ -6829,13 +6885,16 @@
           const overallPercentage = student.totalMaxMarks > 0 ? (student.totalMarksObtained / student.totalMaxMarks) * 100 : 0;
           const gpaData = calculateGPA(overallPercentage);
 
-          const totalPassMarks = student.totalMaxMarks * 0.35; // 35% pass mark
+          // Calculate total pass marks as 35% of total maximum marks
+          const totalPassMarks = Math.ceil(student.totalMaxMarks * 0.35);
           
           let remarksHtml = '-';
           if (failedSubjects > 0) {
               remarksHtml = `<span style="color: red; font-weight: bold;">*${failedSubjects}</span>`;
-          } else {
+          } else if (student.totalMarksObtained >= totalPassMarks) {
               remarksHtml = '<span style="color: green; font-weight: bold;">Pass</span>';
+          } else {
+              remarksHtml = '<span style="color: red; font-weight: bold;">Fail</span>';
           }
 
           rowHtml += `
