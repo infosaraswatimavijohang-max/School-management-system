@@ -6781,16 +6781,14 @@
                // Practical is 25% of full marks
                const fm1 = (fullMarks * 0.10).toFixed(1);
                const fm2 = (fullMarks * 0.30).toFixed(1);
-               const fmFinal = (fullMarks * 0.60).toFixed(1);
                const fmTheoryTotal = (fullMarks * 0.75).toFixed(1);
                const fmPractical = (fullMarks * 0.25).toFixed(1);
                const pm1 = (passMarks * 0.10).toFixed(1);
                const pm2 = (passMarks * 0.30).toFixed(1);
-               const pmFinal = (passMarks * 0.60).toFixed(1);
                const pmTheoryTotal = (passMarks * 0.75).toFixed(1);
                const pmPractical = (passMarks * 0.25).toFixed(1);
                
-               theadHtml += `<th>FM<br>${fm1}</th><th>FM<br>${fm2}</th><th>FM<br>${fmFinal}</th><th>FM<br>${fmTheoryTotal}</th><th>FM<br>${fmPractical}</th><th>FM<br>${fullMarks}</th>`;
+               theadHtml += `<th>FM<br>${fm1}</th><th>FM<br>${fm2}</th><th>FM<br>${fullMarks}</th><th>FM<br>${fmTheoryTotal}</th><th>FM<br>${fmPractical}</th><th>FM<br>${fullMarks}</th>`;
            } else {
                // For other terms: Theory 75%, Practical 25%
                const fmTheory = (fullMarks * 0.75).toFixed(1);
@@ -6808,10 +6806,9 @@
                // Pass marks proportions
                const pm1 = (passMarks * 0.10).toFixed(1);
                const pm2 = (passMarks * 0.30).toFixed(1);
-               const pmFinal = (passMarks * 0.60).toFixed(1);
                const pmTheoryTotal = (passMarks * 0.75).toFixed(1);
                const pmPractical = (passMarks * 0.25).toFixed(1);
-               theadHtml += `<th>PM<br>${pm1}</th><th>PM<br>${pm2}</th><th>PM<br>${pmFinal}</th><th>PM<br>${pmTheoryTotal}</th><th>PM<br>${pmPractical}</th><th>PM<br>${passMarks}</th>`;
+               theadHtml += `<th>PM<br>${pm1}</th><th>PM<br>${pm2}</th><th>PM<br>${passMarks}</th><th>PM<br>${pmTheoryTotal}</th><th>PM<br>${pmPractical}</th><th>PM<br>${passMarks}</th>`;
            } else {
                // Theory 75%, Practical 25% of pass marks
                const pmTheory = (passMarks * 0.75).toFixed(1);
