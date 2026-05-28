@@ -1925,23 +1925,7 @@
             <div class="form-group" style="margin-bottom: 0;">
               <label>Select Class</label>
               <select id="leadersheet-class" class="form-control" onchange="renderResultsWithGPA()">
-                <option value="Grade 12 Technical - T" selected>Grade 12 Technical - T</option>
-                <option value="Grade 1">Grade 1</option>
-                <option value="Grade 2">Grade 2</option>
-                <option value="Grade 3">Grade 3</option>
-                <option value="Grade 4">Grade 4</option>
-                <option value="Grade 5">Grade 5</option>
-                <option value="Grade 6 - Section A">Grade 6 - Section A</option>
-                <option value="Grade 6 - Section B">Grade 6 - Section B</option>
-                <option value="Grade 7 - Section A">Grade 7 - Section A</option>
-                <option value="Grade 7 - Section B">Grade 7 - Section B</option>
-                <option value="Grade 8 - Section A">Grade 8 - Section A</option>
-                <option value="Grade 8 - Section B">Grade 8 - Section B</option>
-                <option value="Grade 9 Science - Section A">Grade 9 Science - Section A</option>
-                <option value="Grade 10 Science - Section A">Grade 10 Science - Section A</option>
-                <option value="Grade 11 Science">Grade 11 Science</option>
-                <option value="Grade 11 Management">Grade 11 Management</option>
-                <option value="Grade 12 Technical - T">Grade 12 Technical - T</option>
+                <option value="" disabled selected>Select Class</option>
               </select>
             </div>
             <div class="form-group" style="margin-bottom: 0;">
@@ -3509,6 +3493,7 @@
 
       // Load exam results when page is visited
       if (pageId === 'manage-results') {
+        if (typeof loadClassesForDropdown === 'function') loadClassesForDropdown();
         if (typeof renderPendingResults === 'function') {
           renderPendingResults().catch(err => console.error('Error rendering results:', err));
         }
@@ -8743,7 +8728,7 @@
         let classNames = [];
 
         // Try 1: Load from the classes table
-        if (supabaseDb) {
+        if (supabaseDb && typeof supabaseDb.from === 'function') {
           try {
             console.log("Try 1: Fetching classes from 'classes' table...");
             const { data, error } = await supabaseDb
@@ -8833,12 +8818,19 @@
           console.log("Try 5: No classes found anywhere. Using hardcoded standard fallbacks.");
           classNames = [
             "Grade 1 - Section A",
+            "Grade 1 - Section B",
             "Grade 2 - Section A",
+            "Grade 2 - Section B",
             "Grade 3 - Section A",
+            "Grade 3 - Section B",
             "Grade 4 - Section A",
+            "Grade 4 - Section B",
             "Grade 5 - Section A",
+            "Grade 5 - Section B",
             "Grade 6 - Section A",
+            "Grade 6 - Section B",
             "Grade 7 - Section A",
+            "Grade 7 - Section B",
             "Grade 8 - Section A",
             "Grade 8 - Section B",
             "Grade 9 - Section A",
@@ -8846,7 +8838,9 @@
             "Grade 10 - Section A",
             "Grade 10 - Section B",
             "Grade 11 - Section A",
+            "Grade 11 - Section B",
             "Grade 12 - Section A",
+            "Grade 12 - Section B",
             "Grade 12 Technical - T"
           ];
         }
@@ -8859,13 +8853,15 @@
           'admin-student-search-class',
           'sched-class',
           'filter-class',
-          'tt-class'
+          'tt-class',
+          'leadersheet-class'
         ];
 
+        // Ensure we populate the dropdowns immediately
         dropdownIds.forEach(id => {
           const selectElement = document.getElementById(id);
           if (!selectElement) {
-            // Some elements might be on other pages/tabs, which is fine
+            console.log(`Dropdown '${id}' not found on this page - skipping.`);
             return;
           }
 
@@ -8874,18 +8870,41 @@
             selectElement.remove(1);
           }
 
-          // Populate
+          // Populate with all class names
           classNames.forEach(name => {
             const option = document.createElement('option');
             option.value = name;
             option.textContent = name;
             selectElement.appendChild(option);
           });
-          console.log(`Populated dropdown '${id}' with ${classNames.length} classes.`);
+          console.log(`✓ Populated dropdown '${id}' with ${classNames.length} classes.`);
         });
 
       } catch(e) {
         console.error('Exception loading classes:', e);
+        // Even on error, ensure dropdowns are populated with fallback values
+        const fallbackClasses = [
+          "Grade 1 - Section A", "Grade 2 - Section A", "Grade 3 - Section A", "Grade 4 - Section A",
+          "Grade 5 - Section A", "Grade 6 - Section A", "Grade 7 - Section A", "Grade 8 - Section A",
+          "Grade 9 - Section A", "Grade 10 - Section A", "Grade 11 - Section A", "Grade 12 - Section A",
+          "Grade 12 Technical - T"
+        ];
+        
+        const dropdownIds = ['std-class', 'admin-student-search-class', 'sched-class', 'filter-class', 'tt-class', 'leadersheet-class'];
+        dropdownIds.forEach(id => {
+          const selectElement = document.getElementById(id);
+          if (selectElement) {
+            while (selectElement.options.length > 1) {
+              selectElement.remove(1);
+            }
+            fallbackClasses.forEach(name => {
+              const option = document.createElement('option');
+              option.value = name;
+              option.textContent = name;
+              selectElement.appendChild(option);
+            });
+          }
+        });
       }
       console.log("=== END: loadClassesForDropdown ===");
     }
