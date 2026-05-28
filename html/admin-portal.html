@@ -1035,7 +1035,7 @@
         <div class="submenu">
           <a href="#" class="submenu-link" onclick="switchPage('Academic_ClassSetup', this)">Class Setup</a>
           <a href="#" class="submenu-link" onclick="switchPage('coming-soon', this)">Categories</a>
-          <a href="#" class="submenu-link" onclick="switchPage('coming-soon', this)">Student Remarks</a>
+          <a href="#" class="submenu-link" onclick="switchPage('Academic_StudentRemarks', this)">Student Remarks</a>
           <a href="#" class="submenu-link" onclick="switchPage('coming-soon', this)">Add Employee</a>
           <a href="#" class="submenu-link" onclick="switchPage('coming-soon', this)">TC/CC</a>
           <a href="#" class="submenu-link" onclick="switchPage('coming-soon', this)">Extra Certification</a>
@@ -1106,12 +1106,11 @@
           <svg class="chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
         </a>
         <div class="submenu">
-          <a href="#" class="submenu-link" onclick="switchPage('coming-soon', this)">Fee Item Setup</a>
-          <a href="#" class="submenu-link" onclick="switchPage('coming-soon', this)">Billing</a>
-          <a href="#" class="submenu-link" onclick="switchPage('coming-soon', this)">Fee Receipt</a>
-          <a href="#" class="submenu-link" onclick="switchPage('coming-soon', this)">Sibling Fee Receipt</a>
-          <a href="#" class="submenu-link" onclick="switchPage('coming-soon', this)">Report</a>
-          <a href="#" class="submenu-link" onclick="switchPage('coming-soon', this)">Setup</a>
+          <a href="#" class="submenu-link" onclick="switchPage('fee-categories', this)">Fee Categories Setup</a>
+          <a href="#" class="submenu-link" onclick="switchPage('manage-fees', this)">Assign Student Fees</a>
+          <a href="#" class="submenu-link" onclick="switchPage('fee-ledger', this)">Student Fee Ledger</a>
+          <a href="#" class="submenu-link" onclick="switchPage('payment-tracking', this)">Payment Tracking</a>
+          <a href="#" class="submenu-link" onclick="switchPage('fee-reports', this)">Fee Reports</a>
         </div>
       </div>
 
@@ -1714,6 +1713,282 @@
             </div>
             <div style="display:flex; flex-direction:column; gap:1.2rem;" id="admin-notices-list">
               <!-- Loaded dynamically -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= PAGE: FEE CATEGORIES SETUP ================= -->
+      <div class="page-view" id="page-fee-categories">
+        <h2 style="font-family:'Playfair Display', serif; margin-bottom: 2rem; color: var(--primary);">Fee Categories & Types Setup</h2>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 2rem;">
+          <!-- Form -->
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Add Fee Category</h3>
+            </div>
+            <form onsubmit="addFeeCategory(event)">
+              <div class="form-group">
+                <label for="cat-name">Category Name</label>
+                <input type="text" id="cat-name" class="form-control" placeholder="e.g. Tuition, Lab, Transport" required>
+              </div>
+              <div class="form-group">
+                <label for="cat-desc">Description</label>
+                <textarea id="cat-desc" class="form-control" rows="3" placeholder="Brief description of this fee category..."></textarea>
+              </div>
+              <div class="form-group">
+                <label for="cat-frequency">Frequency</label>
+                <select id="cat-frequency" class="form-control">
+                  <option value="Monthly">Monthly</option>
+                  <option value="Quarterly">Quarterly</option>
+                  <option value="Annual">Annual</option>
+                  <option value="One-Time">One-Time</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="cat-applicable-class">Applicable to Class(es)</label>
+                <input type="text" id="cat-applicable-class" class="form-control" placeholder="e.g. Grade 9, Grade 10 OR All" required>
+              </div>
+              <button type="submit" class="submit-btn" style="width:100%;">➕ Add Category</button>
+            </form>
+          </div>
+
+          <!-- List -->
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Available Categories</h3>
+            </div>
+            <div class="custom-table-wrapper">
+              <table class="custom-table" style="font-size: 0.9rem;">
+                <thead>
+                  <tr>
+                    <th>Category Name</th>
+                    <th>Frequency</th>
+                    <th>Applicable To</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="fee-categories-tbody">
+                  <tr>
+                    <td colspan="4" style="text-align: center; padding: 2rem; color: #94a3b8;">Loading categories...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= PAGE: MANAGE STUDENT FEES ================= -->
+      <div class="page-view" id="page-manage-fees">
+        <h2 style="font-family:'Playfair Display', serif; margin-bottom: 2rem; color: var(--primary);">Assign Fees to Students</h2>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1.8fr; gap: 2rem;">
+          <!-- Form Panel -->
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Add New Fee</h3>
+            </div>
+            <form onsubmit="assignStudentFee(event)">
+              <div class="form-group">
+                <label for="fee-student">Select Student *</label>
+                <select id="fee-student" class="form-control" required>
+                  <option value="">-- Choose Student --</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="fee-category">Fee Category *</label>
+                <select id="fee-category" class="form-control" required>
+                  <option value="">-- Select Category --</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="fee-amount">Amount (Rs.) *</label>
+                <input type="number" id="fee-amount" class="form-control" placeholder="5000" min="1" required>
+              </div>
+              <div class="form-group">
+                <label for="fee-due-date">Due Date</label>
+                <input type="date" id="fee-due-date" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label for="fee-description">Description/Remarks</label>
+                <textarea id="fee-description" class="form-control" rows="3" placeholder="e.g., Mangsir term tuition..."></textarea>
+              </div>
+              <div class="form-group">
+                <label for="fee-installment">Installment Number</label>
+                <input type="number" id="fee-installment" class="form-control" placeholder="e.g., 1" min="1" value="1">
+              </div>
+              <button type="submit" class="submit-btn" style="width:100%; background: var(--success);">💰 Assign Fee</button>
+            </form>
+          </div>
+
+          <!-- Fees List -->
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Assigned Student Fees</h3>
+            </div>
+            <div style="padding: 1rem; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; gap: 1rem; align-items: center;">
+              <input type="text" id="fee-search" class="form-control" placeholder="Search by student name or roll..." style="flex:1;" oninput="filterStudentFees()">
+            </div>
+            <div class="custom-table-wrapper">
+              <table class="custom-table" style="font-size: 0.85rem;">
+                <thead>
+                  <tr>
+                    <th>Roll</th>
+                    <th>Student Name</th>
+                    <th>Category</th>
+                    <th>Amount</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="student-fees-tbody">
+                  <tr>
+                    <td colspan="7" style="text-align: center; padding: 2rem; color: #94a3b8;">No fees assigned yet</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= PAGE: FEE LEDGER ================= -->
+      <div class="page-view" id="page-fee-ledger">
+        <h2 style="font-family:'Playfair Display', serif; margin-bottom: 2rem; color: var(--primary);">Student Fee Ledger</h2>
+        
+        <div class="panel">
+          <div class="panel-header">
+            <h3>Fee Status by Class</h3>
+          </div>
+          <div style="padding: 1rem; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+            <select id="ledger-class-filter" class="form-control" style="flex: 0 1 200px;" onchange="loadFeeLedger()">
+              <option value="">-- All Classes --</option>
+            </select>
+            <select id="ledger-status-filter" class="form-control" style="flex: 0 1 200px;" onchange="loadFeeLedger()">
+              <option value="">-- All Status --</option>
+              <option value="pending">Pending</option>
+              <option value="partial">Partial Paid</option>
+              <option value="cleared">Cleared</option>
+            </select>
+          </div>
+          <div class="custom-table-wrapper">
+            <table class="custom-table" style="font-size: 0.85rem;">
+              <thead>
+                <tr>
+                  <th>Roll</th>
+                  <th>Student Name</th>
+                  <th>Class</th>
+                  <th>Total Due</th>
+                  <th>Paid Amount</th>
+                  <th>Balance</th>
+                  <th>Status</th>
+                  <th>View Details</th>
+                </tr>
+              </thead>
+              <tbody id="fee-ledger-tbody">
+                <tr>
+                  <td colspan="8" style="text-align: center; padding: 2rem; color: #94a3b8;">Loading ledger...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= PAGE: PAYMENT TRACKING ================= -->
+      <div class="page-view" id="page-payment-tracking">
+        <h2 style="font-family:'Playfair Display', serif; margin-bottom: 2rem; color: var(--primary);">Track Student Payments</h2>
+        
+        <div class="panel">
+          <div class="panel-header">
+            <h3>Pending & Recent Payments</h3>
+          </div>
+          <div style="padding: 1rem; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+            <input type="text" id="payment-search" class="form-control" placeholder="Search student or invoice..." style="flex:1;" oninput="filterPayments()">
+            <select id="payment-status-filter" class="form-control" style="flex: 0 1 180px;" onchange="filterPayments()">
+              <option value="">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="partial">Partial Paid</option>
+              <option value="cleared">Cleared</option>
+            </select>
+          </div>
+          <div class="custom-table-wrapper">
+            <table class="custom-table" style="font-size: 0.85rem;">
+              <thead>
+                <tr>
+                  <th>Invoice ID</th>
+                  <th>Student Name</th>
+                  <th>Due Amount</th>
+                  <th>Paid Amount</th>
+                  <th>Due Date</th>
+                  <th>Status</th>
+                  <th>Days Overdue</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="payment-tracking-tbody">
+                <tr>
+                  <td colspan="8" style="text-align: center; padding: 2rem; color: #94a3b8;">Loading payments...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= PAGE: FEE REPORTS ================= -->
+      <div class="page-view" id="page-fee-reports">
+        <h2 style="font-family:'Playfair Display', serif; margin-bottom: 2rem; color: var(--primary);">Finance & Fee Reports</h2>
+        
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
+          <div class="stat-card">
+            <div class="stat-badge-icon blue">💰</div>
+            <div class="stat-details">
+              <h3 id="report-total-revenue">Rs. 0</h3>
+              <p>Total Revenue Collected</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-badge-icon gold">⏰</div>
+            <div class="stat-details">
+              <h3 id="report-pending-amount">Rs. 0</h3>
+              <p>Pending Collections</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-badge-icon green">✅</div>
+            <div class="stat-details">
+              <h3 id="report-cleared-count">0</h3>
+              <p>Fully Cleared Students</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-badge-icon purple">📊</div>
+            <div class="stat-details">
+              <h3 id="report-collection-rate">0%</h3>
+              <p>Collection Rate</p>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Revenue by Category</h3>
+            </div>
+            <div id="category-report-tbody" style="padding: 1.5rem;">
+              <p style="text-align: center; color: #94a3b8;">Loading category breakdown...</p>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Collection by Class</h3>
+            </div>
+            <div id="class-report-tbody" style="padding: 1.5rem;">
+              <p style="text-align: center; color: #94a3b8;">Loading class breakdown...</p>
             </div>
           </div>
         </div>
@@ -3276,8 +3551,25 @@
                 <textarea id="tt-remarks" class="form-control" placeholder="Optional notes for this class slot" rows="2"></textarea>
               </div>
 
-              <button type="submit" class="submit-btn" style="width:100%; background:var(--primary);">Save Record to System</button>
-              <button type="button" onclick="clearTimetableForm()" class="submit-btn" style="width:100%; background:#e5e7eb; color:var(--text-dark); margin-top:0.5rem;">Clear Form</button>
+              <!-- Repeat Options -->
+              <div class="form-group" style="display: flex; align-items: flex-start; gap: 1rem; border: 2px solid var(--accent); padding: 1.2rem; border-radius: 8px; background: rgba(124, 58, 237, 0.05);">
+                <input type="checkbox" id="tt-repeat-everyday" style="width: 20px; height: 20px; cursor: pointer; margin-top: 2px; accent-color: var(--accent);">
+                <div style="flex: 1;">
+                  <label for="tt-repeat-everyday" style="margin: 0; cursor: pointer; font-weight: 600; color: var(--primary); display: block;">
+                    📅 Repeat this timetable for every weekday
+                  </label>
+                  <div style="font-size: 0.85rem; color: #6b7280; margin-top: 0.4rem; line-height: 1.4;">
+                    <strong>When CHECKED:</strong> Same slot will be saved for Monday-Friday<br>
+                    <strong>When UNCHECKED:</strong> Entry will only be added for the selected day
+                  </div>
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                <button type="submit" class="submit-btn" style="width:100%; background:var(--primary);">💾 Save Record to System</button>
+                <button type="button" onclick="setRepeatAndSubmit()" class="submit-btn" style="width:100%; background:var(--accent);">📅 Save for Entire Week</button>
+              </div>
+              <button type="button" onclick="clearTimetableForm()" class="submit-btn" style="width:100%; background:#e5e7eb; color:var(--text-dark); margin-top:0.5rem;">🔄 Clear Form</button>
             </form>
           </div>
 
@@ -3359,6 +3651,24 @@
         ]));
       }
 
+      // Initialize Fee Categories
+      if (!localStorage.getItem('fee_categories')) {
+        localStorage.setItem('fee_categories', JSON.stringify([
+          { id: 1, name: "Tuition Fee", description: "Monthly tuition charges", frequency: "Monthly", applicableTo: "All" },
+          { id: 2, name: "Lab Fee", description: "Science and computer lab charges", frequency: "Quarterly", applicableTo: "Grade 9-12" },
+          { id: 3, name: "Transport Fee", description: "Student transport charges", frequency: "Monthly", applicableTo: "All" },
+          { id: 4, name: "Admission Fee", description: "One-time admission charges", frequency: "One-Time", applicableTo: "All" }
+        ]));
+      }
+
+      // Initialize Student Fees (individual student fees)
+      if (!localStorage.getItem('student_fees')) {
+        localStorage.setItem('student_fees', JSON.stringify([
+          { id: 1, studentRoll: 1, studentName: "Aarati Dhakal", studentClass: "Grade 11 - Technical", categoryId: 1, amount: 5000, dueDate: "2026-06-15", description: "Mangsir term tuition", installment: 1, status: "cleared", paidAmount: 5000, paidDate: "2026-06-10" },
+          { id: 2, studentRoll: 2, studentName: "Kunjan Bhandari", studentClass: "Grade 11 - Technical", categoryId: 1, amount: 5000, dueDate: "2026-06-15", description: "Mangsir term tuition", installment: 1, status: "pending", paidAmount: 0, paidDate: null }
+        ]));
+      }
+
       if (!localStorage.getItem('student_leaves')) {
         localStorage.setItem('student_leaves', JSON.stringify([
           { id: 1, name: "Anil Gurung", type: "Family Function", range: "2026-11-20 to 2026-11-21", desc: "Attending sister's wedding ritual in Pokhara.", proofFile: "wedding_card.jpg", emoji: "💌", status: "pending" }
@@ -3436,6 +3746,10 @@
             formHTML += `<select id="dyn-${field.id}" class="form-control"${isRequired ? ' required' : ''}><option value="">Select a class...</option></select>`;
           } else if (field.type === 'subject-dropdown') {
             formHTML += `<select id="dyn-${field.id}" class="form-control"${isRequired ? ' required' : ''}><option value="">-- Select Subject --</option></select>`;
+          } else if (field.type === 'teacher-dropdown') {
+            formHTML += `<select id="dyn-${field.id}" class="form-control"${isRequired ? ' required' : ''}><option value="">-- Select Teacher --</option></select>`;
+          } else if (field.type === 'student-dropdown') {
+            formHTML += `<select id="dyn-${field.id}" class="form-control"${isRequired ? ' required' : ''}><option value="">-- Select Student --</option></select>`;
           } else {
             formHTML += `<input type="${field.type}" id="dyn-${field.id}" class="form-control" placeholder="${field.placeholder}"${isRequired ? ' required' : ''}>`;
           }
@@ -3448,13 +3762,28 @@
           if (field.type === 'class-dropdown' && window.classHandler) {
             setTimeout(() => {
               window.classHandler.populateClassDropdown(`dyn-${field.id}`).catch(e => console.error("Error populating class dropdown:", e));
-            }, 100);
+            }, 300);
           } else if (field.type === 'subject-dropdown' && window.subjectHandler) {
             setTimeout(() => {
               window.subjectHandler.populateSubjectDropdown(`dyn-${field.id}`).catch(e => console.error("Error populating subject dropdown:", e));
-            }, 100);
+            }, 300);
+          } else if (field.type === 'teacher-dropdown') {
+            setTimeout(() => {
+              populateTeacherDropdown(`dyn-${field.id}`).catch(e => console.error("Error populating teacher dropdown:", e));
+            }, 300);
           }
         });
+
+        // Handle Student Remarks class change event
+        if (currentGenericModule === 'Academic_StudentRemarks') {
+          const classDropdown = document.getElementById('dyn-f1');
+          const studentDropdown = document.getElementById('dyn-f2');
+          if (classDropdown && studentDropdown) {
+            classDropdown.addEventListener('change', function() {
+              populateStudentsForClass(this.value, 'dyn-f2');
+            });
+          }
+        }
 
         // Build Table Headers
         const tableHeader = document.getElementById('generic-table-header');
@@ -3536,6 +3865,33 @@
       // Load admissions when page is visited
       if (pageId === 'admissions') {
         if (typeof loadAdmissions === 'function') loadAdmissions();
+      }
+
+      // Load fee categories
+      if (pageId === 'fee-categories') {
+        if (typeof loadFeeCategories === 'function') loadFeeCategories();
+      }
+
+      // Load manage fees page
+      if (pageId === 'manage-fees') {
+        if (typeof loadStudentFeesDropdown === 'function') loadStudentFeesDropdown();
+        if (typeof loadFeeCategoriesDropdown === 'function') loadFeeCategoriesDropdown();
+        if (typeof loadAssignedStudentFees === 'function') loadAssignedStudentFees();
+      }
+
+      // Load fee ledger
+      if (pageId === 'fee-ledger') {
+        if (typeof loadFeeLedger === 'function') loadFeeLedger();
+      }
+
+      // Load payment tracking
+      if (pageId === 'payment-tracking') {
+        if (typeof loadPaymentTracking === 'function') loadPaymentTracking();
+      }
+
+      // Load fee reports
+      if (pageId === 'fee-reports') {
+        if (typeof loadFeeReports === 'function') loadFeeReports();
       }
     }
 
@@ -3644,7 +4000,7 @@
         fields: [
           { id: "f1", label: "Grade Level", type: "text", placeholder: "e.g. Grade 10" },
           { id: "f2", label: "Section Name", type: "text", placeholder: "e.g. Section A", required: false },
-          { id: "f3", label: "Assigned Class Teacher", type: "text", placeholder: "e.g. Mr. Sharma", required: false },
+          { id: "f3", label: "Assigned Class Teacher", type: "teacher-dropdown", required: false },
           { id: "f4", label: "Status", type: "select", options: ["Active", "Inactive"] }
         ]
       },
@@ -3676,12 +4032,13 @@
         ]
       },
       "Academic_StudentRemarks": {
-        headers: ["Student Name", "Remarks Type", "Remarks Detail", "Status"],
+        headers: ["Class", "Student Name", "Remarks Type", "Remarks Detail", "Status"],
         fields: [
-          { id: "f1", label: "Student Name", type: "text", placeholder: "e.g. Sunil Thapa" },
-          { id: "f2", label: "Remarks Type", type: "select", options: ["Disciplinary Action", "Academic Praise", "Extra-Curricular", "General Comment"] },
-          { id: "f3", label: "Remarks Detail", type: "text", placeholder: "e.g. Showed excellent performance in math exam." },
-          { id: "f4", label: "Status", type: "select", options: ["Active", "Archived"] }
+          { id: "f1", label: "Class", type: "class-dropdown", placeholder: "Select class" },
+          { id: "f2", label: "Student Name", type: "student-dropdown", placeholder: "Select student" },
+          { id: "f3", label: "Remarks Type", type: "select", options: ["Disciplinary Action", "Academic Praise", "Extra-Curricular", "General Comment"] },
+          { id: "f4", label: "Remarks Detail", type: "text", placeholder: "e.g. Showed excellent performance in math exam." },
+          { id: "f5", label: "Status", type: "select", options: ["Active", "Archived"] }
         ]
       },
       "Academic_AddEmployee": {
@@ -3721,11 +4078,12 @@
         ]
       },
       "Academic_SubjectSetup": {
-        headers: ["Subject Name", "Subject Code", "Subject Type", "Category", "Status"],
+        headers: ["Subject Name", "Subject Code", "Subject Type", "Credit Hour", "Category", "Status"],
         fields: [
           { id: "f1", label: "Subject Name", type: "text", placeholder: "e.g. Compulsory Mathematics" },
           { id: "f2", label: "Subject Code", type: "text", placeholder: "e.g. MATH-10" },
           { id: "f3", label: "Subject Type", type: "select", options: ["Theory Only", "Practical Only", "Both Theory & Practical"] },
+          { id: "f6", label: "Credit Hour", type: "number", placeholder: "e.g. 4" },
           { id: "f5", label: "Category", type: "select", options: ["Primary", "Secondary", "High School"] },
           { id: "f4", label: "Status", type: "select", options: ["Active", "Inactive"] }
         ]
@@ -4588,6 +4946,156 @@
       return ["Primary", "Lower Secondary", "Secondary", "Higher Secondary", "Science", "Management", "Humanities"];
     }
 
+    async function populateTeacherDropdown(dropdownId) {
+      const maxRetries = 5;
+      let retryCount = 0;
+
+      while (retryCount < maxRetries) {
+        try {
+          const dropdown = document.getElementById(dropdownId);
+          if (!dropdown) {
+            console.warn(`Dropdown element with ID ${dropdownId} not found (attempt ${retryCount + 1}/${maxRetries})`);
+            await new Promise(r => setTimeout(r, 200));
+            retryCount++;
+            continue;
+          }
+
+          // Check if supabase client is available
+          if (typeof supabaseDb === 'undefined' || !supabaseDb) {
+            console.warn(`Supabase database not initialized (attempt ${retryCount + 1}/${maxRetries})`);
+            await new Promise(r => setTimeout(r, 200));
+            retryCount++;
+            continue;
+          }
+
+          console.log('[DEBUG] Fetching teachers from Supabase (attempt ' + (retryCount + 1) + '/' + maxRetries + ')...');
+
+          // Fetch teachers from Supabase
+          const { data: teachers, error } = await supabaseDb
+            .from('teachers_registry')
+            .select('name, code')
+            .eq('status', 'Active')
+            .order('name', { ascending: true });
+
+          if (error) {
+            console.error("Error fetching teachers from Supabase:", error);
+            if (retryCount < maxRetries - 1) {
+              await new Promise(r => setTimeout(r, 300));
+              retryCount++;
+              continue;
+            }
+            dropdown.innerHTML = '<option value="">-- Error loading teachers --</option>';
+            return;
+          }
+
+          // Clear and repopulate dropdown
+          dropdown.innerHTML = '<option value="">-- Select Teacher --</option>';
+
+          // Add teacher options
+          if (teachers && teachers.length > 0) {
+            teachers.forEach(teacher => {
+              if (teacher.name) {
+                const option = document.createElement('option');
+                option.value = teacher.name;
+                option.textContent = teacher.name;
+                dropdown.appendChild(option);
+              }
+            });
+            console.log(`✓ Loaded ${teachers.length} teachers from Supabase into dropdown`);
+            return; // Success - exit function
+          } else {
+            console.warn("No active teachers found in Supabase. Register teachers first in Staff/Faculty Management.");
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = '(No teachers registered - Add teachers first)';
+            option.disabled = true;
+            dropdown.appendChild(option);
+            return;
+          }
+        } catch (e) {
+          console.error("Error populating teacher dropdown (attempt " + (retryCount + 1) + "):", e);
+          if (retryCount < maxRetries - 1) {
+            await new Promise(r => setTimeout(r, 300));
+            retryCount++;
+          } else {
+            const dropdown = document.getElementById(dropdownId);
+            if (dropdown) {
+              dropdown.innerHTML = '<option value="">-- Error loading --</option>';
+            }
+            return;
+          }
+        }
+      }
+    }
+
+    async function populateStudentsForClass(className, dropdownId) {
+      try {
+        const dropdown = document.getElementById(dropdownId);
+        if (!dropdown) {
+          console.warn(`Student dropdown with ID ${dropdownId} not found`);
+          return;
+        }
+
+        // Clear dropdown and show loading state
+        dropdown.innerHTML = '<option value="">-- Loading students --</option>';
+
+        if (!className) {
+          dropdown.innerHTML = '<option value="">-- Select Student --</option>';
+          return;
+        }
+
+        // Check if supabase client is available
+        if (typeof supabaseDb === 'undefined' || !supabaseDb) {
+          console.warn("Supabase database not initialized");
+          dropdown.innerHTML = '<option value="">-- Database error --</option>';
+          return;
+        }
+
+        // Fetch students for the selected class from students_registry
+        const { data: students, error } = await supabaseDb
+          .from('students_registry')
+          .select('roll, name, class')
+          .eq('class', className)
+          .eq('status', 'Active')
+          .order('roll', { ascending: true });
+
+        if (error) {
+          console.error("Error fetching students from Supabase:", error);
+          dropdown.innerHTML = '<option value="">-- Error loading students --</option>';
+          return;
+        }
+
+        // Clear and repopulate dropdown
+        dropdown.innerHTML = '<option value="">-- Select Student --</option>';
+
+        // Add student options
+        if (students && students.length > 0) {
+          students.forEach(student => {
+            if (student.name) {
+              const option = document.createElement('option');
+              option.value = student.name;
+              option.textContent = `${student.name} (Roll: ${student.roll || 'N/A'})`;
+              dropdown.appendChild(option);
+            }
+          });
+          console.log(`✓ Loaded ${students.length} students for class ${className}`);
+        } else {
+          console.warn(`No students found for class ${className}`);
+          const option = document.createElement('option');
+          option.value = '';
+          option.textContent = '(No students in this class)';
+          option.disabled = true;
+          dropdown.appendChild(option);
+        }
+      } catch (e) {
+        console.error("Error populating students dropdown:", e);
+        const dropdown = document.getElementById(dropdownId);
+        if (dropdown) {
+          dropdown.innerHTML = '<option value="">-- Error loading --</option>';
+        }
+      }
+    }
+
     function setupGenericModule(moduleName, category) {
       currentGenericModule = category.replace(/[^a-zA-Z0-9]/g, '') + '_' + moduleName.replace(/[^a-zA-Z0-9]/g, '');
       
@@ -4615,6 +5123,10 @@
           formHTML += `<select id="dyn-${field.id}" class="form-control"><option value="">Select a class...</option></select>`;
         } else if (field.type === 'subject-dropdown') {
           formHTML += `<select id="dyn-${field.id}" class="form-control"><option value="">-- Select Subject --</option></select>`;
+        } else if (field.type === 'teacher-dropdown') {
+          formHTML += `<select id="dyn-${field.id}" class="form-control"><option value="">-- Select Teacher --</option></select>`;
+        } else if (field.type === 'student-dropdown') {
+          formHTML += `<select id="dyn-${field.id}" class="form-control"><option value="">-- Select Student --</option></select>`;
         } else {
           formHTML += `<input type="${field.type}" id="dyn-${field.id}" class="form-control" placeholder="${field.placeholder}" required>`;
         }
@@ -4627,13 +5139,28 @@
         if (field.type === 'class-dropdown' && window.classHandler) {
           setTimeout(() => {
             window.classHandler.populateClassDropdown(`dyn-${field.id}`).catch(e => console.error(e));
-          }, 100);
+          }, 300);
         } else if (field.type === 'subject-dropdown' && window.subjectHandler) {
           setTimeout(() => {
             window.subjectHandler.populateSubjectDropdown(`dyn-${field.id}`).catch(e => console.error(e));
-          }, 100);
+          }, 300);
+        } else if (field.type === 'teacher-dropdown') {
+          setTimeout(() => {
+            populateTeacherDropdown(`dyn-${field.id}`).catch(e => console.error(e));
+          }, 300);
         }
       });
+
+      // Handle Student Remarks class change event
+      if (currentGenericModule === 'Academic_StudentRemarks') {
+        const classDropdown = document.getElementById('dyn-f1');
+        const studentDropdown = document.getElementById('dyn-f2');
+        if (classDropdown && studentDropdown) {
+          classDropdown.addEventListener('change', function() {
+            populateStudentsForClass(this.value, 'dyn-f2');
+          });
+        }
+      }
 
       // Build Table Headers
       const tableHeader = document.getElementById('generic-table-header');
@@ -4685,6 +5212,7 @@
               f1: cls.subject_name,
               f2: cls.subject_code,
               f3: cls.subject_type,
+              f6: cls.credit_hour || '',
               f5: cls.category || 'Secondary',
               f4: cls.status
             }));
@@ -4697,6 +5225,8 @@
         // Fallback to localStorage
         data = JSON.parse(localStorage.getItem('generic_module_' + currentGenericModule) || '[]');
       }
+      
+      window.currentGenericData = data; // Store globally for edit functionality
       
       if (data.length === 0) {
         tbody.innerHTML = `<tr><td colspan="${currentSchema.headers.length + 1}" style="text-align:center; color:var(--text-muted); padding:2rem;">No entries found for this module.</td></tr>`;
@@ -4719,8 +5249,9 @@
         });
         
         trHTML += `
-            <td>
-              <button onclick="deleteGenericEntry(${d.id})" style="background:none; border:none; color:var(--danger); font-weight:700; cursor:pointer; font-size:0.8rem;">&times; Delete</button>
+            <td style="display:flex; gap:0.5rem; align-items:center;">
+              <button type="button" onclick="editGenericEntry('${d.id}')" style="background:none; border:none; color:var(--primary); font-weight:700; cursor:pointer; font-size:0.8rem;">✏️ Edit</button>
+              <button type="button" onclick="deleteGenericEntry('${d.id}')" style="background:none; border:none; color:var(--danger); font-weight:700; cursor:pointer; font-size:0.8rem;">&times; Delete</button>
             </td>
           </tr>
         `;
@@ -4737,7 +5268,8 @@
         return;
       }
       
-      let entry = { id: Date.now() };
+      let editId = document.getElementById('generic-form').dataset.editId;
+      let entry = { id: editId ? editId : Date.now() };
       currentSchema.fields.forEach(field => {
         entry[field.id] = document.getElementById(`dyn-${field.id}`).value;
       });
@@ -4794,18 +5326,30 @@
             subject_name: entry.f1,
             subject_code: entry.f2,
             subject_type: entry.f3,
+            credit_hour: entry.f6,
             category: entry.f5,
             status: entry.f4,
             created_by: adminUser.email
           };
           
-          let { data, error } = await supabaseDb.from('subjects').insert([subjectData]).select();
+          let dbData, error;
+          if (editId) {
+             const result = await supabaseDb.from('subjects').update(subjectData).eq('id', editId).select();
+             dbData = result.data; error = result.error;
+          } else {
+             const result = await supabaseDb.from('subjects').insert([subjectData]).select();
+             dbData = result.data; error = result.error;
+          }
           
           if (error) {
             console.error("Database error:", error);
-            alert("❌ Error saving subject: " + error.message + "\n\nData saved to local storage.");
+            if (error.message.includes("'credit_hour'")) {
+               alert("⚠️ DATABASE SCHEMA ERROR\n\nPlease run SQL setup to add 'credit_hour' column to 'subjects' table. Data has been saved locally.");
+            } else {
+               alert("❌ Error saving subject: " + error.message + "\n\nData saved to local storage.");
+            }
           } else {
-            alert("✅ Subject added successfully to database!");
+            alert(editId ? "✅ Subject updated successfully in database!" : "✅ Subject added successfully to database!");
             if (window.subjectHandler) window.subjectHandler.invalidateCache();
           }
         } catch(err) {
@@ -4815,9 +5359,18 @@
       }
 
       // Also save to localStorage as backup/fallback
-      const data = JSON.parse(localStorage.getItem('generic_module_' + currentGenericModule) || '[]');
-      data.push(entry);
-      localStorage.setItem('generic_module_' + currentGenericModule, JSON.stringify(data));
+      let localData = JSON.parse(localStorage.getItem('generic_module_' + currentGenericModule) || '[]');
+      if (editId) {
+         const idx = localData.findIndex(d => String(d.id) === String(editId));
+         if (idx !== -1) localData[idx] = entry;
+         
+         document.getElementById('generic-form').removeAttribute('data-edit-id');
+         const submitBtn = document.querySelector('#generic-form button[type="submit"]');
+         if (submitBtn) submitBtn.innerText = "Save Record to System";
+      } else {
+         localData.push(entry);
+      }
+      localStorage.setItem('generic_module_' + currentGenericModule, JSON.stringify(localData));
       
       event.target.reset();
       renderGenericTable();
@@ -4858,6 +5411,23 @@
       localStorage.setItem('generic_module_' + currentGenericModule, JSON.stringify(data));
       renderGenericTable();
     }
+
+    window.editGenericEntry = function(id) {
+       const data = window.currentGenericData || [];
+       const record = data.find(d => String(d.id) === String(id));
+       if (!record) return;
+       
+       currentSchema.fields.forEach(field => {
+         const el = document.getElementById(`dyn-${field.id}`);
+         if (el) el.value = record[field.id] || '';
+       });
+       
+       document.getElementById('generic-form').dataset.editId = id;
+       const submitBtn = document.querySelector('#generic-form button[type="submit"]');
+       if (submitBtn) submitBtn.innerText = "Update Record in System";
+       
+       window.scrollTo({ top: document.getElementById('generic-form').offsetTop - 100, behavior: 'smooth' });
+    };
 
     // ── STUDENTS DIRECTORY ──
     // OLD FUNCTION REMOVED - Use loadStudentAccounts() instead for proper credential display
@@ -4945,6 +5515,9 @@
           let actionButtons = '';
           if (cred) {
             actionButtons = `
+              <button onclick="editTeacherAccount(${cred.id}, '${teacher.code}', '${teacher.name.replace(/'/g, "\\'")}', '${email}')" style="padding: 0.35rem 0.6rem; background: #f59e0b; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem; margin-right:0.25rem;" onmouseover="this.style.background='#d97706'" onmouseout="this.style.background='#f59e0b'">
+                ✏️ Edit
+              </button>
               <button onclick="toggleTeacherStatus(${cred.id}, '${teacher.code}', ${!cred.is_active})" style="padding: 0.35rem 0.6rem; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem; margin-right:0.25rem;" onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'">
                 ${cred.is_active ? 'Disable' : 'Enable'}
               </button>
@@ -4954,6 +5527,9 @@
             `;
           } else {
             actionButtons = `
+              <button onclick="editTeacherWithoutCred('${teacher.code}', '${teacher.name.replace(/'/g, "\\'")}', '${teacher.subject}')" style="padding: 0.35rem 0.6rem; background: #f59e0b; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem; margin-right:0.25rem;" onmouseover="this.style.background='#d97706'" onmouseout="this.style.background='#f59e0b'">
+                ✏️ Edit
+              </button>
               <button onclick="promptCreateCredentials('${teacher.code}', '${teacher.name.replace(/'/g, "\\'")}')" style="padding: 0.35rem 0.6rem; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">
                 Create Login
               </button>
@@ -6513,6 +7089,8 @@
 
       let totalMarksObtained = 0;
       let totalMaxMarks = 0;
+      let totalCreditHours = 0;
+      let weightedGpaSum = 0;
 
       studentResults.forEach((result, index) => {
          const marks = parseInt(result.marks) || 0;
@@ -6575,6 +7153,7 @@
 
       const overallPercentage = totalMaxMarks > 0 ? (totalMarksObtained / totalMaxMarks) * 100 : 0;
       const overallGpaData = calculateGPA(overallPercentage);
+      overallGpaData.gpa = totalCreditHours > 0 ? (weightedGpaSum / totalCreditHours) : 0;
       
       document.getElementById('ms-overall-gpa').innerText = overallGpaData.gpa.toFixed(2);
 
@@ -6971,13 +7550,15 @@
             const pm = r.passMarks || Math.ceil(tm * 0.35);
             let tfm = r.theoryFullMarks !== undefined ? parseInt(r.theoryFullMarks) : tm;
             let pfm = r.practicalFullMarks !== undefined ? parseInt(r.practicalFullMarks) : 0;
+            let ch = r.creditHour !== undefined ? parseFloat(r.creditHour) : 4;
             
             subjectMarksMap[r.subject] = {
               fullMarks: tm,
               passMarks: pm,
               theoryFullMarks: tfm,
               practicalFullMarks: pfm,
-              hasPractical: pfm > 0 || parseInt(r.practicalMarks) > 0
+              hasPractical: pfm > 0 || parseInt(r.practicalMarks) > 0,
+              creditHour: ch
             };
           }
           if (parseInt(r.practicalMarks) > 0) {
@@ -7013,7 +7594,8 @@
              theoryMarks: theoryMarks,
              practicalMarks: practicalMarks,
              totalMarks: totalMarks,
-             passMarks: r.passMarks || Math.ceil(totalMarks * 0.35)
+             passMarks: r.passMarks || Math.ceil(totalMarks * 0.35),
+             creditHour: parseFloat(r.creditHour) || 4
           };
           
           let subjectTotal = hasPractical ? (theoryMarks + practicalMarks) : theoryMarks;
@@ -7230,8 +7812,26 @@
              }
           });
 
+          let totalCreditHours = 0;
+          let weightedGpaSum = 0;
+          subjects.forEach(sub => {
+             const sm = student.marksBySubject[sub];
+             if(sm) {
+                 const ch = sm.creditHour || subjectMarksMap[sub].creditHour || 4;
+                 const fm = sm.totalMarks || subjectMarksMap[sub].fullMarks || 100;
+                 const hasPrac = subjectMarksMap[sub].hasPractical;
+                 const om = hasPrac ? (sm.theoryMarks + sm.practicalMarks) : sm.theoryMarks;
+                 const perc = fm > 0 ? (om / fm) * 100 : 0;
+                 const gp = calculateGPA(perc).gpa;
+                 
+                 totalCreditHours += ch;
+                 weightedGpaSum += (ch * gp);
+             }
+          });
+          const overallGpa = totalCreditHours > 0 ? (weightedGpaSum / totalCreditHours) : 0;
           const overallPercentage = student.totalMaxMarks > 0 ? (student.totalMarksObtained / student.totalMaxMarks) * 100 : 0;
           const gpaData = calculateGPA(overallPercentage);
+          gpaData.gpa = overallGpa;
 
           // Calculate total pass marks as 35% of total maximum marks
           const totalPassMarks = Math.ceil(student.totalMaxMarks * 0.35);
@@ -7616,6 +8216,8 @@
         try {
           adminUser = JSON.parse(stored);
           hideLoginModal();
+          // Try to restore Supabase session
+          restoreSupabaseSession();
           return true;
         } catch(e) {
           localStorage.removeItem('adminUser');
@@ -7633,6 +8235,50 @@
     function hideLoginModal() {
       document.getElementById('login-modal').classList.add('hidden');
       document.getElementById('login-modal').style.display = 'none';
+    }
+
+    async function restoreSupabaseSession() {
+      try {
+        if (!supabaseDb) {
+          console.warn('[WARNING] Supabase client not available for session restoration');
+          return;
+        }
+
+        // Check if demo user
+        if (adminUser.isDemoUser) {
+          console.log('[INFO] Demo user detected, skipping Supabase session restoration');
+          return;
+        }
+
+        // Try to restore session from Supabase
+        const { data: { session }, error } = await supabaseDb.auth.getSession();
+        
+        if (session) {
+          console.log('[SUCCESS] Supabase session restored:', session.user.email);
+          adminUser.session = session;
+          localStorage.setItem('adminUser', JSON.stringify(adminUser));
+          localStorage.setItem('authToken', session.access_token);
+          return;
+        }
+
+        // If no session, try to refresh
+        const { data: { session: refreshedSession }, error: refreshError } = await supabaseDb.auth.refreshSession();
+        if (refreshedSession) {
+          console.log('[SUCCESS] Supabase session refreshed:', refreshedSession.user.email);
+          adminUser.session = refreshedSession;
+          localStorage.setItem('adminUser', JSON.stringify(adminUser));
+          localStorage.setItem('authToken', refreshedSession.access_token);
+          return;
+        }
+
+        console.warn('[WARNING] Could not restore or refresh Supabase session');
+        // Session expired, user will need to log in again
+        localStorage.removeItem('adminUser');
+        localStorage.removeItem('authToken');
+        showLoginModal();
+      } catch (error) {
+        console.error('[ERROR] Error restoring Supabase session:', error);
+      }
     }
 
     async function handleAdminLogin(event) {
@@ -7657,8 +8303,11 @@
           if (error) {
             // If Supabase auth fails, check local credentials (for demo)
             if (email === 'info@sss.com' && password === 'sss@121') {
-              adminUser = { email: email, authenticated: true, timestamp: Date.now() };
+              console.log('[INFO] Using demo credentials for login');
+              adminUser = { email: email, authenticated: true, timestamp: Date.now(), isDemoUser: true };
               localStorage.setItem('adminUser', JSON.stringify(adminUser));
+              // Force RLS bypass for demo user by setting auth context
+              localStorage.setItem('authToken', 'demo-admin-token');
               hideLoginModal();
               document.getElementById('admin-login-form').reset();
               location.reload();
@@ -7669,16 +8318,29 @@
           }
 
           // Supabase login successful
-          adminUser = { email: data.user.email, id: data.user.id, authenticated: true, timestamp: Date.now() };
+          console.log('[SUCCESS] Authenticated with Supabase:', data.user.email);
+          adminUser = { email: data.user.email, id: data.user.id, authenticated: true, timestamp: Date.now(), session: data.session };
           localStorage.setItem('adminUser', JSON.stringify(adminUser));
+          
+          // Verify session is set
+          const { data: { session } } = await supabaseDb.auth.getSession();
+          console.log('[DEBUG] Session verified:', session ? 'Active' : 'Not found');
+          
+          if (session) {
+            console.log('[SUCCESS] Session token acquired, RLS should work now');
+            localStorage.setItem('authToken', session.access_token);
+          }
+          
           hideLoginModal();
           document.getElementById('admin-login-form').reset();
           location.reload();
         } else {
           // Fallback to local authentication
           if (email === 'info@sss.com' && password === 'sss@121') {
-            adminUser = { email: email, authenticated: true, timestamp: Date.now() };
+            console.log('[INFO] Supabase not available, using demo credentials');
+            adminUser = { email: email, authenticated: true, timestamp: Date.now(), isDemoUser: true };
             localStorage.setItem('adminUser', JSON.stringify(adminUser));
+            localStorage.setItem('authToken', 'demo-admin-token');
             hideLoginModal();
             document.getElementById('admin-login-form').reset();
             location.reload();
@@ -9117,6 +9779,9 @@
               </span>
             </td>
             <td style="padding: 0.75rem;">
+              <button onclick="editStudentAccount(${student.id}, '${student.student_name.replace(/'/g, "\\'")}', '${student.student_roll}', '${student.student_username}', '${student.student_email || ''}', '${student.student_class}')" style="padding: 0.35rem 0.6rem; background: #f59e0b; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem; margin-right:0.25rem;" onmouseover="this.style.background='#d97706'" onmouseout="this.style.background='#f59e0b'">
+                ✏️ Edit
+              </button>
               <button onclick="toggleStudentStatus(${student.id}, ${!student.is_active})" style="padding: 0.35rem 0.6rem; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem; margin-right:0.25rem;" onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'">
                 ${student.is_active ? 'Disable' : 'Enable'}
               </button>
@@ -9132,7 +9797,397 @@
       }
     }
 
+    function filterAdminStudents() {
+      const searchTerm = document.getElementById('admin-student-search-name')?.value.toLowerCase().trim() || '';
+      const selectedClass = document.getElementById('admin-student-search-class')?.value.toLowerCase().trim() || '';
+      const tbody = document.getElementById('admin-students-tbody');
+      if (!tbody) return;
+
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        const matchesName = !searchTerm || text.includes(searchTerm);
+        const matchesClass = !selectedClass || text.includes(selectedClass);
+        row.style.display = (matchesName && matchesClass) ? '' : 'none';
+      });
+    }
+
+    // ==================== FEE MANAGEMENT FUNCTIONS ====================
+    
+    async function loadFeeCategories() {
+      const tbody = document.getElementById('fee-categories-tbody');
+      if (!tbody) return;
+
+      try {
+        const categories = JSON.parse(localStorage.getItem('fee_categories') || '[]');
+        if (categories.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:2rem; color:#94a3b8;">No fee categories created yet</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = categories.map(cat => `
+          <tr>
+            <td><strong>${cat.name}</strong></td>
+            <td>${cat.frequency}</td>
+            <td>${cat.applicableTo}</td>
+            <td>
+              <button onclick="editFeeCategory(${cat.id})" style="padding:0.35rem 0.6rem; background:#f59e0b; color:white; border:none; border-radius:4px; cursor:pointer; font-size:0.8rem; margin-right:0.25rem;">Edit</button>
+              <button onclick="deleteFeeCategory(${cat.id})" style="padding:0.35rem 0.6rem; background:#ef4444; color:white; border:none; border-radius:4px; cursor:pointer; font-size:0.8rem;">Delete</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch(e) {
+        console.error('Error loading fee categories:', e);
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:2rem; color:#ef4444;">Error loading categories</td></tr>';
+      }
+    }
+
+    function addFeeCategory(e) {
+      e.preventDefault();
+      const name = document.getElementById('cat-name').value.trim();
+      const desc = document.getElementById('cat-desc').value.trim();
+      const frequency = document.getElementById('cat-frequency').value;
+      const applicable = document.getElementById('cat-applicable-class').value.trim();
+
+      if (!name) {
+        alert('Category name is required');
+        return;
+      }
+
+      const categories = JSON.parse(localStorage.getItem('fee_categories') || '[]');
+      const newCategory = {
+        id: Date.now(),
+        name,
+        description: desc,
+        frequency,
+        applicableTo: applicable
+      };
+
+      categories.push(newCategory);
+      localStorage.setItem('fee_categories', JSON.stringify(categories));
+      
+      alert('✅ Category added successfully!');
+      document.getElementById('cat-name').value = '';
+      document.getElementById('cat-desc').value = '';
+      document.getElementById('cat-applicable-class').value = '';
+      loadFeeCategories();
+    }
+
+    function deleteFeeCategory(catId) {
+      if (confirm('Delete this category? Associated fees may be affected.')) {
+        const categories = JSON.parse(localStorage.getItem('fee_categories') || '[]').filter(c => c.id !== catId);
+        localStorage.setItem('fee_categories', JSON.stringify(categories));
+        loadFeeCategories();
+      }
+    }
+
+    async function loadStudentFeesDropdown() {
+      const select = document.getElementById('fee-student');
+      if (!select) return;
+
+      try {
+        const result = await getStudentCredentials(false);
+        if (result.success && result.data) {
+          select.innerHTML = '<option value="">-- Choose Student --</option>' + 
+            result.data.map(s => `<option value="${s.student_roll}|${s.student_name}|${s.student_class}|${s.id}">${s.student_roll} - ${s.student_name} (${s.student_class})</option>`).join('');
+        }
+      } catch(e) {
+        console.error('Error loading students:', e);
+      }
+    }
+
+    async function loadFeeCategoriesDropdown() {
+      const select = document.getElementById('fee-category');
+      if (!select) return;
+
+      const categories = JSON.parse(localStorage.getItem('fee_categories') || '[]');
+      select.innerHTML = '<option value="">-- Select Category --</option>' + 
+        categories.map(c => `<option value="${c.id}|${c.name}">${c.name}</option>`).join('');
+    }
+
+    function assignStudentFee(e) {
+      e.preventDefault();
+      
+      const studentData = document.getElementById('fee-student').value;
+      const categoryData = document.getElementById('fee-category').value;
+      const amount = parseFloat(document.getElementById('fee-amount').value);
+      const dueDate = document.getElementById('fee-due-date').value;
+      const description = document.getElementById('fee-description').value.trim();
+      const installment = parseInt(document.getElementById('fee-installment').value) || 1;
+
+      if (!studentData || !categoryData || !amount || !dueDate) {
+        alert('Please fill all required fields');
+        return;
+      }
+
+      const [roll, name, studentClass, studentId] = studentData.split('|');
+      const [categoryId, categoryName] = categoryData.split('|');
+
+      const fees = JSON.parse(localStorage.getItem('student_fees') || '[]');
+      const newFee = {
+        id: Date.now(),
+        studentRoll: roll,
+        studentName: name,
+        studentClass: studentClass,
+        categoryId,
+        categoryName,
+        amount,
+        dueDate,
+        description,
+        installment,
+        status: 'pending',
+        paidAmount: 0,
+        paidDate: null,
+        createdDate: new Date().toLocaleDateString()
+      };
+
+      fees.push(newFee);
+      localStorage.setItem('student_fees', JSON.stringify(fees));
+
+      alert(`✅ Fee of Rs.${amount} assigned to ${name}!`);
+      document.querySelector('#page-manage-fees form').reset();
+      loadAssignedStudentFees();
+    }
+
+    function loadAssignedStudentFees() {
+      const tbody = document.getElementById('student-fees-tbody');
+      if (!tbody) return;
+
+      const fees = JSON.parse(localStorage.getItem('student_fees') || '[]');
+      
+      if (fees.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:2rem; color:#94a3b8;">No fees assigned yet</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = fees.map(fee => {
+        const statusColor = fee.status === 'cleared' ? '#d1fae5' : fee.status === 'partial' ? '#fef3c7' : '#fee2e2';
+        const statusText = fee.status === 'cleared' ? 'Cleared' : fee.status === 'partial' ? 'Partial' : 'Pending';
+        const statusTextColor = fee.status === 'cleared' ? '#065f46' : fee.status === 'partial' ? '#92400e' : '#7f1d1d';
+        
+        return `
+          <tr style="border-bottom: 1px solid #e5e7eb;">
+            <td style="padding: 0.75rem;">${fee.studentRoll}</td>
+            <td style="padding: 0.75rem;"><strong>${fee.studentName}</strong></td>
+            <td style="padding: 0.75rem;">${fee.categoryName || 'N/A'}</td>
+            <td style="padding: 0.75rem;"><strong>Rs. ${fee.amount}</strong></td>
+            <td style="padding: 0.75rem;">${fee.dueDate}</td>
+            <td style="padding: 0.75rem;">
+              <span style="background:${statusColor}; color:${statusTextColor}; padding:0.25rem 0.75rem; border-radius:20px; font-size:0.75rem; font-weight:600;">
+                ${statusText}
+              </span>
+            </td>
+            <td style="padding: 0.75rem;">
+              <button onclick="editStudentFee(${fee.id})" style="padding:0.35rem 0.6rem; background:#3b82f6; color:white; border:none; border-radius:4px; cursor:pointer; font-size:0.75rem; margin-right:0.25rem;">Edit</button>
+              <button onclick="deleteStudentFee(${fee.id})" style="padding:0.35rem 0.6rem; background:#ef4444; color:white; border:none; border-radius:4px; cursor:pointer; font-size:0.75rem;">Delete</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function filterStudentFees() {
+      const searchTerm = document.getElementById('fee-search')?.value.toLowerCase() || '';
+      const tbody = document.getElementById('student-fees-tbody');
+      if (!tbody) return;
+
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+      });
+    }
+
+    function deleteStudentFee(feeId) {
+      if (confirm('Delete this fee assignment?')) {
+        const fees = JSON.parse(localStorage.getItem('student_fees') || '[]').filter(f => f.id !== feeId);
+        localStorage.setItem('student_fees', JSON.stringify(fees));
+        loadAssignedStudentFees();
+      }
+    }
+
+    function loadFeeLedger() {
+      const tbody = document.getElementById('fee-ledger-tbody');
+      if (!tbody) return;
+
+      const classFilter = document.getElementById('ledger-class-filter')?.value || '';
+      const statusFilter = document.getElementById('ledger-status-filter')?.value || '';
+      
+      const fees = JSON.parse(localStorage.getItem('student_fees') || '[]');
+      
+      // Group by student
+      const studentGroups = {};
+      fees.forEach(fee => {
+        const key = `${fee.studentRoll}|${fee.studentName}|${fee.studentClass}`;
+        if (!studentGroups[key]) {
+          studentGroups[key] = { roll: fee.studentRoll, name: fee.studentName, class: fee.studentClass, fees: [] };
+        }
+        studentGroups[key].fees.push(fee);
+      });
+
+      // Calculate totals and filter
+      let records = Object.values(studentGroups).map(group => {
+        const totalDue = group.fees.reduce((sum, f) => sum + f.amount, 0);
+        const totalPaid = group.fees.reduce((sum, f) => sum + (f.paidAmount || 0), 0);
+        const balance = totalDue - totalPaid;
+        const status = balance === 0 ? 'cleared' : totalPaid > 0 ? 'partial' : 'pending';
+
+        return { ...group, totalDue, totalPaid, balance, status };
+      }).filter(r => {
+        const matchClass = !classFilter || r.class.toLowerCase().includes(classFilter.toLowerCase());
+        const matchStatus = !statusFilter || r.status === statusFilter;
+        return matchClass && matchStatus;
+      });
+
+      if (records.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:2rem; color:#94a3b8;">No records found</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = records.map(r => {
+        const statusColor = r.status === 'cleared' ? '#d1fae5' : r.status === 'partial' ? '#fef3c7' : '#fee2e2';
+        const statusText = r.status === 'cleared' ? 'Cleared' : r.status === 'partial' ? 'Partial' : 'Pending';
+        const statusTextColor = r.status === 'cleared' ? '#065f46' : r.status === 'partial' ? '#92400e' : '#7f1d1d';
+        
+        return `
+          <tr>
+            <td>${r.roll}</td>
+            <td><strong>${r.name}</strong></td>
+            <td>${r.class}</td>
+            <td>Rs. ${r.totalDue}</td>
+            <td style="color:#16a34a; font-weight:600;">Rs. ${r.totalPaid}</td>
+            <td style="color:#dc2626; font-weight:600;">Rs. ${r.balance}</td>
+            <td><span style="background:${statusColor}; color:${statusTextColor}; padding:0.25rem 0.75rem; border-radius:20px; font-size:0.75rem; font-weight:600;">${statusText}</span></td>
+            <td>
+              <button onclick="viewStudentFeeDetails('${r.roll}', '${r.name}')" style="padding:0.35rem 0.6rem; background:#3b82f6; color:white; border:none; border-radius:4px; cursor:pointer; font-size:0.75rem;">View</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function viewStudentFeeDetails(roll, name) {
+      const fees = JSON.parse(localStorage.getItem('student_fees') || '[]').filter(f => f.studentRoll === roll);
+      const detailsHtml = fees.map(f => `
+        <div style="padding:1rem; background:#f8fafc; border-radius:8px; margin-bottom:0.5rem;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
+            <strong>${f.categoryName}</strong>
+            <span style="font-weight:700; color:var(--primary);">Rs. ${f.amount}</span>
+          </div>
+          <div style="font-size:0.85rem; color:#64748b;">Due: ${f.dueDate} | Inst: ${f.installment}</div>
+          <div style="font-size:0.8rem; color:#94a3b8; margin-top:0.25rem;">${f.description}</div>
+        </div>
+      `).join('');
+
+      alert(`Fee Details for ${name}:\n\n${fees.map(f => `${f.categoryName}: Rs. ${f.amount} (${f.status})`).join('\n')}`);
+    }
+
+    function loadPaymentTracking() {
+      const tbody = document.getElementById('payment-tracking-tbody');
+      if (!tbody) return;
+
+      const fees = JSON.parse(localStorage.getItem('student_fees') || '[]');
+      
+      if (fees.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:2rem; color:#94a3b8;">No payment records</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = fees.map((f, idx) => {
+        const invoiceId = `INV-${Date.now()}-${idx}`;
+        const dueDate = new Date(f.dueDate);
+        const today = new Date();
+        const daysOverdue = Math.max(0, Math.floor((today - dueDate) / (1000 * 60 * 60 * 24)));
+        
+        const statusColor = f.status === 'cleared' ? '#d1fae5' : f.status === 'partial' ? '#fef3c7' : daysOverdue > 0 ? '#fee2e2' : '#fef3c7';
+        const statusText = f.status === 'cleared' ? 'Cleared' : f.status === 'partial' ? 'Partial' : daysOverdue > 0 ? 'Overdue' : 'Pending';
+        const statusTextColor = f.status === 'cleared' ? '#065f46' : f.status === 'partial' ? '#92400e' : daysOverdue > 0 ? '#7f1d1d' : '#92400e';
+
+        return `
+          <tr>
+            <td><code style="background:#f3f4f6; padding:0.25rem 0.5rem; border-radius:3px;">${invoiceId}</code></td>
+            <td><strong>${f.studentName}</strong></td>
+            <td>Rs. ${f.amount}</td>
+            <td style="color:#16a34a; font-weight:600;">Rs. ${f.paidAmount || 0}</td>
+            <td>${f.dueDate}</td>
+            <td><span style="background:${statusColor}; color:${statusTextColor}; padding:0.25rem 0.75rem; border-radius:20px; font-size:0.75rem; font-weight:600;">${statusText}</span></td>
+            <td>${daysOverdue > 0 ? `<span style="color:#dc2626; font-weight:600;">${daysOverdue} days</span>` : '—'}</td>
+            <td>
+              <button onclick="markPaymentReceived(${f.id}, ${f.amount})" style="padding:0.35rem 0.6rem; background:#10b981; color:white; border:none; border-radius:4px; cursor:pointer; font-size:0.75rem;">Mark Paid</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function filterPayments() {
+      const searchTerm = document.getElementById('payment-search')?.value.toLowerCase() || '';
+      const statusFilter = document.getElementById('payment-status-filter')?.value || '';
+      const tbody = document.getElementById('payment-tracking-tbody');
+      if (!tbody) return;
+
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        const matchSearch = !searchTerm || text.includes(searchTerm);
+        const matchStatus = !statusFilter || text.includes(statusFilter);
+        row.style.display = (matchSearch && matchStatus) ? '' : 'none';
+      });
+    }
+
+    function markPaymentReceived(feeId, amount) {
+      const fees = JSON.parse(localStorage.getItem('student_fees') || '[]');
+      const fee = fees.find(f => f.id === feeId);
+      
+      if (fee) {
+        fee.paidAmount = amount;
+        fee.paidDate = new Date().toLocaleDateString();
+        fee.status = 'cleared';
+        localStorage.setItem('student_fees', JSON.stringify(fees));
+        alert('✅ Payment marked as received!');
+        loadPaymentTracking();
+      }
+    }
+
+    function loadFeeReports() {
+      const fees = JSON.parse(localStorage.getItem('student_fees') || '[]');
+      
+      // Calculate totals
+      const totalRevenue = fees.reduce((sum, f) => sum + (f.paidAmount || 0), 0);
+      const totalDue = fees.reduce((sum, f) => sum + f.amount, 0);
+      const pendingAmount = totalDue - totalRevenue;
+      const clearedStudents = new Set(fees.filter(f => f.status === 'cleared').map(f => f.studentRoll)).size;
+      const collectionRate = totalDue > 0 ? Math.round((totalRevenue / totalDue) * 100) : 0;
+
+      document.getElementById('report-total-revenue').textContent = `Rs. ${totalRevenue.toLocaleString()}`;
+      document.getElementById('report-pending-amount').textContent = `Rs. ${pendingAmount.toLocaleString()}`;
+      document.getElementById('report-cleared-count').textContent = clearedStudents;
+      document.getElementById('report-collection-rate').textContent = `${collectionRate}%`;
+
+      // Category breakdown
+      const categoryMap = {};
+      fees.forEach(f => {
+        if (!categoryMap[f.categoryName]) {
+          categoryMap[f.categoryName] = { due: 0, paid: 0 };
+        }
+        categoryMap[f.categoryName].due += f.amount;
+        categoryMap[f.categoryName].paid += f.paidAmount || 0;
+      });
+
+      const categoryHtml = Object.entries(categoryMap).map(([cat, data]) => `
+        <div style="padding:0.75rem; display:flex; justify-content:space-between; border-bottom:1px solid #e2e8f0;">
+          <span><strong>${cat}</strong></span>
+          <span style="color:var(--primary); font-weight:600;">Rs. ${data.paid} / ${data.due}</span>
+        </div>
+      `).join('');
+      document.getElementById('category-report-tbody').innerHTML = categoryHtml || '<p style="text-align:center; color:#94a3b8;">No data</p>';
+
+      // Class breakdown (if needed)
+      document.getElementById('class-report-tbody').innerHTML = '<p style="text-align:center; color:#94a3b8;">Analysis by class available in detailed reports</p>';
+    }
+
     async function loadClassesForDropdown() {
+
       console.log("=== START: loadClassesForDropdown ===");
       try {
         let classNames = [];
@@ -9725,10 +10780,28 @@
      * Initialize timetable page when switched to
      */
     async function initTimetablePage() {
-      await populateClassDropdown();
-      await populateSubjectDropdown();
-      await populateTeacherDropdown();
-      await loadTimetableRecords();
+      try {
+        console.log('[DEBUG] Initializing timetable page...');
+        
+        // Check authentication status
+        const authCheck = await timetableHandler.checkAuthentication();
+        console.log('[AUTH] Authentication status:', authCheck);
+        
+        if (!authCheck.authenticated) {
+          console.warn('[WARNING] User may not be authenticated with Supabase', authCheck);
+          // Show warning but continue loading - RLS will catch permissions
+        }
+        
+        // Load all dropdown data
+        await populateClassDropdown();
+        await populateSubjectDropdown();
+        await populateTeacherDropdownForTimetable();
+        await loadTimetableRecords();
+        
+        console.log('[SUCCESS] Timetable page initialized');
+      } catch (error) {
+        console.error('[ERROR] Failed to initialize timetable page:', error);
+      }
     }
 
     /**
@@ -9839,7 +10912,7 @@
     /**
      * Populate Teacher dropdown with categories (subjects)
      */
-    async function populateTeacherDropdown() {
+    async function populateTeacherDropdownForTimetable() {
       try {
         const select = document.getElementById('tt-teacher');
         select.innerHTML = '<option value="">-- Select Teacher --</option>';
@@ -9930,6 +11003,12 @@
       event.preventDefault();
 
       try {
+        // Show loading indicator
+        const submitBtn = event.target.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.textContent = '⏳ Processing...';
+
         const classJson = document.getElementById('tt-class').value;
         const subjectJson = document.getElementById('tt-subject').value;
         const teacherJson = document.getElementById('tt-teacher').value;
@@ -9938,43 +11017,126 @@
         const endTime = document.getElementById('tt-end-time').value;
         const classroom = document.getElementById('tt-classroom').value;
         const remarks = document.getElementById('tt-remarks').value;
+        const repeatEveryday = document.getElementById('tt-repeat-everyday').checked;
 
+        // Validate all required fields
         if (!classJson || !subjectJson || !teacherJson || !dayOfWeek || !startTime || !endTime) {
-          alert('Please fill all required fields (*)');
+          alert('❌ Please fill all required fields marked with (*)');
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalText;
           return;
         }
 
-        const classData = JSON.parse(classJson);
-        const subjectData = JSON.parse(subjectJson);
-        const teacherData = JSON.parse(teacherJson);
+        // Validate time range
+        if (startTime >= endTime) {
+          alert('❌ End time must be after start time');
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalText;
+          return;
+        }
 
-        const entryData = {
-          class_id: classData.id,
-          grade_level: classData.grade_level,
-          section_name: classData.section_name,
-          subject_id: subjectData.id,
-          subject_name: subjectData.name,
-          teacher_code: teacherData.code,
-          teacher_name: teacherData.name,
-          day_of_week: dayOfWeek,
-          start_time: startTime,
-          end_time: endTime,
-          classroom_number: classroom,
-          remarks: remarks
-        };
+        let classData, subjectData, teacherData;
+        try {
+          classData = JSON.parse(classJson);
+          subjectData = JSON.parse(subjectJson);
+          teacherData = JSON.parse(teacherJson);
+        } catch (parseError) {
+          console.error("JSON parse error:", parseError);
+          alert('❌ Error parsing form data. Please refresh the page and try again.');
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalText;
+          return;
+        }
 
-        const result = await timetableHandler.addTimetableEntry(entryData);
+        // Determine which days to create entries for
+        let daysToCreate = [dayOfWeek];
+        if (repeatEveryday) {
+          daysToCreate = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+        }
 
-        if (result.success) {
-          alert(result.message);
+        console.log('[INFO] Starting timetable entry submission:', {
+          daysToCreate,
+          repeatEveryday,
+          class: classData.section_name,
+          subject: subjectData.name,
+          teacher: teacherData.name,
+          timeSlot: `${startTime} - ${endTime}`
+        });
+
+        let successCount = 0;
+        let failCount = 0;
+        let lastError = null;
+        let errors = [];
+
+        // Create entries for each day
+        for (const day of daysToCreate) {
+          const entryData = {
+            class_id: classData.id,
+            grade_level: classData.grade_level,
+            section_name: classData.section_name,
+            subject_id: subjectData.id,
+            subject_name: subjectData.name,
+            teacher_code: teacherData.code,
+            teacher_name: teacherData.name,
+            day_of_week: day,
+            start_time: startTime,
+            end_time: endTime,
+            classroom_number: classroom || null,
+            remarks: remarks || null
+          };
+
+          const result = await timetableHandler.addTimetableEntry(entryData);
+          
+          if (result.success) {
+            successCount++;
+            console.log(`✅ Successfully added entry for ${day}`);
+          } else {
+            failCount++;
+            lastError = result.error;
+            errors.push(`${day}: ${result.error}`);
+            console.warn(`❌ Failed to add entry for ${day}: ${result.error}`);
+          }
+        }
+
+        // Reset button
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+
+        // Show results
+        if (successCount > 0) {
+          let message = `✅ Successfully added ${successCount} timetable ${successCount === 1 ? 'entry' : 'entries'}`;
+          if (failCount > 0) {
+            message += `\n\n⚠️ ${failCount} ${failCount === 1 ? 'entry failed' : 'entries failed'}:\n${errors.join('\n')}`;
+          } else {
+            message += ' for ' + (repeatEveryday ? 'the entire week' : dayOfWeek);
+          }
+          alert(message);
           clearTimetableForm();
           await loadTimetableRecords();
         } else {
-          alert('Error: ' + result.error);
+          // All entries failed
+          let errorMsg = '❌ Failed to add timetable entries.\n\n';
+          if (lastError?.includes('Permission Denied') || lastError?.includes('RLS')) {
+            errorMsg += 'PERMISSION ERROR:\n' + lastError + '\n\n';
+            errorMsg += 'STEPS TO FIX:\n';
+            errorMsg += '1. Refresh the page (Ctrl+R or Cmd+R)\n';
+            errorMsg += '2. Make sure you\'re logged in as an administrator\n';
+            errorMsg += '3. Try again\n';
+            errorMsg += '4. If still failing, check browser console for details (F12)';
+          } else {
+            errorMsg += 'Details:\n' + errors.join('\n') + '\n\n';
+            errorMsg += 'Please check the browser console (F12) for more information.';
+          }
+          alert(errorMsg);
         }
       } catch (error) {
-        console.error("Error adding timetable entry:", error);
-        alert('Error: ' + error.message);
+        console.error("Exception in addTimetableEntry:", error);
+        alert(`❌ Unexpected error: ${error.message}\n\nPlease check the console (F12) for details.`);
+        const submitBtn = event.target.querySelector('button[type="submit"]');
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Save Record to System';
+        }
       }
     }
 
@@ -10040,11 +11202,32 @@
     /**
      * Clear timetable form
      */
+    /**
+     * Helper function to set repeat flag and submit form
+     */
+    function setRepeatAndSubmit() {
+      document.getElementById('tt-repeat-everyday').checked = true;
+      document.getElementById('timetable-form').dispatchEvent(new Event('submit'));
+    }
+
     function clearTimetableForm() {
-      document.getElementById('timetable-form').reset();
+      const form = document.getElementById('timetable-form');
+      if (form) {
+        form.reset();
+      }
+      
+      // Reset repeat checkbox
+      const repeatCheckbox = document.getElementById('tt-repeat-everyday');
+      if (repeatCheckbox) {
+        repeatCheckbox.checked = false;
+      }
+      
+      // Reload dropdowns
       populateClassDropdown();
       populateSubjectDropdown();
-      populateTeacherDropdown();
+      populateTeacherDropdownForTimetable();
+      
+      console.log('[INFO] Timetable form cleared');
     }
 
     // Update switchPage to initialize timetable when switching to it
@@ -10304,6 +11487,131 @@
         modal.style.display = 'none';
       }, 300);
     }
+
+    // ==================== EDIT FUNCTIONS ====================
+    let editingStudentId = null;
+    let editingTeacherCredId = null;
+    let editingTeacherCode = null;
+
+    function editStudentAccount(id, name, roll, username, email, className) {
+      editingStudentId = id;
+      document.getElementById('std-name').value = name;
+      document.getElementById('std-roll').value = roll;
+      document.getElementById('std-username').value = username;
+      document.getElementById('std-email').value = email || '';
+      document.getElementById('std-password').value = '';
+      document.getElementById('std-password').removeAttribute('required');
+      document.getElementById('std-password-confirm').value = '';
+      document.getElementById('std-password-confirm').removeAttribute('required');
+      
+      const classSelect = document.getElementById('std-class');
+      for (let i = 0; i < classSelect.options.length; i++) {
+        if (classSelect.options[i].text === className || classSelect.options[i].value === className) {
+          classSelect.selectedIndex = i;
+          break;
+        }
+      }
+      
+      const submitBtn = document.querySelector('#student-enrollment-form button[type="submit"]');
+      if(submitBtn) {
+        submitBtn.innerHTML = '✏️ Update Student Account';
+      }
+      document.getElementById('student-enrollment-form').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function editTeacherAccount(credId, code, name, email) {
+      editingTeacherCredId = credId;
+      editingTeacherCode = code;
+      
+      document.getElementById('tch-name').value = name;
+      document.getElementById('tch-code').value = code;
+      document.getElementById('tch-email').value = email || '';
+      document.getElementById('tch-password').value = '';
+      document.getElementById('tch-password').removeAttribute('required');
+      document.getElementById('tch-password-confirm').value = '';
+      document.getElementById('tch-password-confirm').removeAttribute('required');
+      
+      const submitBtn = document.querySelector('#teacher-enrollment-form button[type="submit"]');
+      if(submitBtn) {
+        submitBtn.innerHTML = '✏️ Update Faculty Member';
+      }
+      document.getElementById('teacher-enrollment-form').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function editTeacherWithoutCred(code, name, subject) {
+      editingTeacherCredId = null;
+      editingTeacherCode = code;
+      
+      document.getElementById('tch-name').value = name;
+      document.getElementById('tch-code').value = code;
+      document.getElementById('tch-email').value = '';
+      document.getElementById('tch-password').value = '';
+      document.getElementById('tch-password').setAttribute('required', 'required');
+      document.getElementById('tch-password-confirm').value = '';
+      document.getElementById('tch-password-confirm').setAttribute('required', 'required');
+      
+      const submitBtn = document.querySelector('#teacher-enrollment-form button[type="submit"]');
+      if(submitBtn) {
+        submitBtn.innerHTML = '✏️ Update Faculty Member';
+      }
+      document.getElementById('teacher-enrollment-form').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Override the submit behavior for student enrollment
+    const originalEnrollStudent = window.enrollStudentWithCredentials;
+    window.enrollStudentWithCredentials = async function(e) {
+      if (editingStudentId) {
+        e.preventDefault();
+        alert('Student account updated! (Local preview only)');
+        
+        // Reset form
+        editingStudentId = null;
+        document.getElementById('student-enrollment-form').reset();
+        document.getElementById('std-password').setAttribute('required', 'required');
+        document.getElementById('std-password-confirm').setAttribute('required', 'required');
+        const submitBtn = document.querySelector('#student-enrollment-form button[type="submit"]');
+        if(submitBtn) submitBtn.innerHTML = 'Create Student Account';
+        
+        loadStudentAccounts();
+        return false;
+      } else {
+        if (originalEnrollStudent) return originalEnrollStudent(e);
+      }
+    };
+
+    // Override the submit behavior for teacher enrollment
+    const originalEnrollTeacher = window.enrollTeacher;
+    window.enrollTeacher = async function(e) {
+      if (editingTeacherCode) {
+        e.preventDefault();
+        
+        // Update local storage for teacher
+        let teachers = [];
+        try { teachers = JSON.parse(localStorage.getItem('teachers_registry') || '[]'); } catch(e){}
+        const tIndex = teachers.findIndex(t => t.code === editingTeacherCode);
+        if (tIndex >= 0) {
+          teachers[tIndex].name = document.getElementById('tch-name').value;
+          teachers[tIndex].code = document.getElementById('tch-code').value;
+          localStorage.setItem('teachers_registry', JSON.stringify(teachers));
+        }
+        
+        alert('Faculty member updated! (Local preview only)');
+        
+        // Reset form
+        editingTeacherCode = null;
+        editingTeacherCredId = null;
+        document.getElementById('teacher-enrollment-form').reset();
+        document.getElementById('tch-password').setAttribute('required', 'required');
+        document.getElementById('tch-password-confirm').setAttribute('required', 'required');
+        const submitBtn = document.querySelector('#teacher-enrollment-form button[type="submit"]');
+        if(submitBtn) submitBtn.innerHTML = '✓ Register Faculty';
+        
+        loadTeacherAccounts();
+        return false;
+      } else {
+        if (originalEnrollTeacher) return originalEnrollTeacher(e);
+      }
+    };
   </script>
   <style>
   /* CSS for Organization Tree */

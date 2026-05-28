@@ -1210,8 +1210,83 @@
         syncGPAAndRemarks();
         syncLeavesFromRegistry();
         
+        // Load student fees from admin portal
+        loadStudentFeesFromAdmin();
+        
       } catch(err) {
         console.error('Error loading student portal data:', err);
+      }
+    }
+
+    // ── LOAD STUDENT FEES FROM ADMIN PORTAL ──
+    function loadStudentFeesFromAdmin() {
+      try {
+        if (!window.studentData) return;
+        
+        const studentRoll = String(window.studentData.roll).trim();
+        const studentFees = JSON.parse(localStorage.getItem('student_fees') || '[]');
+        
+        // Get fees for this student
+        const myFees = studentFees.filter(f => String(f.studentRoll).trim() === studentRoll);
+        
+        if (myFees.length === 0) {
+          // No fees assigned
+          document.getElementById('billing-due-amount').textContent = 'Rs. 0';
+          document.getElementById('billing-pay-btn').textContent = 'No Fees Assigned';
+          document.getElementById('billing-pay-btn').disabled = true;
+          document.getElementById('billing-pay-btn').style.opacity = '0.6';
+          return;
+        }
+
+        // Calculate total due and paid
+        const totalDue = myFees.reduce((sum, f) => sum + f.amount, 0);
+        const totalPaid = myFees.reduce((sum, f) => sum + (f.paidAmount || 0), 0);
+        const balance = totalDue - totalPaid;
+        
+        // Update dashboard
+        document.getElementById('billing-due-amount').textContent = `Rs. ${balance}`;
+        
+        // Update fee payment history table
+        const billingTbody = document.querySelector('#page-fees .custom-table tbody');
+        if (billingTbody) {
+          // Clear existing rows
+          billingTbody.innerHTML = '';
+          
+          // Add fee records
+          myFees.forEach((fee, idx) => {
+            const statusColor = fee.status === 'cleared' ? '#d1fae5' : fee.status === 'partial' ? '#fef3c7' : '#fee2e2';
+            const statusText = fee.status === 'cleared' ? 'Cleared' : fee.status === 'partial' ? 'Partial' : 'Pending';
+            const statusTextColor = fee.status === 'cleared' ? '#065f46' : fee.status === 'partial' ? '#92400e' : '#7f1d1d';
+            
+            const row = `
+              <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td>#SS-${Date.now()}-${idx}</td>
+                <td>${fee.dueDate}</td>
+                <td>${fee.categoryName || 'Installment'} (Inst ${fee.installment})</td>
+                <td>Rs. ${fee.amount}</td>
+                <td>
+                  <span style="background:${statusColor}; color:${statusTextColor}; padding:0.25rem 0.75rem; border-radius:20px; font-size:0.8rem; font-weight:600;">
+                    ${statusText}
+                  </span>
+                </td>
+              </tr>
+            `;
+            billingTbody.insertAdjacentHTML('beforeend', row);
+          });
+        }
+        
+        // Update button based on balance
+        if (balance <= 0) {
+          document.getElementById('billing-pay-btn').textContent = 'All Fees Cleared ✓';
+          document.getElementById('billing-pay-btn').style.background = 'var(--success)';
+          document.getElementById('billing-pay-btn').disabled = true;
+        } else {
+          document.getElementById('billing-pay-btn').textContent = `Pay Dues (Rs. ${balance})`;
+          document.getElementById('billing-pay-btn').disabled = false;
+        }
+        
+      } catch(err) {
+        console.error('Error loading student fees:', err);
       }
     }
 

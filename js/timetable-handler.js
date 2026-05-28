@@ -13,6 +13,58 @@ class TimetableHandler {
   }
 
   /**
+   * Ensure user is authenticated with Supabase
+   */
+  async ensureAuthenticated() {
+    try {
+      if (!this.supabaseDb) {
+        console.error('[ERROR] Supabase client not available');
+        return { authenticated: false, reason: 'Supabase client not initialized' };
+      }
+
+      // Check if demo user
+      const adminUser = localStorage.getItem('adminUser');
+      if (adminUser) {
+        const user = JSON.parse(adminUser);
+        if (user.isDemoUser) {
+          console.log('[INFO] Demo user authenticated, bypassing Supabase session check');
+          return { authenticated: true, isDemoUser: true };
+        }
+      }
+
+      // Get current session
+      const { data: { session }, error } = await this.supabaseDb.auth.getSession();
+      
+      if (error) {
+        console.error('[ERROR] Error checking session:', error);
+        return { authenticated: false, reason: 'Error checking session: ' + error.message };
+      }
+
+      if (session && session.user) {
+        console.log('[SUCCESS] User authenticated with Supabase:', session.user.email);
+        return { authenticated: true, user: session.user };
+      }
+
+      // Try to restore session from localStorage
+      const authToken = localStorage.getItem('authToken');
+      if (authToken) {
+        console.log('[INFO] Auth token found in localStorage, attempting to restore session');
+        const { data: { session: restoredSession }, error: restoreError } = await this.supabaseDb.auth.refreshSession();
+        if (restoredSession && restoredSession.user) {
+          console.log('[SUCCESS] Session restored from token');
+          return { authenticated: true, user: restoredSession.user };
+        }
+      }
+
+      console.warn('[WARNING] User not authenticated with Supabase');
+      return { authenticated: false, reason: 'No active session' };
+    } catch (error) {
+      console.error('[ERROR] Exception in ensureAuthenticated:', error);
+      return { authenticated: false, reason: 'Exception: ' + error.message };
+    }
+  }
+
+  /**
    * Get all teachers grouped by category (with unique names)
    */
   async getTeachersByCategory() {
@@ -197,12 +249,51 @@ class TimetableHandler {
   }
 
   /**
-   * Add new timetable entry
+   * Check if user is authenticated with Supabase
+   */
+  async checkAuthentication() {
+    try {
+      if (!this.supabaseDb) {
+        return { authenticated: false, error: "Database not initialized" };
+      }
+      
+      const { data: { session }, error } = await this.supabaseDb.auth.getSession();
+      
+      if (error) {
+        console.warn("Auth check error:", error);
+        return { authenticated: false, error: error.message };
+      }
+      
+      return { 
+        authenticated: !!session, 
+        session: session,
+        message: session ? "User authenticated" : "No active session"
+      };
+    } catch (error) {
+      console.error("Exception in checkAuthentication:", error);
+      return { authenticated: false, error: error.message };
+    }
+  }
+
+  /**
+   * Add new timetable entry with improved error handling
    */
   async addTimetableEntry(entryData) {
     try {
       if (!this.supabaseDb) {
         return { success: false, error: "Database not initialized" };
+      }
+
+      // Ensure user is authenticated before proceeding
+      const authStatus = await this.ensureAuthenticated();
+      if (!authStatus.authenticated && !authStatus.isDemoUser) {
+        console.error('[ERROR] Authentication failed:', authStatus.reason);
+        return { 
+          success: false, 
+          error: "❌ Authentication Required: You must be logged in to add timetable entries. Please log in first.",
+          code: "AUTH_REQUIRED",
+          details: authStatus.reason
+        };
       }
 
       // Validate required fields
@@ -211,14 +302,23 @@ class TimetableHandler {
         return { success: false, error: "All fields are required" };
       }
 
+      // Log entry data for debugging
+      console.log('[DEBUG] Adding timetable entry:', {
+        class_id: entryData.class_id,
+        subject_name: entryData.subject_name,
+        teacher_name: entryData.teacher_name,
+        day_of_week: entryData.day_of_week,
+        time_slot: `${entryData.start_time} - ${entryData.end_time}`
+      });
+
       const newEntry = {
         class_id: entryData.class_id,
-        grade_level: entryData.grade_level,
-        section_name: entryData.section_name,
+        grade_level: entryData.grade_level || "",
+        section_name: entryData.section_name || "",
         subject_id: entryData.subject_id,
-        subject_name: entryData.subject_name,
+        subject_name: entryData.subject_name || "",
         teacher_code: entryData.teacher_code,
-        teacher_name: entryData.teacher_name,
+        teacher_name: entryData.teacher_name || "",
         day_of_week: entryData.day_of_week,
         start_time: entryData.start_time,
         end_time: entryData.end_time,
@@ -234,22 +334,60 @@ class TimetableHandler {
 
       if (error) {
         console.error("Error adding timetable entry:", error);
+        console.error("Full error object:", {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        
+        // Handle specific error codes
+        if (error.code === 'PGRST205') {
+          // Table not found
+          return { 
+            success: false, 
+            error: "Timetable table not found. Please contact administrator."
+          };
+        } else if (error.code === '42501') {
+          // RLS policy violation - enhanced message
+          return {
+            success: false,
+            error: "❌ Permission Denied: You don't have permission to add timetable entries. This is usually due to RLS (Row Level Security) policy. Please:\n1. Ensure you're logged in with admin credentials\n2. Refresh the page (Ctrl+R)\n3. Try again\n4. If issue persists, contact the system administrator.",
+            code: "RLS_DENIED"
+          };
+        } else if (error.code === '23505' || error.message?.includes("unique")) {
+          return { 
+            success: false, 
+            error: `⏰ Time Slot Conflict: This time slot is already assigned for this class on ${entryData.day_of_week}. Please choose a different time slot.`,
+            code: "DUPLICATE_SLOT"
+          };
+        } else if (error.message?.includes("not found") || error.message?.includes("relation")) {
+          return {
+            success: false,
+            error: "Table or field not found. The database schema may be missing. Please contact administrator.",
+            code: "SCHEMA_ERROR"
+          };
+        }
+        
         return { 
           success: false, 
-          error: error.message.includes("unique") 
-            ? "This time slot is already assigned for this class!"
-            : error.message
+          error: error.message || "Failed to add timetable entry",
+          details: error.details || error.hint
         };
       }
 
       return {
         success: true,
         id: data[0].id,
-        message: "Class timetable entry added successfully!"
+        message: "✅ Class timetable entry added successfully!"
       };
     } catch (error) {
       console.error("Exception in addTimetableEntry:", error);
-      return { success: false, error: error.message };
+      return { 
+        success: false, 
+        error: `Unexpected error: ${error.message}`,
+        details: error.stack
+      };
     }
   }
 

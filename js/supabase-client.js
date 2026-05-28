@@ -16,6 +16,20 @@ try {
   if (typeof supabase !== 'undefined') {
     supabaseDb = supabase.createClient(DB1_URL, DB1_KEY);
     supabaseMedia = supabase.createClient(DB2_URL, DB2_KEY);
+    
+    // Set up authentication state listener for DB1
+    if (supabaseDb) {
+      supabaseDb.auth.onAuthStateChange((event, session) => {
+        console.log('[AUTH_EVENT]', event, session ? `User: ${session.user.email}` : 'No session');
+        if (session) {
+          console.log('[SUCCESS] Auth state changed: Session is now active');
+          localStorage.setItem('authToken', session.access_token);
+        } else {
+          console.log('[WARNING] Auth state changed: Session cleared');
+          localStorage.removeItem('authToken');
+        }
+      });
+    }
   } else {
     console.error("Supabase library not loaded. Please include the CDN script.");
   }
