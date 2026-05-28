@@ -3061,10 +3061,10 @@
     /* ── SCROLL TO TOP ── */
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/supabase-client.js"></script>
-  <script src="js/class-handler.js"></script>
-  <script src="js/admission-handler.js"></script>
-  <script src="js/document-handler.js"></script>
+  <script src="../js/supabase-client.js"></script>
+  <script src="../js/class-handler.js"></script>
+  <script src="../js/admission-handler.js"></script>
+  <script src="../js/document-handler.js"></script>
 </head>
 <body>
 
@@ -3120,7 +3120,7 @@
   <div class="header-inner">
     <!-- LOGO -->
     <div class="logo-wrap">
-      <img class="logo-png" src="images/logo.png" alt="Shree Saraswati Secondary School Logo" />
+      <img class="logo-png" src="../images/logo.png" alt="Shree Saraswati Secondary School Logo" />
       <div class="school-title">
         <h1>Shree Saraswati<br/>Secondary School</h1>
         <p>Satyawati-6 Johang, Gulmi &nbsp;|&nbsp; IEMIS: 460500011</p>
@@ -3132,7 +3132,7 @@
       
       <!-- Dropdown 1: About Us -->
       <div class="dropdown">
-        <a href="html/about.html" class="dropdown-toggle">About Us <span class="arrow">▼</span></a>
+        <a href="about.html" class="dropdown-toggle">About Us <span class="arrow">▼</span></a>
         <div class="dropdown-menu">
           <a href="#message">Principal's Message</a>
           <a href="about.html#history">History & Goals</a>
@@ -3158,7 +3158,7 @@
         <div class="dropdown-menu">
           <a href="#facilities">Campus Facilities</a>
           <a href="#downloads">Downloads Hub</a>
-          <a href="html/student-directory.html">📚 Student Directory</a>
+          <a href="student-directory.html">📚 Student Directory</a>
           <a href="#faq">FAQ Board</a>
         </div>
       </div>
@@ -3176,7 +3176,7 @@
 <!-- SLIDER -->
 <div class="slider" id="slider">
   <div class="slide active">
-    <img src="images/img1.png" onerror="this.onerror=null; this.src='images/img1.jpg';" alt="School Campus"/>
+    <img src="../images/img1.png" onerror="this.onerror=null; this.src='../images/img1.jpg';" alt="School Campus"/>
     <div class="slide-caption">
       <span class="badge">✦ Welcome to SSSS ✦</span>
       <h2>Nurturing Minds,<br/>Shaping Futures</h2>
@@ -3185,7 +3185,7 @@
     </div>
   </div>
   <div class="slide">
-    <img src="images/img2.png" onerror="this.onerror=null; this.src='images/img2.jpg';" alt="Students"/>
+    <img src="../images/img2.png" onerror="this.onerror=null; this.src='../images/img2.jpg';" alt="Students"/>
     <div class="slide-caption">
       <span class="badge">✦ Academic Excellence ✦</span>
       <h2>Quality Education<br/>For Every Child</h2>
@@ -3194,7 +3194,7 @@
     </div>
   </div>
   <div class="slide">
-    <img src="images/img3.png" onerror="this.onerror=null; this.src='images/img3.jpg';" alt="Events"/>
+    <img src="../images/img3.png" onerror="this.onerror=null; this.src='../images/img3.jpg';" alt="Events"/>
     <div class="slide-caption">
       <span class="badge">✦ Co-curricular ✦</span>
       <h2>Beyond the Classroom,<br/>Building Character</h2>
@@ -3203,7 +3203,7 @@
     </div>
   </div>
   <div class="slide">
-    <img src="images/img.jpg" onerror="this.onerror=null; this.src='images/img.png';" alt="Our Environment"/>
+    <img src="../images/img.jpg" onerror="this.onerror=null; this.src='../images/img.png';" alt="Our Environment"/>
     <div class="slide-caption">
       <span class="badge">✦ Our Environment ✦</span>
       <h2>A Safe & Inspiring<br/>Learning Environment</h2>
@@ -3414,7 +3414,7 @@
       <!-- TECHNICAL BLOCK -->
       <div class="campus-card technical-card">
         <div class="campus-image-wrap">
-          <img src="images/img.jpg" alt="Bedauri Campus - Technical Block" />
+          <img src="../images/img.jpg" alt="Bedauri Campus - Technical Block" />
         </div>
         <span class="campus-badge">Technical Block</span>
         <div class="campus-details">
@@ -4119,8 +4119,8 @@
             </style>
 
             <div class="ms-header">
-              <img src="images/logo.png" class="ms-logo-left" alt="Logo Left" onerror="this.style.display='none'">
-              <img src="images/img1.png" class="ms-logo-right" alt="Logo Right" onerror="this.style.display='none'">
+              <img src="../images/logo.png" class="ms-logo-left" alt="Logo Left" onerror="this.style.display='none'">
+              <img src="../images/img1.png" class="ms-logo-right" alt="Logo Right" onerror="this.style.display='none'">
               <h1>Shree Saraswati Secondary School</h1>
               <h2>Satyawati - 6 Johang(Bidauri), Gulmi</h2>
               <h3>Grade Sheet</h3>
@@ -4725,7 +4725,7 @@
   <div class="footer-grid">
     <div class="footer-brand">
       <div class="logo-wrap">
-        <img class="logo-png-footer" src="images/logo.png" alt="Shree Saraswati Secondary School Logo" />
+        <img class="logo-png-footer" src="../images/logo.png" alt="Shree Saraswati Secondary School Logo" />
         <div class="school-title">
           <h1 style="color:#fff;font-size:1rem;">Shree Saraswati Secondary School</h1>
           <p style="color:#d4af37;">Satyawati-6 Johang, Gulmi</p>
@@ -5348,11 +5348,11 @@
       // Auto close modal or redirect
       setTimeout(() => {
         if (isRedirectAdmin) {
-          window.location.href = 'html/admin-portal.html';
+          window.location.href = 'admin-portal.html';
         } else if (type === 'student') {
-          window.location.href = 'html/student-portal.html';
+          window.location.href = 'student-portal.html';
         } else if (type === 'teacher') {
-          window.location.href = 'html/teacher-portal.html';
+          window.location.href = 'teacher-portal.html';
         } else {
           closeLoginModal();
         }
