@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Student Portal | Shree Saraswati Secondary School</title>
+  <link rel="stylesheet" href="../css/id-card.css">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap');
 
@@ -271,6 +272,11 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
     /* Welcome Banner */
     .welcome-banner {
       background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
@@ -351,6 +357,7 @@
       font-weight: 700; text-decoration: none; margin-top: 1.5rem; transition: background 0.3s; cursor: pointer;
     }
     .pay-btn:hover { background: var(--accent); color: var(--primary); }
+    @keyframes pulseUnderReview { 0%,100%{ box-shadow: 0 0 0 0 rgba(245,158,11,0.4); } 50%{ box-shadow: 0 0 0 10px rgba(245,158,11,0); } }
 
     /* Leave Requests Widget */
     .leave-list { display: flex; flex-direction: column; gap: 1rem; }
@@ -509,6 +516,139 @@
       }
       #payment-modal .modal-content {
         max-width: 100%;
+      }
+    }
+    /* ── MARKSHEET STYLES ── */
+    #printable-marksheet {
+      position: relative;
+      padding: 2rem;
+      background: white;
+      font-family: 'Times New Roman', Times, serif;
+      color: #000;
+    }
+    .marksheet-watermark {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 400px;
+      opacity: 0.1;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .marksheet-header {
+      text-align: center;
+      position: relative;
+      margin-bottom: 2rem;
+      z-index: 1;
+    }
+    .logo-left {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100px;
+    }
+    .logo-right {
+      position: absolute;
+      right: 0;
+      top: 0;
+      width: 100px;
+    }
+    .marksheet-header h1 {
+      font-size: 28px;
+      font-weight: bold;
+      margin: 0;
+      text-transform: uppercase;
+      color: #b91c1c;
+    }
+    .marksheet-header h2 {
+      font-size: 16px;
+      margin: 5px 0;
+    }
+    .marksheet-header h3 {
+      font-size: 24px;
+      margin: 10px 0;
+      text-decoration: underline;
+    }
+    .marksheet-header h4 {
+      font-size: 18px;
+      margin: 5px 0;
+    }
+    .marksheet-info {
+      font-size: 14px;
+      margin-bottom: 1rem;
+      line-height: 1.6;
+      z-index: 1;
+      position: relative;
+    }
+    .marksheet-table, .grading-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1rem;
+      z-index: 1;
+      position: relative;
+    }
+    .marksheet-table th, .marksheet-table td, .grading-table th, .grading-table td {
+      border: 1px solid #000;
+      padding: 8px;
+      text-align: center;
+      font-size: 14px;
+    }
+    .marksheet-table th {
+      font-weight: bold;
+    }
+    .marksheet-table td:nth-child(2) {
+      text-align: left;
+    }
+    .marksheet-gpa {
+      font-weight: bold;
+      font-size: 16px;
+      margin-bottom: 2rem;
+      z-index: 1;
+      position: relative;
+    }
+    .marksheet-details-header {
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 0.5rem;
+      z-index: 1;
+      position: relative;
+    }
+    .marksheet-footer {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 4rem;
+      z-index: 1;
+      position: relative;
+    }
+    .marksheet-footer .signature-line {
+      border-top: 1px solid #000;
+      width: 200px;
+      text-align: center;
+      padding-top: 5px;
+      font-weight: bold;
+    }
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #marksheet-preview-modal, #marksheet-preview-modal * {
+        visibility: visible;
+      }
+      #marksheet-preview-modal {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding: 0;
+        background: transparent;
+      }
+      .no-print {
+        display: none !important;
+      }
+      #printable-marksheet {
+        box-shadow: none !important;
+        padding: 0;
       }
     }
   </style>
@@ -703,17 +843,20 @@
                 <a onclick="switchPage('fees')">Details</a>
               </div>
               <div class="fee-card">
-                <div class="fee-subtitle">Next Installment Due (Mangsir)</div>
-                <div class="fee-amount" id="dash-due-amount">Rs. 5,000</div>
-                <p style="font-size:0.8rem; color:var(--danger); font-weight:700; margin-bottom:1.5rem;" id="dash-due-deadline">Due in 5 days</p>
+                <div class="fee-subtitle" id="dash-fee-subtitle">Outstanding Balance</div>
+                <div class="fee-amount" id="dash-due-amount" style="display:flex; align-items:center; gap:0.5rem;">
+                  <span class="fee-loader" id="fee-amount-loader" style="display:inline-block; width:28px; height:28px; border:3px solid #e2e8f0; border-top:3px solid var(--primary); border-radius:50%; animation: spin 0.6s linear infinite;"></span>
+                  <span style="font-size:0.95rem; color:#94a3b8; font-weight:500;">Loading...</span>
+                </div>
+                <p style="font-size:0.8rem; color:var(--text-muted); font-weight:700; margin-bottom:1.5rem;" id="dash-due-deadline">Fetching fee records...</p>
                 <div class="progress-text">
-                  <span id="dash-paid-lbl">Paid: Rs. 15,000</span>
-                  <span>Total: Rs. 25,000</span>
+                  <span id="dash-paid-lbl">Paid: —</span>
+                  <span id="dash-total-lbl">Total: —</span>
                 </div>
                 <div class="progress-bar-bg">
-                  <div class="progress-fill" id="dash-progress-fill" style="width: 60%;"></div>
+                  <div class="progress-fill" id="dash-progress-fill" style="width: 0%; transition: width 0.8s ease;"></div>
                 </div>
-                <button onclick="triggerPaymentFlow()" class="pay-btn" id="dash-pay-btn" style="border:none; width:100%;">Pay Online Now</button>
+                <button onclick="switchPage('fees')" class="pay-btn" id="dash-pay-btn" style="border:none; width:100%; opacity:0.6;" disabled>Pay Online Now</button>
               </div>
             </div>
 
@@ -876,6 +1019,10 @@
                   <!-- Results populated by JavaScript -->
                 </tbody>
               </table>
+              <div style="margin-top: 1rem; display: flex; gap: 1rem; justify-content: flex-end;">
+                <button onclick="downloadStudentResultCard()" class="submit-btn" style="background: var(--primary); padding: 0.6rem 1.2rem; font-size: 0.9rem;">View Marksheet</button>
+                <button onclick="downloadStudentResultCard()" class="submit-btn" style="background: var(--accent); padding: 0.6rem 1.2rem; font-size: 0.9rem;">Download Marksheet</button>
+              </div>
             </div>
           </div>
 
@@ -885,10 +1032,15 @@
               <h3>📥 Download Report Card</h3>
             </div>
             <div style="padding: 2rem; text-align: center;">
-              <button onclick="downloadStudentResultCard()" style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; padding: 0.85rem 2rem; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 0.95rem; box-shadow: 0 6px 20px rgba(26,58,107,0.25); transition: all 0.3s ease; font-family: 'Nunito', sans-serif;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 10px 25px rgba(26,58,107,0.35)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 6px 20px rgba(26,58,107,0.25)'">
-                📄 Generate & Download PDF Report
-              </button>
-              <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 1rem;">Download your official result report card as PDF</p>
+              <div style="display:flex; justify-content:center; gap:1rem; flex-wrap:wrap;">
+                <button onclick="downloadStudentResultCard()" style="background: var(--primary); color: white; border: none; padding: 0.85rem 1.5rem; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 0.95rem; box-shadow: 0 4px 15px rgba(26,58,107,0.2); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                  👀 View Marksheet
+                </button>
+                <button onclick="downloadStudentResultCard(); setTimeout(() => window.print(), 500);" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 0.85rem 1.5rem; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 0.95rem; box-shadow: 0 4px 15px rgba(16,185,129,0.25); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                  📥 Download Marksheet
+                </button>
+              </div>
+              <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 1rem;">View or download your official term marksheet as PDF</p>
             </div>
           </div>
         </div>
@@ -911,21 +1063,44 @@
         <h2 style="font-family:'Playfair Display', serif; margin-bottom: 2rem; color: var(--primary);">Student Billing Ledger</h2>
         
         <div style="display:grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
-          <div class="panel">
-            <div class="panel-header">
-              <h3>Dues Quick Summary</h3>
-            </div>
-            <div class="fee-card" style="background: white; border: none; padding:0;">
-              <p style="font-size:0.9rem; color:var(--text-muted); font-weight:600; margin-bottom:0.5rem;">Current Pending Amount</p>
-              <h1 id="billing-due-amount" style="font-size:2.5rem; color:var(--primary); font-weight:800; margin-bottom:1rem;">Rs. 5,000</h1>
-              
-              <div style="background:var(--bg-color); padding:1rem; border-radius:12px; margin-bottom:1.5rem;">
-                <p style="font-size:0.85rem; font-weight:700; color:var(--text-main);">📌 Billing Terms:</p>
-                <p style="font-size:0.8rem; color:var(--text-muted); margin-top:0.3rem;">Second Installment covering Tuition and Labs for Mangsir term.</p>
+          <div class="panel" style="background: transparent; box-shadow: none; padding: 0;">
+            
+            <!-- SECTION 1: Tuition -->
+            <div class="panel" style="margin-bottom: 1.5rem;">
+              <div class="panel-header">
+                <h3 style="font-size: 1rem;">Tuition & Academic Fees</h3>
               </div>
-
-              <button onclick="triggerPaymentFlow()" class="pay-btn" id="billing-pay-btn" style="border:none; width:100%;">Pay Dues Online</button>
+              <div class="fee-card" style="background: white; border: none; padding:0;">
+                <p style="font-size:0.85rem; color:var(--text-muted); font-weight:600; margin-bottom:0.3rem;">Pending Balance</p>
+                <h1 id="billing-due-tuition" style="font-size:2rem; color:var(--primary); font-weight:800; margin-bottom:1rem;">Rs. 0</h1>
+                <button onclick="triggerPaymentFlow('Tuition')" class="pay-btn" id="btn-pay-tuition" style="border:none; width:100%; padding:0.6rem; font-size:0.9rem;">Pay Tuition Dues</button>
+              </div>
             </div>
+
+            <!-- SECTION 2: Examination -->
+            <div class="panel" style="margin-bottom: 1.5rem;">
+              <div class="panel-header">
+                <h3 style="font-size: 1rem;">Examination Fees</h3>
+              </div>
+              <div class="fee-card" style="background: white; border: none; padding:0;">
+                <p style="font-size:0.85rem; color:var(--text-muted); font-weight:600; margin-bottom:0.3rem;">Pending Balance</p>
+                <h1 id="billing-due-exam" style="font-size:2rem; color:var(--primary); font-weight:800; margin-bottom:1rem;">Rs. 0</h1>
+                <button onclick="triggerPaymentFlow('Examination')" class="pay-btn" id="btn-pay-exam" style="border:none; width:100%; padding:0.6rem; font-size:0.9rem;">Pay Exam Dues</button>
+              </div>
+            </div>
+
+            <!-- SECTION 3: Other -->
+            <div class="panel">
+              <div class="panel-header">
+                <h3 style="font-size: 1rem;">Other & Transport Fees</h3>
+              </div>
+              <div class="fee-card" style="background: white; border: none; padding:0;">
+                <p style="font-size:0.85rem; color:var(--text-muted); font-weight:600; margin-bottom:0.3rem;">Pending Balance</p>
+                <h1 id="billing-due-other" style="font-size:2rem; color:var(--primary); font-weight:800; margin-bottom:1rem;">Rs. 0</h1>
+                <button onclick="triggerPaymentFlow('Other')" class="pay-btn" id="btn-pay-other" style="border:none; width:100%; padding:0.6rem; font-size:0.9rem;">Pay Other Dues</button>
+              </div>
+            </div>
+
           </div>
 
           <div class="panel">
@@ -1058,50 +1233,144 @@
     </div>
   </div>
 
+  <!-- ================= MARKSHEET PREVIEW MODAL ================= -->
+  <div id="marksheet-preview-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10000; overflow-y:auto; padding:2rem;">
+    <div style="background:#fff; max-width:900px; margin:0 auto; position:relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+      <div class="no-print" style="background:#f1f5f9; padding: 1rem 2rem; display:flex; justify-content:flex-end; gap:1rem; border-bottom:1px solid #cbd5e1; position:sticky; top:0; z-index:10;">
+          <button onclick="window.print()" style="background:#3b82f6; color:white; border:none; padding:0.6rem 1.2rem; border-radius:6px; cursor:pointer; font-weight:bold; font-size: 1rem;">Print Marksheet</button>
+          <button onclick="closeMarksheetPreview()" style="background:#ef4444; color:white; border:none; padding:0.6rem 1.2rem; border-radius:6px; cursor:pointer; font-weight:bold; font-size: 1rem;">Close Preview</button>
+      </div>
+      <!-- Printable Marksheet Template -->
+      <div id="printable-marksheet" style="display: block; margin: 0 auto; box-shadow: none;">
+        <img src="../images/logo.png" class="marksheet-watermark" alt="Watermark" onerror="this.style.display='none'">
+        <div class="content-wrapper">
+      <div class="marksheet-header">
+        <img src="../images/logo.png" class="logo-left" alt="School Logo" onerror="this.style.display='none'">
+        <img src="../images/saraswati.png" class="logo-right" alt="Saraswati Logo" onerror="this.style.display='none'">
+        <h1>Shree Saraswati Secondary School</h1>
+        <h2>Satyawati - 6 Johang(Bidauri), Gulmi</h2>
+        <h3>Grade Sheet</h3>
+        <h4 id="ms-exam-title">Pree S.E.E Examination</h4>
+      </div>
+
+      <div class="marksheet-info">
+        THE GRADE(S) SECURED BY: <span style="text-decoration: underline;" id="ms-student-name"></span> &nbsp; DATE OF BIRTH: <span style="text-decoration: underline;" id="ms-student-dob"></span> &nbsp; GRADE: <span style="text-decoration: underline;" id="ms-student-grade"></span><br>
+        'TECHNICAL' IN THE <span id="ms-exam-name"></span> CONDUCTED BY SCHOOL IN <span id="ms-exam-year"></span> BS ARE GIVEN BELOW:
+      </div>
+
+      <table class="marksheet-table">
+        <thead id="ms-marks-thead">
+          <tr>
+            <th>S.NO.</th>
+            <th>Subjects</th>
+            <th>Credit Hour</th>
+            <th>Grade Point</th>
+            <th>Grade</th>
+            <th>Remarks</th>
+          </tr>
+        </thead>
+        <tbody id="ms-marks-tbody">
+          <!-- Rows injected here -->
+        </tbody>
+      </table>
+
+      <div class="marksheet-gpa">
+        Grade Point Average (GPA): <span id="ms-overall-gpa"></span>
+      </div>
+
+      <div class="marksheet-details-header">
+        <span>DETAILS OF GRADE SHEET</span>
+      </div>
+
+      <table class="grading-table">
+        <thead>
+          <tr>
+            <th>S.N.</th>
+            <th>Interval in Percent</th>
+            <th>Grade</th>
+            <th>Grade Point</th>
+            <th>Descriptor</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td>90 to 100</td><td>A+</td><td>4.0</td><td>Outstanding</td></tr>
+          <tr><td>2</td><td>80 to below 90</td><td>A</td><td>3.6</td><td>Excellent</td></tr>
+          <tr><td>3</td><td>70 to below 80</td><td>B+</td><td>3.2</td><td>Very Good</td></tr>
+          <tr><td>4</td><td>60 to below 70</td><td>B</td><td>2.8</td><td>Good</td></tr>
+          <tr><td>5</td><td>50 to below 60</td><td>C+</td><td>2.4</td><td>Satisfactory</td></tr>
+          <tr><td>6</td><td>40 to below 50</td><td>C</td><td>2.0</td><td>Acceptable</td></tr>
+          <tr><td>8</td><td>35 to below 40</td><td>D</td><td>1.2</td><td>Basic</td></tr>
+          <tr><td>9</td><td>0 to below 35</td><td>NG</td><td>0.8</td><td>Not Graded</td></tr>
+        </tbody>
+      </table>
+
+      <div style="margin-top: 20px; font-weight: bold;">
+        DATE OF ISSUE: <span id="ms-issue-date"></span>
+      </div>
+
+      <div class="marksheet-footer">
+        <div class="signature-line">CLASS TEACHER</div>
+        <div class="signature-line">EXAM CO-ORDINATOR</div>
+        <div class="signature-line">HEAD TEACHER</div>
+      </div>
+    </div>
+  </div>
+    </div>
+  </div>
+
   <!-- ================= PAYMENT GATEWAY MODAL ================= -->
   <div class="modal-overlay" id="payment-modal">
     <div class="modal-content">
       <button class="modal-close-btn" onclick="closePaymentModal()">&times;</button>
       <h3 class="modal-title">School Fee Payment Desk</h3>
-      <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:0.5rem;">Please transfer Rs. 5,000 and submit verification credentials below</p>
+      <p id="payment-modal-desc" style="color:var(--text-muted); font-size:0.9rem; margin-bottom:0.5rem;">Please transfer Rs. 5,000 and submit verification credentials below</p>
       
-      <div class="payment-modal-layout">
+      <div id="payment-rejection-remark" style="display:none; background:#fef2f2; color:#b91c1c; padding:0.8rem; border-radius:8px; margin-bottom:1rem; border:1px solid #f87171; font-size:0.85rem;"></div>
+
+      <div class="payment-modal-layout" style="position:relative;">
+        <div id="payment-loader-overlay" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:10; align-items:center; justify-content:center; flex-direction:column; border-radius:12px;">
+           <div style="display:inline-block; width:40px; height:40px; border:4px solid #e2e8f0; border-top:4px solid var(--primary); border-radius:50%; animation: spin 0.8s linear infinite;"></div>
+           <p style="margin-top:1rem; font-weight:700; color:var(--primary);">Submitting Fee...</p>
+        </div>
         <!-- Left Section: Bank Details & QR -->
         <div class="payment-qr-section">
           <h4 style="font-size:0.95rem; color:var(--primary); font-weight:700;">Scan QR to Pay Instantly</h4>
           
-          <svg class="qr-svg" viewBox="0 0 100 100" width="140" height="140" style="background:#fff; padding:8px; border:1px solid #e2e8f0; border-radius:8px;">
-            <rect x="10" y="10" width="20" height="20" fill="#1a3a6b"/>
-            <rect x="15" y="15" width="10" height="10" fill="#fff"/>
-            <rect x="70" y="10" width="20" height="20" fill="#1a3a6b"/>
-            <rect x="75" y="15" width="10" height="10" fill="#fff"/>
-            <rect x="10" y="70" width="20" height="20" fill="#1a3a6b"/>
-            <rect x="15" y="75" width="10" height="10" fill="#fff"/>
-            <rect x="35" y="10" width="5" height="15" fill="#1a3a6b"/>
-            <rect x="45" y="10" width="10" height="5" fill="#1a3a6b"/>
-            <rect x="60" y="15" width="5" height="10" fill="#1a3a6b"/>
-            <rect x="35" y="30" width="15" height="5" fill="#1a3a6b"/>
-            <rect x="55" y="30" width="10" height="15" fill="#1a3a6b"/>
-            <rect x="75" y="35" width="15" height="5" fill="#1a3a6b"/>
-            <rect x="10" y="35" width="5" height="25" fill="#1a3a6b"/>
-            <rect x="25" y="45" width="15" height="10" fill="#1a3a6b"/>
-            <rect x="45" y="50" width="25" height="5" fill="#1a3a6b"/>
-            <rect x="75" y="55" width="10" height="25" fill="#1a3a6b"/>
-            <rect x="35" y="60" width="5" height="20" fill="#1a3a6b"/>
-            <rect x="15" y="65" width="10" height="5" fill="#1a3a6b"/>
-            <rect x="45" y="70" width="15" height="10" fill="#1a3a6b"/>
-            <rect x="65" y="80" width="5" height="10" fill="#1a3a6b"/>
-            <rect x="42" y="42" width="16" height="16" rx="3" fill="#d4af37"/>
-            <text x="50" y="52" font-size="8" font-weight="bold" fill="#fff" text-anchor="middle">SSS</text>
-          </svg>
+          <div id="payment-qr-container" style="background:#fff; padding:8px; border:1px solid #e2e8f0; border-radius:8px; margin: 0 auto; width: 140px; height: 140px; display: flex; align-items: center; justify-content: center;">
+            <svg class="qr-svg" id="default-qr-svg" viewBox="0 0 100 100" width="100%" height="100%">
+              <rect x="10" y="10" width="20" height="20" fill="#1a3a6b"/>
+              <rect x="15" y="15" width="10" height="10" fill="#fff"/>
+              <rect x="70" y="10" width="20" height="20" fill="#1a3a6b"/>
+              <rect x="75" y="15" width="10" height="10" fill="#fff"/>
+              <rect x="10" y="70" width="20" height="20" fill="#1a3a6b"/>
+              <rect x="15" y="75" width="10" height="10" fill="#fff"/>
+              <rect x="35" y="10" width="5" height="15" fill="#1a3a6b"/>
+              <rect x="45" y="10" width="10" height="5" fill="#1a3a6b"/>
+              <rect x="60" y="15" width="5" height="10" fill="#1a3a6b"/>
+              <rect x="35" y="30" width="15" height="5" fill="#1a3a6b"/>
+              <rect x="55" y="30" width="10" height="15" fill="#1a3a6b"/>
+              <rect x="75" y="35" width="15" height="5" fill="#1a3a6b"/>
+              <rect x="10" y="35" width="5" height="25" fill="#1a3a6b"/>
+              <rect x="25" y="45" width="15" height="10" fill="#1a3a6b"/>
+              <rect x="45" y="50" width="25" height="5" fill="#1a3a6b"/>
+              <rect x="75" y="55" width="10" height="25" fill="#1a3a6b"/>
+              <rect x="35" y="60" width="5" height="20" fill="#1a3a6b"/>
+              <rect x="15" y="65" width="10" height="5" fill="#1a3a6b"/>
+              <rect x="45" y="70" width="15" height="10" fill="#1a3a6b"/>
+              <rect x="65" y="80" width="5" height="10" fill="#1a3a6b"/>
+              <rect x="42" y="42" width="16" height="16" rx="3" fill="#d4af37"/>
+              <text x="50" y="52" font-size="8" font-weight="bold" fill="#fff" text-anchor="middle">SSS</text>
+            </svg>
+            <img id="custom-qr-img" src="" alt="Bank QR" style="display:none; max-width: 100%; max-height: 100%; object-fit: contain;">
+          </div>
           
           <p style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">Supports: Fonepay, eSewa, Khalti, IPS</p>
           
           <div class="payment-bank-details">
-            <p><strong>Bank:</strong> Rastriya Banijya Bank</p>
-            <p><strong>A/C Name:</strong> Shree Saraswati Sec. School</p>
-            <p><strong>A/C Number:</strong> 1430100002561001</p>
-            <p><strong>Branch:</strong> Chabahil, Kathmandu</p>
+            <p><strong>Bank:</strong> <span id="payment-bank-name">Rastriya Banijya Bank</span></p>
+            <p><strong>A/C Name:</strong> <span id="payment-ac-name">Shree Saraswati Sec. School</span></p>
+            <p><strong>A/C Number:</strong> <span id="payment-ac-number">1430100002561001</span></p>
+            <p><strong>Branch:</strong> <span id="payment-bank-branch">Chabahil, Kathmandu</span></p>
           </div>
         </div>
 
@@ -1161,12 +1430,37 @@
         // Update header and welcome message immediately from session
         document.getElementById('header-student-name').textContent = studentName;
         document.getElementById('header-student-class').textContent = studentClass || 'Loading...';
+        
+        // Fetch avatar from profile if available
+        if (supabaseDb && studentRoll) {
+          const { data: profileData, error: profileError } = await supabaseDb
+            .from('student_profiles')
+            .select('*')
+            .eq('student_roll', studentRoll)
+            .single();
+          
+          if (!profileError && profileData) {
+            window.fullProfileData = profileData;
+          }
+
+          if (!profileError && profileData && profileData.photo_url) {
+            document.getElementById('header-profile-avatar').innerHTML = `<img src="${profileData.photo_url}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
+            document.getElementById('digital-id-avatar').innerHTML = `<img src="${profileData.photo_url}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
+          } else if (window.studentData?.photoUrl) {
+            document.getElementById('header-profile-avatar').innerHTML = `<img src="${window.studentData.photoUrl}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
+            document.getElementById('digital-id-avatar').innerHTML = `<img src="${window.studentData.photoUrl}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
+          } else {
+            document.getElementById('header-profile-avatar').textContent = firstLetter;
+            document.getElementById('digital-id-avatar').textContent = firstLetter;
+          }
+        } else {
+          document.getElementById('header-profile-avatar').textContent = firstLetter;
+        }
+
         document.getElementById('welcome-message').textContent = `Welcome back, ${studentName.split(' ')[0]}! 👋`;
         document.getElementById('digital-id-student-name').textContent = studentName;
         
-        // Update profile avatars with first letter
-        document.getElementById('header-profile-avatar').textContent = firstLetter;
-        document.getElementById('digital-id-avatar').textContent = firstLetter;
+        // Remove the hardcoded firstLetter fallback since it overwrites the photo_url
         
         // Fetch full student record from Supabase
         if (supabaseDb && studentRoll) {
@@ -1188,21 +1482,33 @@
             
             // Update welcome subtitle with pending assignments count
             const pendingAssignments = assignmentsData.filter(a => a.status === 'Pending').length;
-            const billingState = data.billing_state || 'unpaid';
+            
+            // Calculate actual due fees
+            const allFees = JSON.parse(localStorage.getItem('student_fees') || '[]');
+            const myFees = allFees.filter(f => 
+              String(f.studentRoll || f.student_roll).trim().toLowerCase() === String(studentRoll).trim().toLowerCase() ||
+              (!isNaN(parseInt(studentRoll)) && parseInt(f.studentRoll || f.student_roll) === parseInt(studentRoll))
+            );
+            const pendingFees = myFees.filter(f => f.status.toLowerCase() === 'pending');
             let dueText = '';
-            if (billingState === 'paid') {
-              dueText = 'All fees are paid. ✓';
-            } else if (billingState === 'pending') {
-              dueText = 'Your fee payment is under review.';
+            
+            if (pendingFees.length > 0) {
+              const totalDue = pendingFees.reduce((sum, f) => sum + (f.amount || 0), 0);
+              dueText = `You have Rs. ${totalDue.toLocaleString()} in pending fees.`;
             } else {
-              dueText = 'Your Mangsir fee installment is due soon.';
+              dueText = 'All fees are paid. ✓';
             }
+            
             document.getElementById('welcome-subtitle').textContent = `You have ${pendingAssignments} pending assignments and ${dueText}`;
+            
+            // Sync rejection remark to localStorage if present
+            if (data.billing_state === 'rejected' && data.billing_rejection_remark) {
+              localStorage.setItem('student_billing_rejection_remark', data.billing_rejection_remark);
+            }
             
             // Store in window for later use
             window.studentData.attendance = attendance;
             window.studentData.gpa = data.overall_gpa;
-            window.studentData.billingState = billingState;
           }
         }
         
@@ -1218,6 +1524,21 @@
       }
     }
 
+    // ── FEE GROUP CLASSIFICATION HELPER ──
+    function classifyFeeGroup(fee) {
+      const cat = (fee.categoryName || fee.category_name || fee.feeType || fee.fee_type || '').toLowerCase();
+      // Examination group
+      if (cat.includes('exam') || cat.includes('term') || cat.includes('final') || cat.includes('test') || cat.includes('board')) {
+        return 'Examination';
+      }
+      // Tuition group
+      if (cat.includes('tuition') || cat.includes('monthly') || cat.includes('admission') || cat.includes('academic') || cat.includes('annual') || cat.includes('quarterly') || cat.includes('installment')) {
+        return 'Tuition';
+      }
+      // Everything else
+      return 'Other';
+    }
+
     // ── LOAD STUDENT FEES FROM ADMIN PORTAL ──
     function loadStudentFeesFromAdmin() {
       try {
@@ -1226,44 +1547,164 @@
         const studentRoll = String(window.studentData.roll).trim();
         const studentFees = JSON.parse(localStorage.getItem('student_fees') || '[]');
         
-        // Get fees for this student
-        const myFees = studentFees.filter(f => String(f.studentRoll).trim() === studentRoll);
+        // Get fees for this student (handle both camelCase and snake_case from DB)
+        const myFees = studentFees.filter(f => 
+          String(f.studentRoll || f.student_roll).trim() === studentRoll || 
+          String(f.studentRoll || f.student_roll) === studentRoll
+        );
         
-        if (myFees.length === 0) {
-          // No fees assigned
-          document.getElementById('billing-due-amount').textContent = 'Rs. 0';
-          document.getElementById('billing-pay-btn').textContent = 'No Fees Assigned';
-          document.getElementById('billing-pay-btn').disabled = true;
-          document.getElementById('billing-pay-btn').style.opacity = '0.6';
-          return;
+        // Bucket fees into the 3 groups
+        const groups = { Tuition: [], Examination: [], Other: [] };
+        myFees.forEach(f => {
+          const group = classifyFeeGroup(f);
+          groups[group].push(f);
+        });
+
+        // Helper to compute unpaid balance for a group
+        function getGroupBalance(fees) {
+          const totalDue = fees.reduce((sum, f) => sum + (parseFloat(f.amount) || 0), 0);
+          const totalPaid = fees.reduce((sum, f) => sum + (parseFloat(f.paidAmount || f.paid_amount) || 0), 0);
+          return { totalDue, totalPaid, balance: totalDue - totalPaid };
         }
 
-        // Calculate total due and paid
-        const totalDue = myFees.reduce((sum, f) => sum + f.amount, 0);
-        const totalPaid = myFees.reduce((sum, f) => sum + (f.paidAmount || 0), 0);
-        const balance = totalDue - totalPaid;
-        
-        // Update dashboard
-        document.getElementById('billing-due-amount').textContent = `Rs. ${balance}`;
-        
-        // Update fee payment history table
+        // Update each section card
+        const sectionMap = [
+          { key: 'Tuition', amountEl: 'billing-due-tuition', btnEl: 'btn-pay-tuition', label: 'Tuition' },
+          { key: 'Examination', amountEl: 'billing-due-exam', btnEl: 'btn-pay-exam', label: 'Exam' },
+          { key: 'Other', amountEl: 'billing-due-other', btnEl: 'btn-pay-other', label: 'Other' }
+        ];
+
+        let grandTotalDue = 0;
+        let grandTotalPaid = 0;
+
+        sectionMap.forEach(sec => {
+          const { totalDue, totalPaid, balance } = getGroupBalance(groups[sec.key]);
+          grandTotalDue += totalDue;
+          grandTotalPaid += totalPaid;
+
+          const amountEl = document.getElementById(sec.amountEl);
+          const btnEl = document.getElementById(sec.btnEl);
+          if (amountEl) amountEl.textContent = `Rs. ${balance.toLocaleString('en-IN')}`;
+
+          // Check statuses within this group's fees
+          const groupFees = groups[sec.key];
+          const hasUnderReview = groupFees.some(f => (f.status || '').toLowerCase() === 'under review');
+          const hasRejected = groupFees.some(f => (f.status || '').toLowerCase() === 'rejected');
+          const allPaid = groupFees.length > 0 && groupFees.every(f => ['paid', 'cleared'].includes((f.status || '').toLowerCase()));
+
+          // Remove any existing rejection/review banners from this section's parent
+          const sectionPanel = btnEl ? btnEl.closest('.panel') : null;
+          if (sectionPanel) {
+            const oldBanner = sectionPanel.querySelector('.fee-status-banner');
+            if (oldBanner) oldBanner.remove();
+          }
+
+          if (btnEl) {
+            // Reset styles
+            btnEl.style.background = '';
+            btnEl.style.opacity = '1';
+            btnEl.style.animation = '';
+            btnEl.style.cursor = 'pointer';
+            btnEl.style.color = '';
+            btnEl.disabled = false;
+
+            if (groupFees.length === 0) {
+              btnEl.textContent = 'No Fees Assigned';
+              btnEl.disabled = true;
+              btnEl.style.opacity = '0.5';
+              btnEl.style.cursor = 'not-allowed';
+            } else if (allPaid || balance <= 0) {
+              btnEl.textContent = `${sec.label} Cleared ✓`;
+              btnEl.style.background = 'var(--success)';
+              btnEl.style.color = 'white';
+              btnEl.disabled = true;
+              btnEl.style.opacity = '0.9';
+              btnEl.style.cursor = 'not-allowed';
+              if (amountEl) {
+                amountEl.textContent = 'Rs. 0';
+                amountEl.style.color = 'var(--success)';
+              }
+            } else if (hasUnderReview) {
+              btnEl.innerHTML = `<span style="display:inline-flex;align-items:center;gap:0.4rem;">⏳ Under Review</span>`;
+              btnEl.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+              btnEl.style.color = 'white';
+              btnEl.disabled = true;
+              btnEl.style.cursor = 'not-allowed';
+              btnEl.style.animation = 'pulseUnderReview 2s ease-in-out infinite';
+              // Add info banner
+              if (sectionPanel) {
+                const banner = document.createElement('div');
+                banner.className = 'fee-status-banner';
+                banner.style.cssText = 'background:#fffbeb; border:1px solid #fbbf24; border-radius:10px; padding:0.75rem 1rem; margin-top:0.8rem; font-size:0.8rem; color:#92400e; display:flex; align-items:center; gap:0.5rem;';
+                banner.innerHTML = '⏳ <span><strong>Payment submitted.</strong> Our accounts team is verifying your transaction. This usually takes up to 24 hours.</span>';
+                sectionPanel.querySelector('.fee-card').appendChild(banner);
+              }
+            } else if (hasRejected) {
+              const rejectionComment = localStorage.getItem('student_billing_rejection_remark') || 'Transaction verification failed. Please resubmit.';
+              btnEl.textContent = `Resubmit ${sec.label} Payment`;
+              btnEl.style.background = 'var(--danger)';
+              btnEl.style.color = 'white';
+              btnEl.disabled = false;
+              // Add rejection banner
+              if (sectionPanel) {
+                const banner = document.createElement('div');
+                banner.className = 'fee-status-banner';
+                banner.style.cssText = 'background:#fef2f2; border:1px solid #f87171; border-radius:10px; padding:0.75rem 1rem; margin-top:0.8rem; font-size:0.8rem; color:#991b1b;';
+                banner.innerHTML = `
+                  <div style="display:flex; align-items:flex-start; gap:0.5rem;">
+                    <span style="font-size:1.2rem; flex-shrink:0;">❌</span>
+                    <div>
+                      <strong style="display:block; margin-bottom:0.2rem;">Payment Rejected</strong>
+                      <span style="color:#b91c1c;">${rejectionComment}</span>
+                    </div>
+                  </div>`;
+                sectionPanel.querySelector('.fee-card').appendChild(banner);
+              }
+            } else {
+              btnEl.textContent = `Pay ${sec.label} (Rs. ${balance.toLocaleString('en-IN')})`;
+              btnEl.disabled = false;
+              btnEl.style.opacity = '1';
+              if (amountEl) amountEl.style.color = 'var(--primary)';
+            }
+          }
+        });
+
+        // Update the Billing & Payment History table
         const billingTbody = document.querySelector('#page-fees .custom-table tbody');
         if (billingTbody) {
-          // Clear existing rows
           billingTbody.innerHTML = '';
           
-          // Add fee records
           myFees.forEach((fee, idx) => {
-            const statusColor = fee.status === 'cleared' ? '#d1fae5' : fee.status === 'partial' ? '#fef3c7' : '#fee2e2';
-            const statusText = fee.status === 'cleared' ? 'Cleared' : fee.status === 'partial' ? 'Partial' : 'Pending';
-            const statusTextColor = fee.status === 'cleared' ? '#065f46' : fee.status === 'partial' ? '#92400e' : '#7f1d1d';
+            let statusColor = '#fee2e2';
+            let statusText = 'Unpaid';
+            let statusTextColor = '#7f1d1d';
+            const fs = (fee.status || '').toLowerCase();
+            if (fs === 'cleared' || fs === 'paid') {
+              statusColor = '#d1fae5'; statusText = 'Cleared'; statusTextColor = '#065f46';
+            } else if (fs === 'partial') {
+              statusColor = '#fef3c7'; statusText = 'Partial'; statusTextColor = '#92400e';
+            } else if (fs === 'under review') {
+              statusColor = '#ffedd5'; statusText = 'Under Review'; statusTextColor = '#c2410c';
+            } else if (fs === 'rejected') {
+              statusColor = '#fee2e2'; statusText = 'Rejected'; statusTextColor = '#991b1b';
+            }
+
+            const feeGroup = classifyFeeGroup(fee);
+            const groupBadgeColors = {
+              'Tuition': 'background:#e0e7ff;color:#3730a3;',
+              'Examination': 'background:#fef3c7;color:#92400e;',
+              'Other': 'background:#f3e8ff;color:#6b21a8;'
+            };
             
             const row = `
               <tr style="border-bottom: 1px solid #e2e8f0;">
                 <td>#SS-${Date.now()}-${idx}</td>
-                <td>${fee.dueDate}</td>
-                <td>${fee.categoryName || 'Installment'} (Inst ${fee.installment})</td>
-                <td>Rs. ${fee.amount}</td>
+                <td>${fee.dueDate || fee.due_date || 'N/A'}</td>
+                <td>
+                  ${fee.categoryName || fee.category_name || 'Installment'}
+                  <br><span style="font-size:0.7rem; padding:0.15rem 0.5rem; border-radius:10px; ${groupBadgeColors[feeGroup] || ''}">${feeGroup}</span>
+                </td>
+                <td>Rs. ${fee.amount || 0}</td>
                 <td>
                   <span style="background:${statusColor}; color:${statusTextColor}; padding:0.25rem 0.75rem; border-radius:20px; font-size:0.8rem; font-weight:600;">
                     ${statusText}
@@ -1275,16 +1716,65 @@
           });
         }
         
-        // Update button based on balance
-        if (balance <= 0) {
-          document.getElementById('billing-pay-btn').textContent = 'All Fees Cleared ✓';
-          document.getElementById('billing-pay-btn').style.background = 'var(--success)';
-          document.getElementById('billing-pay-btn').disabled = true;
-        } else {
-          document.getElementById('billing-pay-btn').textContent = `Pay Dues (Rs. ${balance})`;
-          document.getElementById('billing-pay-btn').disabled = false;
-        }
+        // Update the DASHBOARD fee card (total across all groups)
+        const grandBalance = grandTotalDue - grandTotalPaid;
+        const dashAmount = document.getElementById('dash-due-amount');
+        if (dashAmount) dashAmount.innerHTML = `<span style="font-size:2.2rem; font-weight:800;">Rs. ${grandBalance.toLocaleString('en-IN')}</span>`;
         
+        const dashSubtitle = document.getElementById('dash-fee-subtitle');
+        if (dashSubtitle) dashSubtitle.textContent = myFees.length > 0 ? `${myFees.length} Fee Items Assigned` : 'No Fees Assigned';
+
+        const dashDeadline = document.getElementById('dash-due-deadline');
+        if (dashDeadline) dashDeadline.textContent = grandBalance > 0 ? `Total Due: Rs. ${grandTotalDue.toLocaleString('en-IN')}` : 'All fees cleared ✓';
+
+        const dashPaid = document.getElementById('dash-paid-lbl');
+        if (dashPaid) dashPaid.textContent = `Paid: Rs. ${grandTotalPaid.toLocaleString('en-IN')}`;
+        const dashTotal = document.getElementById('dash-total-lbl');
+        if (dashTotal) dashTotal.textContent = `Total: Rs. ${grandTotalDue.toLocaleString('en-IN')}`;
+
+        const dashFill = document.getElementById('dash-progress-fill');
+        if (dashFill) dashFill.style.width = grandTotalDue > 0 ? `${Math.round((grandTotalPaid / grandTotalDue) * 100)}%` : '0%';
+
+        const dashPayBtn = document.getElementById('dash-pay-btn');
+        if (dashPayBtn) {
+          const anyUnderReview = myFees.some(f => (f.status || '').toLowerCase() === 'under review');
+          const anyRejected = myFees.some(f => (f.status || '').toLowerCase() === 'rejected');
+          
+          dashPayBtn.style.background = '';
+          dashPayBtn.style.opacity = '1';
+          dashPayBtn.style.animation = '';
+          dashPayBtn.style.cursor = 'pointer';
+          dashPayBtn.style.color = '';
+
+          if (grandBalance <= 0 && myFees.length > 0) {
+            dashPayBtn.textContent = 'All Fees Cleared ✓';
+            dashPayBtn.style.background = 'var(--success)';
+            dashPayBtn.style.color = 'white';
+            dashPayBtn.disabled = true;
+            dashPayBtn.style.cursor = 'not-allowed';
+          } else if (myFees.length === 0) {
+            dashPayBtn.textContent = 'No Fees Assigned';
+            dashPayBtn.disabled = true;
+            dashPayBtn.style.opacity = '0.6';
+            dashPayBtn.style.cursor = 'not-allowed';
+          } else if (anyUnderReview) {
+            dashPayBtn.innerHTML = `<span style="display:inline-flex;align-items:center;gap:0.4rem;">⏳ Under Review</span>`;
+            dashPayBtn.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+            dashPayBtn.style.color = 'white';
+            dashPayBtn.disabled = true;
+            dashPayBtn.style.cursor = 'not-allowed';
+            dashPayBtn.style.animation = 'pulseUnderReview 2s ease-in-out infinite';
+          } else if (anyRejected) {
+            dashPayBtn.textContent = `Review Rejected Payments`;
+            dashPayBtn.style.background = 'var(--danger)';
+            dashPayBtn.style.color = 'white';
+            dashPayBtn.disabled = false;
+          } else {
+            dashPayBtn.textContent = `Pay Dues (Rs. ${grandBalance.toLocaleString('en-IN')})`;
+            dashPayBtn.disabled = false;
+          }
+        }
+
       } catch(err) {
         console.error('Error loading student fees:', err);
       }
@@ -1346,22 +1836,161 @@
     }
 
     // ── DIGITAL STUDENT ID MODAL ──
-    function openDigitalId() { document.getElementById('id-modal').classList.add('active'); }
+    function openDigitalId() { 
+      const student = window.studentData || {};
+      const profile = window.fullProfileData || {};
+      const photoUrl = profile.photo_url || student.photoUrl || '';
+      
+      const modal = document.getElementById('id-modal');
+      modal.innerHTML = `
+        <div style="max-width: 400px; padding:0; margin: 10% auto; position: relative;">
+          <button class="modal-close-btn" onclick="closeDigitalId()" style="color:var(--text-main); position:absolute; right:-30px; top:-30px; font-size:2rem; cursor:pointer; outline:none; background:none; border:none;">&times;</button>
+          
+          <div class="id-card-wrapper" style="box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+            <img src="../images/logo.png" alt="Logo Watermark" class="id-card-logo-watermark">
+            
+            <div class="id-card-header">
+              <h2 class="id-card-school-name">Shree Saraswati Secondary School</h2>
+              <p class="id-card-school-address">Satyawati Rural Municipality-6 Johang, Gulmi</p>
+              <p style="font-size: 10px; opacity: 0.9; margin-bottom: 8px;">Academic Year: ${new Date().getFullYear()}</p>
+              <div class="id-card-title-badge">STUDENT ID CARD</div>
+            </div>
+            
+            <div class="id-card-body">
+              <div class="id-card-photo-container">
+                ${photoUrl ? `<img src="${photoUrl}" alt="Student Photo" class="id-card-photo">` : `<div class="id-card-photo" style="display:flex;align-items:center;justify-content:center;background:#e2e8f0;color:#64748b;font-size:12px;">No Photo</div>`}
+              </div>
+              
+              <div class="id-card-details">
+                <div class="id-card-student-name">${student.name || 'Unknown'}</div>
+                <div class="id-card-info-grid">
+                  <strong>Regd ID:</strong> <span>${student.roll || '-'}</span>
+                  <strong>Grade:</strong> <span>${student.class || '-'}</span>
+                  <strong>DoB:</strong> <span>${profile.dob || '-'}</span>
+                  <strong>Father:</strong> <span>${profile.father_name || '-'}</span>
+                  <strong>Mother:</strong> <span>${profile.mother_name || '-'}</span>
+                  <strong>Address:</strong> <span>${profile.address || '-'}</span>
+                  <strong>Contact:</strong> <span>${profile.contact || '-'}</span>
+                </div>
+              </div>
+            </div>
+              
+            <div class="id-card-signatures">
+              <div class="id-card-barcode"></div>
+              <div class="id-card-signature-box">
+                <img src="../images/signature.jpg" alt="Signature" class="id-card-signature-img" onerror="this.style.display='none'">
+                <div class="id-card-signature-line">Head Teacher</div>
+              </div>
+            </div>
+            
+            <div class="id-card-footer">
+              <div class="id-card-footer-top">If found, please return to the school.</div>
+              <div class="id-card-footer-bottom">Phone: 079-412035 | Web: www.saraswatimavigulmi.edu.np</div>
+              ${profile.school_email ? `<div class="id-card-footer-bottom" style="margin-top: 2px;">Email: ${profile.school_email}</div>` : ''}
+            </div>
+          </div>
+          <button onclick="window.print()" style="margin-top:1.5rem; width:100%; padding:0.85rem; border:none; background:var(--primary); color:white; font-weight:700; border-radius:12px; cursor:pointer; font-size: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">🖨️ Print Digital ID</button>
+        </div>
+      `;
+      modal.classList.add('active'); 
+    }
     function closeDigitalId() { document.getElementById('id-modal').classList.remove('active'); }
 
     // ── PAYMENT MODAL FLOW ──
     let feePaymentState = 'unpaid'; // 'unpaid', 'pending', 'paid'
     let submittedTxnCode = '';
+    let currentUnpaidAmount = 0;
+    let currentPayingGroup = ''; // 'Tuition', 'Examination', 'Other'
 
-    function triggerPaymentFlow() {
-      if (feePaymentState === 'paid') {
-        alert("Your term fees are fully cleared. No outstanding dues!");
-        return;
+    async function triggerPaymentFlow(feeGroup) {
+      currentPayingGroup = feeGroup || 'All';
+      
+      const rejectionRemarkDiv = document.getElementById('payment-rejection-remark');
+      if (rejectionRemarkDiv) rejectionRemarkDiv.style.display = 'none';
+
+      // Dynamically check status of fees in this group
+      const allFees = JSON.parse(localStorage.getItem('student_fees') || '[]');
+      const studentRoll = window.studentData ? window.studentData.roll : null;
+      let hasUnderReview = false;
+      let hasRejected = false;
+
+      if (studentRoll) {
+        const myFees = allFees.filter(f => String(f.student_roll || f.studentRoll).trim() === String(studentRoll).trim());
+        const groupFees = myFees.filter(f => feeGroup === 'All' || classifyFeeGroup(f) === feeGroup);
+        hasUnderReview = groupFees.some(f => (f.status || '').toLowerCase() === 'under review');
+        hasRejected = groupFees.some(f => (f.status || '').toLowerCase() === 'rejected');
       }
-      if (feePaymentState === 'pending') {
-        alert("Your transaction is currently under review by the accounts branch!");
-        return;
+
+      if (hasUnderReview) {
+        alert("Note: A previous transaction for this section is currently under review by the accounts branch.");
+        return; // Prevent opening the payment modal if already under review
+      } else if (hasRejected) {
+        const comment = localStorage.getItem('student_billing_rejection_remark') || "Transaction verification failed.";
+        if (rejectionRemarkDiv) {
+          rejectionRemarkDiv.innerHTML = `<strong>⚠️ Previous Payment Rejected:</strong> ${comment}<br><span style="font-size:0.75rem;">Please review and submit a new valid screenshot.</span>`;
+          rejectionRemarkDiv.style.display = 'block';
+        }
       }
+
+      // 🚀 REDESIGNED: Read fees from localStorage only (no broken student_fees DB query)
+      let totalUnpaid = 0;
+      
+      if (studentRoll) {
+        const myFees = allFees.filter(f => {
+          const rollMatch = String(f.student_roll || f.studentRoll).trim() === String(studentRoll).trim();
+          const statusMatch = ['pending', 'unpaid'].includes((f.status || '').toLowerCase());
+          // Only include fees from the selected group
+          const groupMatch = feeGroup ? classifyFeeGroup(f) === feeGroup : true;
+          return rollMatch && statusMatch && groupMatch;
+        });
+        totalUnpaid = myFees.reduce((sum, f) => sum + parseFloat(f.amount || 0), 0);
+        if (totalUnpaid <= 0) {
+          alert(`No unpaid ${feeGroup || ''} fees found. You are all cleared for this section!`);
+        }
+      }
+      currentUnpaidAmount = totalUnpaid;
+
+      // Format currency and show group label
+      const formattedAmount = totalUnpaid.toLocaleString('en-IN');
+      const groupLabel = feeGroup ? ` for <strong>${feeGroup} Fees</strong>` : '';
+      document.getElementById('payment-modal-desc').innerHTML = `Please transfer <strong>Rs. ${formattedAmount}</strong>${groupLabel} and submit verification credentials below.`;
+
+      // Load Bank Settings
+      try {
+        let bankSettings = null;
+        if (typeof supabaseDb !== 'undefined' && supabaseDb) {
+          try {
+            const { data, error } = await supabaseDb
+              .from('school_settings')
+              .select('setting_value')
+              .eq('setting_key', 'bank_details')
+              .single();
+            if (!error && data) {
+              bankSettings = data.setting_value;
+            }
+          } catch(e) { console.warn('Supabase fetch failed for bank settings', e); }
+        }
+        
+        if (!bankSettings) {
+          bankSettings = JSON.parse(localStorage.getItem('bank_settings'));
+        }
+        
+        if (bankSettings) {
+          if (bankSettings.bankName) document.getElementById('payment-bank-name').innerText = bankSettings.bankName;
+          if (bankSettings.accountName) document.getElementById('payment-ac-name').innerText = bankSettings.accountName;
+          if (bankSettings.accountNumber) document.getElementById('payment-ac-number').innerText = bankSettings.accountNumber;
+          if (bankSettings.branch) document.getElementById('payment-bank-branch').innerText = bankSettings.branch;
+          if (bankSettings.qrCodeDataUrl) {
+             document.getElementById('default-qr-svg').style.display = 'none';
+             const customQrImg = document.getElementById('custom-qr-img');
+             customQrImg.src = bankSettings.qrCodeDataUrl;
+             customQrImg.style.display = 'block';
+          }
+        }
+      } catch (e) {
+        console.error("Error loading bank settings", e);
+      }
+
       document.getElementById('payment-modal').classList.add('active');
     }
     function closePaymentModal() { document.getElementById('payment-modal').classList.remove('active'); }
@@ -1387,6 +2016,10 @@
         alert("Please enter a valid Transaction Reference Code.");
         return;
       }
+      
+      const loader = document.getElementById('payment-loader-overlay');
+      if (loader) loader.style.display = 'flex';
+      
       submittedTxnCode = txnCode;
       feePaymentState = 'pending';
       localStorage.setItem('student_billing_state', 'pending');
@@ -1396,24 +2029,58 @@
       const screenshotInput = document.getElementById('payment-screenshot');
       if (screenshotInput && screenshotInput.files[0]) {
         try {
-          proofUrl = await uploadMediaFile(screenshotInput.files[0], `payments/${Date.now()}_${screenshotInput.files[0].name}`);
-        } catch(err) { console.warn('Screenshot upload failed:', err); }
+          const file = screenshotInput.files[0];
+          // Get local base64 URL as fallback
+          proofUrl = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = () => resolve("rbb_receipt_screenshot.png");
+            reader.readAsDataURL(file);
+          });
+          
+          // Attempt cloud upload
+          const cloudUrl = await uploadMediaFile(file, `payments/${Date.now()}_${file.name}`);
+          if (cloudUrl) proofUrl = cloudUrl;
+        } catch(err) { console.warn('Cloud screenshot upload failed, using local base64 fallback:', err); }
       }
 
       // Insert into Supabase fee_payments table
-      if (supabaseDb) {
+      let dbInsertOk = false;
+      if (typeof supabaseDb !== 'undefined' && supabaseDb) {
         try {
           const studentName = window.studentData?.name || 'Student';
           const studentRoll = window.studentData?.roll || 12;
-          await supabaseDb.from('fee_payments').insert([{
+          // For DB: use a short proof filename, NOT base64 (too large for text column)
+          const dbProofFile = (proofUrl && proofUrl.startsWith('data:')) ? `proof_${Date.now()}.png` : proofUrl;
+          
+          const paymentRecord = {
             name: studentName,
             roll: studentRoll,
-            category: "Second Installment Dues (Rs. 5,000)",
+            category: `${currentPayingGroup} Fees (Rs. ${currentUnpaidAmount.toLocaleString('en-IN')})`,
             txn_id: txnCode,
-            proof_file: proofUrl,
+            proof_file: dbProofFile,
             status: "pending",
-            submitted_time: "Just Now"
-          }]);
+            submitted_time: new Date().toLocaleString()
+          };
+          
+          // Try insert with amount first
+          let { data, error } = await supabaseDb.from('fee_payments').insert([{ ...paymentRecord, amount: currentUnpaidAmount }]).select();
+          
+          if (error) {
+            console.warn('Insert with amount failed, retrying without amount:', error.message);
+            // Retry without amount column (might not exist in table)
+            const retry = await supabaseDb.from('fee_payments').insert([paymentRecord]).select();
+            if (retry.error) {
+              console.error('Fee payment DB insert failed completely:', retry.error.message);
+            } else {
+              dbInsertOk = true;
+              console.log('Fee payment inserted to DB (without amount)');
+            }
+          } else {
+            dbInsertOk = true;
+            console.log('Fee payment inserted to DB successfully');
+          }
+          
           // Update student billing state in DB
           await supabaseDb.from('students_registry').update({ billing_state: 'pending' }).eq('roll', studentRoll);
         } catch(err) { console.error('Payment DB sync failed:', err); }
@@ -1424,19 +2091,48 @@
       if (!globalPayments.find(p => p.txn_id === txnCode)) {
         globalPayments.push({
           id: Date.now(),
-          name: window.studentData?.name || 'Anil Gurung',
-          roll: window.studentData?.roll || 12,
-          category: "Second Installment Dues (Rs. 5,000)",
+          name: window.studentData?.name || 'Student',
+          roll: window.studentData?.roll || 0,
+          category: `${currentPayingGroup} Fees (Rs. ${currentUnpaidAmount.toLocaleString('en-IN')})`,
+          feeGroup: currentPayingGroup,
+          amount: currentUnpaidAmount,
           txn_id: txnCode,
           proof_file: proofUrl,
           status: "pending",
-          submitted_time: "Just Now"
+          submitted_time: new Date().toLocaleString()
         });
         localStorage.setItem('fee_payments', JSON.stringify(globalPayments));
       }
+      
+      // Only mark fees in the SPECIFIC group as 'Under Review'
+      const allFees = JSON.parse(localStorage.getItem('student_fees') || '[]');
+      allFees.forEach(f => {
+         const sr = window.studentData?.roll || 0;
+         const rollMatch = (String(f.studentRoll) === String(sr) || String(f.student_roll) === String(sr));
+         const statusMatch = ['unpaid', 'pending'].includes((f.status || '').toLowerCase());
+         const groupMatch = currentPayingGroup === 'All' || classifyFeeGroup(f) === currentPayingGroup;
+         if (rollMatch && statusMatch && groupMatch) {
+            f.status = 'Under Review';
+         }
+      });
+      localStorage.setItem('student_fees', JSON.stringify(allFees));
+
+      // 🚀 REDESIGNED: Sync updated fees to cloud
+      if (typeof supabaseDb !== 'undefined' && supabaseDb) {
+        try {
+          await supabaseDb.from('school_config').delete().eq('key', 'student_fees_json');
+          await supabaseDb.from('school_config').insert([{ key: 'student_fees_json', val: JSON.stringify(allFees) }]);
+        } catch(e) {
+          console.error("Cloud fee sync error:", e);
+        }
+      }
+
+      if (loader) loader.style.display = 'none';
 
       closePaymentModal();
       alert(`Verification Proof Submitted!\n\nReference ID: ${txnCode}\n\nOur accounts department will review the bank record and the screenshot within 24 hours. The portal will reflect a 'Pending Review' status in the ledger.`);
+      
+      generateInvoice(txnCode);
       
       renderPortalStates();
     }
@@ -1661,76 +2357,208 @@
       }
     }
 
-    // ── RENDER STATES ON ACTIONS ──
-    function renderPortalStates() {
+    async function renderPortalStates() {
       const billingTbody = document.querySelector('#page-fees .custom-table tbody');
+      if (billingTbody) {
+        billingTbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="text-align:center; padding: 3rem;">
+              <div style="display:inline-block; width:30px; height:30px; border:3px solid #e2e8f0; border-top:3px solid var(--primary); border-radius:50%; animation: spin 0.8s linear infinite;"></div>
+              <p style="margin-top:1rem; color:var(--text-muted); font-weight:600;">Loading Fee Ledger...</p>
+            </td>
+          </tr>
+        `;
+      }
       
-      if (feePaymentState === 'pending') {
-        // Dashboard
-        document.getElementById('dash-due-amount').textContent = "Reviewing...";
-        document.getElementById('dash-due-deadline').textContent = "Pending Accounts Check";
-        document.getElementById('dash-due-deadline').style.color = "var(--warning)";
-        document.getElementById('dash-pay-btn').textContent = "Under Review";
-        document.getElementById('dash-pay-btn').style.background = "var(--warning)";
-        
-        // Billing tab page
-        document.getElementById('billing-due-amount').textContent = "Pending Review";
-        document.getElementById('billing-pay-btn').textContent = "Under Review";
-        document.getElementById('billing-pay-btn').style.background = "var(--warning)";
+      const studentRoll = window.studentData?.roll || 12;
+      let allFees = [];
 
-        // Append pending verification row to history table
-        if (!document.getElementById('ledger-pending-row')) {
-          const rowHtml = `
-            <tr id="ledger-pending-row">
-              <td>#SS-9872</td>
-              <td>Today</td>
-              <td>Second Term Installment</td>
-              <td>Rs. 5,000</td>
-              <td><span class="status-badge pending-verification">Pending Review</span></td>
-            </tr>
-          `;
-          billingTbody.insertAdjacentHTML('afterbegin', rowHtml);
-        }
-      } else if (feePaymentState === 'paid') {
-        // Dashboard
-        document.getElementById('dash-due-amount').textContent = "Rs. 0";
-        document.getElementById('dash-due-deadline').textContent = "Term fees fully cleared";
-        document.getElementById('dash-due-deadline').style.color = "var(--success)";
-        document.getElementById('dash-paid-lbl').textContent = "Paid: Rs. 20,000";
-        document.getElementById('dash-progress-fill').style.width = "80%";
-        document.getElementById('dash-pay-btn').textContent = "Receipt Issued";
-        document.getElementById('dash-pay-btn').style.background = "var(--success)";
-        
-        // Billing tab page
-        document.getElementById('billing-due-amount').textContent = "Rs. 0";
-        document.getElementById('billing-pay-btn').textContent = "Fee Ledger Cleared";
-        document.getElementById('billing-pay-btn').style.background = "var(--success)";
-
-        // Update the pending row to fully cleared
-        const pendingRow = document.getElementById('ledger-pending-row');
-        if (pendingRow) {
-          pendingRow.innerHTML = `
-            <td>#SS-9872</td>
-            <td>Today</td>
-            <td>Second Term Installment</td>
-            <td>Rs. 5,000</td>
-            <td><span class="status-badge approved">Cleared</span></td>
-          `;
-          pendingRow.removeAttribute('id'); // Remove pending ID so it stays in history
-        } else {
-          // If approved directly without pending phase, insert cleared row
-          const rowHtml = `
-            <tr>
-              <td>#SS-9872</td>
-              <td>Today</td>
-              <td>Second Term Installment</td>
-              <td>Rs. 5,000</td>
-              <td><span class="status-badge approved">Cleared</span></td>
-            </tr>
-          `;
-          billingTbody.insertAdjacentHTML('afterbegin', rowHtml);
+      // Try Supabase first for fastest, freshest data
+      if (typeof supabaseDb !== 'undefined' && supabaseDb) {
+        try {
+          const { data, error } = await supabaseDb.from('school_config').select('val').eq('key', 'student_fees_json').single();
+          if (!error && data && data.val) {
+            allFees = JSON.parse(data.val);
+            localStorage.setItem('student_fees', data.val); // Cache it
+          }
+        } catch (e) {
+          console.warn('Supabase fee fetch failed, falling back to localStorage', e);
         }
       }
+
+      // Fallback to localStorage
+      if (allFees.length === 0) {
+        allFees = JSON.parse(localStorage.getItem('student_fees') || '[]');
+      }
+
+      // Filter fees for the specific student using robust matching
+      const myFees = allFees.filter(f => 
+        String(f.studentRoll).trim().toLowerCase() === String(studentRoll).trim().toLowerCase() ||
+        (!isNaN(parseInt(studentRoll)) && parseInt(f.studentRoll) === parseInt(studentRoll))
+      );
+      
+      let totalDue = 0;
+      let totalPaid = 0;
+      let pendingCount = 0;
+
+      // Helper to stop the loader and show real data
+      function showFeeAmount(text) {
+        const el = document.getElementById('dash-due-amount');
+        el.style.display = 'block';
+        el.textContent = text;
+      }
+      
+      if (myFees.length === 0) {
+        showFeeAmount('Rs. 0');
+        document.getElementById('dash-fee-subtitle').textContent = 'No Pending Dues';
+        document.getElementById('dash-due-deadline').textContent = 'No assigned fees';
+        document.getElementById('dash-due-deadline').style.color = 'var(--success)';
+        if(document.getElementById('dash-pay-btn')) {
+          document.getElementById('dash-pay-btn').textContent = 'All Clear ✓';
+          document.getElementById('dash-pay-btn').style.background = 'var(--success)';
+          document.getElementById('dash-pay-btn').disabled = false;
+          document.getElementById('dash-pay-btn').style.opacity = '1';
+        }
+        if(document.getElementById('dash-paid-lbl')) {
+          document.getElementById('dash-paid-lbl').textContent = 'Paid: Rs. 0';
+        }
+        if(document.getElementById('dash-total-lbl')) {
+          document.getElementById('dash-total-lbl').textContent = 'Total: Rs. 0';
+        }
+        if(document.getElementById('dash-progress-fill')) {
+          document.getElementById('dash-progress-fill').style.width = '100%';
+        }
+        
+        document.getElementById('billing-due-amount').textContent = 'Rs. 0';
+        document.getElementById('billing-pay-btn').textContent = 'Fee Ledger Cleared';
+        document.getElementById('billing-pay-btn').style.background = 'var(--success)';
+        
+        if (billingTbody) {
+          billingTbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:2rem; color:#94a3b8;">No fees assigned yet.</td></tr>`;
+        }
+        return;
+      }
+      if (billingTbody) billingTbody.innerHTML = '';
+      
+      myFees.forEach(fee => {
+        const fStatus = (fee.status || '').toLowerCase();
+        if (fStatus === 'pending' || fStatus === 'unpaid' || fStatus === 'under review') {
+          totalDue += (fee.amount || 0);
+          pendingCount++;
+        } else if (fStatus === 'paid' || fStatus === 'cleared') {
+          totalPaid += (fee.amount || 0);
+        }
+        
+        // Render history table row
+        if (billingTbody) {
+          let badgeClass = 'rejected';
+          let statusLabel = 'Unpaid';
+          if (fStatus === 'paid' || fStatus === 'cleared') { badgeClass = 'approved'; statusLabel = 'Cleared'; }
+          else if (fStatus === 'under review') { badgeClass = 'pending-verification'; statusLabel = 'Under Review'; }
+          else if (fStatus === 'rejected') { badgeClass = 'rejected'; statusLabel = 'Rejected'; }
+          
+          billingTbody.insertAdjacentHTML('beforeend', `
+            <tr>
+              <td>#FEE-${fee.id.toString().slice(-4)}</td>
+              <td>${fee.dueDate || fee.createdDate || new Date().toLocaleDateString()}</td>
+              <td>${fee.categoryName || fee.category || 'School Fee'}</td>
+              <td>Rs. ${fee.amount}</td>
+              <td><span class="status-badge ${badgeClass}">${statusLabel}</span></td>
+            </tr>
+          `);
+        }
+      });
+      
+      let totalAmount = totalDue + totalPaid;
+      let progress = totalAmount > 0 ? (totalPaid / totalAmount) * 100 : 100;
+      
+      if (totalDue > 0) {
+        showFeeAmount('Rs. ' + totalDue.toLocaleString());
+        if (pendingCount === 1) {
+          const pendingFee = myFees.find(f => (f.status || '').toLowerCase() === 'pending' || (f.status || '').toLowerCase() === 'unpaid' || (f.status || '').toLowerCase() === 'under review');
+          document.getElementById('dash-fee-subtitle').textContent = pendingFee ? (pendingFee.categoryName || '1 Pending Installment') : '1 Pending Installment';
+        } else {
+          document.getElementById('dash-fee-subtitle').textContent = `${pendingCount} Pending Installments`;
+        }
+        document.getElementById('dash-due-deadline').textContent = `Total Due: Rs. ${totalDue.toLocaleString()}`;
+        document.getElementById('dash-due-deadline').style.color = 'var(--danger)';
+        document.getElementById('dash-pay-btn').textContent = 'Pay Now';
+        document.getElementById('dash-pay-btn').style.background = 'var(--primary)';
+        document.getElementById('dash-pay-btn').disabled = false;
+        document.getElementById('dash-pay-btn').style.opacity = '1';
+        
+        document.getElementById('billing-due-amount').textContent = 'Rs. ' + totalDue.toLocaleString();
+        document.getElementById('billing-pay-btn').textContent = 'Pay Outstanding Dues';
+        document.getElementById('billing-pay-btn').style.background = 'var(--primary)';
+        document.getElementById('billing-pay-btn').disabled = false;
+        
+        // Handle Under Review or Rejected dynamically based on actual fee states
+        let hasRejected = myFees.some(f => (f.status || '').toLowerCase() === 'rejected');
+        let hasUnderReview = myFees.some(f => (f.status || '').toLowerCase() === 'under review');
+        let unpaidAmount = myFees.filter(f => ['unpaid', 'pending'].includes((f.status || '').toLowerCase())).reduce((s,f) => s + (f.amount || 0), 0);
+        let hasUnpaid = unpaidAmount > 0;
+        
+        if (hasRejected) {
+          feePaymentState = 'rejected';
+          document.getElementById('dash-pay-btn').textContent = 'Re-Submit Proof';
+          document.getElementById('dash-pay-btn').style.background = 'var(--danger)';
+          document.getElementById('billing-pay-btn').textContent = 'Re-Submit Proof';
+          document.getElementById('billing-pay-btn').style.background = 'var(--danger)';
+          
+          const comment = localStorage.getItem('student_billing_rejection_remark') || "Transaction mismatch.";
+          const existingBanner = document.getElementById('rejection-banner');
+          if (!existingBanner) {
+            const banner = document.createElement('div');
+            banner.id = 'rejection-banner';
+            banner.style = "background: #fee2e2; color: #b91c1c; padding: 1rem; margin-bottom: 1.5rem; border-radius: 8px; font-weight: bold; border-left: 5px solid #ef4444;";
+            banner.innerHTML = `⚠️ Your previous payment proof was rejected. Reason: <span>${comment}</span>. Please update and re-submit your proof.`;
+            const container = document.querySelector('#page-dashboard .cards-grid').parentNode;
+            container.insertBefore(banner, document.querySelector('#page-dashboard .cards-grid'));
+          } else {
+            existingBanner.innerHTML = `⚠️ Your previous payment proof was rejected. Reason: <span>${comment}</span>. Please update and re-submit your proof.`;
+          }
+        } else if (hasUnpaid) {
+          feePaymentState = 'pending';
+          document.getElementById('dash-pay-btn').textContent = 'Pay Now';
+          document.getElementById('dash-pay-btn').style.background = 'var(--primary)';
+          document.getElementById('dash-pay-btn').disabled = false;
+          
+          document.getElementById('billing-pay-btn').textContent = `Pay Dues (Rs. ${unpaidAmount.toLocaleString()})`;
+          document.getElementById('billing-pay-btn').style.background = 'var(--primary)';
+          document.getElementById('billing-pay-btn').disabled = false;
+        } else if (hasUnderReview) {
+          feePaymentState = 'pending';
+          document.getElementById('dash-pay-btn').textContent = 'Under Review';
+          document.getElementById('dash-pay-btn').style.background = 'var(--warning)';
+          document.getElementById('dash-pay-btn').disabled = true;
+          document.getElementById('billing-pay-btn').textContent = 'Verification in Progress';
+          document.getElementById('billing-pay-btn').style.background = 'var(--warning)';
+          document.getElementById('billing-pay-btn').disabled = true;
+        }
+      } else {
+        showFeeAmount('Rs. 0');
+        document.getElementById('dash-fee-subtitle').textContent = 'No Pending Dues';
+        document.getElementById('dash-due-deadline').textContent = 'Term fees fully cleared ✓';
+        document.getElementById('dash-due-deadline').style.color = 'var(--success)';
+        document.getElementById('dash-pay-btn').textContent = 'All Cleared ✓';
+        document.getElementById('dash-pay-btn').style.background = 'var(--success)';
+        document.getElementById('dash-pay-btn').disabled = true;
+        document.getElementById('dash-pay-btn').style.opacity = '1';
+        
+        document.getElementById('billing-due-amount').textContent = 'Rs. 0';
+        document.getElementById('billing-pay-btn').textContent = 'Fee Ledger Cleared';
+        document.getElementById('billing-pay-btn').style.background = 'var(--success)';
+        document.getElementById('billing-pay-btn').disabled = true;
+      }
+      
+      if (feePaymentState !== 'rejected') {
+        const existingBanner = document.getElementById('rejection-banner');
+        if (existingBanner) existingBanner.remove();
+      }
+      
+      document.getElementById('dash-paid-lbl').textContent = 'Paid: Rs. ' + totalPaid.toLocaleString();
+      document.getElementById('dash-total-lbl').textContent = 'Total: Rs. ' + totalAmount.toLocaleString();
+      document.getElementById('dash-progress-fill').style.width = progress + '%';
     }
 
     // ── NOTIFICATION TOGGLE & ACTIONS ──
@@ -1787,9 +2615,17 @@
     function syncGPAAndRemarks() {
       const students = JSON.parse(localStorage.getItem('students_registry') || '[]');
       const studentRoll = window.studentData?.roll || 12;
-      const student = students.find(s => s.roll === studentRoll);
-      if (student && student.overallGPA) {
-        document.getElementById('student-overall-gpa-val').textContent = student.overallGPA;
+      
+      // Match by either roll (as number) or name
+      const student = students.find(s => parseInt(s.roll) === parseInt(studentRoll) || s.name === window.studentData?.name);
+      
+      if (student) {
+        if (student.overallGPA) {
+          document.getElementById('student-overall-gpa-val').textContent = student.overallGPA;
+        }
+        if (student.attendance) {
+          document.getElementById('student-attendance-val').textContent = student.attendance;
+        }
       }
       
       const remark = localStorage.getItem(`student_gpa_remark_${studentRoll}`);
@@ -1813,23 +2649,24 @@
 
     function syncLeavesFromRegistry() {
       const dbLeaves = JSON.parse(localStorage.getItem('student_leaves') || '[]');
-      if (dbLeaves.length > 0) {
-        const studentName = window.studentData?.name || 'Anil Gurung';
-        const studentLeaves = dbLeaves.filter(l => l.name === studentName);
-        if (studentLeaves.length > 0) {
-          leavesData = studentLeaves.map(l => {
-            return {
-              id: l.id,
-              type: l.type,
-              start: l.range.split(' to ')[0] || '2026-11-20',
-              end: l.range.split(' to ')[1] || '2026-11-21',
-              desc: l.desc,
-              status: l.status.charAt(0).toUpperCase() + l.status.slice(1)
-            };
-          });
-          renderLeaves();
-        }
+      const studentName = window.studentData?.name || 'Anil Gurung';
+      const studentLeaves = dbLeaves.filter(l => l.name === studentName);
+      
+      if (studentLeaves.length > 0) {
+        leavesData = studentLeaves.map(l => {
+          return {
+            id: l.id,
+            type: l.type,
+            start: l.range.split(' to ')[0] || '2026-11-20',
+            end: l.range.split(' to ')[1] || '2026-11-21',
+            desc: l.desc,
+            status: l.status.charAt(0).toUpperCase() + l.status.slice(1)
+          };
+        });
+      } else {
+        leavesData = [];
       }
+      renderLeaves();
     }
 
     function renderDynamicTimetable() {
@@ -1869,13 +2706,10 @@
           renderPortalStates();
           
           if (dbState === 'paid') {
-            triggerSuccessBeepToast("Payment Approved by Admin Cell!", "Rs. 5,000 cleared cleanly from outstanding dues!");
+            triggerSuccessBeepToast("Payment Approved by Admin Cell!", "Fee payment cleared cleanly from outstanding dues!");
           } else if (dbState === 'rejected') {
             const comment = localStorage.getItem('student_billing_rejection_remark') || "Transaction mismatch.";
             alert(`⚠️ Payment Proof Audit Rejected by Accounts!\n\nRemark: "${comment}"\n\nPlease re-upload proper transaction voucher.`);
-            feePaymentState = 'unpaid';
-            localStorage.setItem('student_billing_state', 'unpaid');
-            renderPortalStates();
           }
         }
 
@@ -1884,152 +2718,309 @@
         syncLeavesFromRegistry();
         renderDynamicTimetable();
         renderAnnouncements();
+        loadStudentFeesFromAdmin();
       }, 1500);
     }
 
     // ── RENDER STUDENT RESULTS ──
-    function renderStudentResults() {
-      // Get current student symbol (in a real system, this would come from login session)
-      // For demo, we'll get the first student symbol from approved results
-      const approvedResults = JSON.parse(localStorage.getItem('approved_results') || '[]');
+    async function renderStudentResults() {
+      const studentRoll = window.studentData?.roll || 12;
       
-      if (approvedResults.length === 0) {
-        document.getElementById('result-no-data').style.display = 'block';
-        document.getElementById('result-table-wrapper').style.display = 'none';
-        document.getElementById('result-subjects-count').textContent = '0';
-        document.getElementById('result-avg-percentage').textContent = '0%';
-        document.getElementById('result-avg-gpa').textContent = '0.0';
-        return;
-      }
-      
-      // Get unique students and default to first student (in real app, get from login session)
-      const uniqueStudents = [];
-      const seenSymbols = new Set();
-      approvedResults.forEach(result => {
-        if (!seenSymbols.has(result.symbolNumber)) {
-          uniqueStudents.push(result.symbolNumber);
-          seenSymbols.add(result.symbolNumber);
-        }
-      });
-      
-      // Use first student's results for display
-      const currentStudentSymbol = uniqueStudents[0];
-      const studentResults = approvedResults.filter(r => r.symbolNumber === currentStudentSymbol);
-      
-      if (studentResults.length === 0) {
-        document.getElementById('result-no-data').style.display = 'block';
-        document.getElementById('result-table-wrapper').style.display = 'none';
-        return;
-      }
-      
-      // Show table and hide no-data message
-      document.getElementById('result-no-data').style.display = 'none';
-      document.getElementById('result-table-wrapper').style.display = 'block';
-      
-      // Populate results table
       const tbody = document.getElementById('result-tbody');
-      tbody.innerHTML = '';
-      
-      let totalPercentage = 0;
-      let totalGPA = 0;
-      
-      studentResults.forEach(result => {
-        const gradeColor = result.gpa >= 3.0 ? '#10b981' : result.gpa >= 2.0 ? '#f59e0b' : '#ef4444';
-        tbody.innerHTML += `
+      if (tbody) {
+        document.getElementById('result-table-wrapper').style.display = 'block';
+        document.getElementById('result-no-data').style.display = 'none';
+        tbody.innerHTML = `
           <tr>
-            <td><strong>${result.subject}</strong></td>
-            <td>${result.examType}</td>
-            <td><strong>${result.marks}</strong></td>
-            <td>${result.totalMarks}</td>
-            <td><span style="color: ${gradeColor}; font-weight: 700; font-size: 1.1rem;">${result.grade}</span></td>
-            <td><strong style="color: ${gradeColor};">${result.gpa.toFixed(2)}</strong></td>
-            <td>${result.percentage}%</td>
-            <td>${result.approvalDate}</td>
+            <td colspan="8" style="text-align:center; padding: 3rem;">
+              <div style="display:inline-block; width:30px; height:30px; border:3px solid #e2e8f0; border-top:3px solid var(--primary); border-radius:50%; animation: spin 0.8s linear infinite;"></div>
+              <p style="margin-top:1rem; color:var(--text-muted); font-weight:600;">Loading Exam Results...</p>
+            </td>
           </tr>
         `;
-        totalPercentage += result.percentage;
-        totalGPA += result.gpa;
-      });
+      }
       
-      // Calculate and display averages
-      const avgPercentage = Math.round(totalPercentage / studentResults.length);
-      const avgGPA = (totalGPA / studentResults.length).toFixed(2);
+      // Wait briefly to show loader
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      // CHECK FEE STATUS FIRST
+      // CHECK FEE STATUS FIRST
+      let unpaidTotal = 0;
+      const localFees = JSON.parse(localStorage.getItem('student_fees') || '[]');
+      const myFees = localFees.filter(f => String(f.studentRoll || f.student_roll) === String(studentRoll));
+      unpaidTotal = myFees.filter(f => (f.status || '').toLowerCase() === 'unpaid' || (f.status || '').toLowerCase() === 'pending' || (f.status || '').toLowerCase() === 'under review').reduce((sum, f) => sum + (parseFloat(f.amount) || 0), 0);
+
+      if (unpaidTotal > 0) {
+        document.getElementById('result-table-wrapper').style.display = 'none';
+        document.getElementById('result-no-data').style.display = 'block';
+        document.getElementById('result-no-data').innerHTML = `
+          <div style="background: #fef2f2; padding: 2rem; border-radius: 12px; border: 2px dashed #f87171; max-width: 500px; margin: 0 auto;">
+            <span style="font-size: 3rem; margin-bottom: 1rem; display: block;">🔒</span>
+            <h3 style="color: #b91c1c; font-weight: 800; margin-bottom: 0.5rem;">Marksheet Locked</h3>
+            <p style="color: #991b1b; font-size: 1rem; margin-bottom: 1.5rem;">You have an outstanding fee balance of <strong>Rs. ${unpaidTotal.toLocaleString('en-IN')}</strong>.</p>
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.5rem;">Please pay all your remaining dues to unlock your exam results and download your report card.</p>
+            <button onclick="switchPage('fees')" class="submit-btn" style="background: var(--danger); width: 100%;">Pay Dues Now</button>
+          </div>
+        `;
+        // Hide the overall performance card values
+        document.getElementById('result-subjects-count').textContent = '🔒';
+        document.getElementById('result-avg-percentage').textContent = '🔒';
+        document.getElementById('result-avg-gpa').textContent = '🔒';
+        document.getElementById('result-last-updated').textContent = 'Locked';
+        return;
+      }
+
+      const publishedResults = JSON.parse(localStorage.getItem('published_results') || '[]');
+      const studentResults = publishedResults.filter(r => 
+        String(r.symbolNumber).trim().toLowerCase() === String(studentRoll).trim().toLowerCase() ||
+        String(r.student_roll).trim().toLowerCase() === String(studentRoll).trim().toLowerCase() ||
+        (!isNaN(parseInt(studentRoll)) && (parseInt(r.symbolNumber) === parseInt(studentRoll) || parseInt(r.student_roll) === parseInt(studentRoll)))
+      );
+      
+      if (studentResults.length === 0) {
+        document.getElementById('result-no-data').style.display = 'block';
+        document.getElementById('result-table-wrapper').style.display = 'none';
+        return;
+      }
+      
+      // Calculate overall stats
+      let totalObtained = 0;
+      let totalMax = 0;
+      let totalGPA = 0;
+
+      // Populate results table
+      if (tbody) {
+        tbody.innerHTML = '';
+      }
+      
+      studentResults.forEach(result => {
+        const marks = parseInt(result.marks) || 0;
+        const totalMarks = parseInt(result.totalMarks) || 100;
+        const percentage = totalMarks > 0 ? (marks / totalMarks) * 100 : 0;
+        const gpa = percentage / 25;
+        
+        let grade = 'F';
+        if (percentage >= 90) grade = 'A+';
+        else if (percentage >= 80) grade = 'A';
+        else if (percentage >= 70) grade = 'B+';
+        else if (percentage >= 60) grade = 'B';
+        else if (percentage >= 50) grade = 'C+';
+        else if (percentage >= 40) grade = 'C';
+        else if (percentage >= 35) grade = 'D';
+
+        const gradeColor = gpa >= 3.0 ? '#10b981' : gpa >= 2.0 ? '#f59e0b' : '#ef4444';
+        
+        tbody.innerHTML += `
+          <tr>
+            <td><strong>${result.subject || '-'}</strong></td>
+            <td>${result.examType || 'Term Exam'}</td>
+            <td><strong>${marks}</strong></td>
+            <td>${totalMarks}</td>
+            <td><span style="color: ${gradeColor}; font-weight: 700; font-size: 1.1rem;">${grade}</span></td>
+            <td><strong style="color: ${gradeColor};">${gpa.toFixed(2)}</strong></td>
+            <td>${percentage.toFixed(1)}%</td>
+            <td>${result.academicYear || new Date().getFullYear()}</td>
+          </tr>
+        `;
+        
+        totalObtained += marks;
+        totalMax += totalMarks;
+        totalGPA += gpa;
+      });
+
+      document.getElementById('result-no-data').style.display = 'none';
+      document.getElementById('result-table-wrapper').style.display = 'block';
+
+      // Update Dashboard Cards
+      const avgPercentage = totalMax > 0 ? (totalObtained / totalMax) * 100 : 0;
+      const avgGPA = (totalGPA / studentResults.length) || 0;
       
       document.getElementById('result-subjects-count').textContent = studentResults.length;
-      document.getElementById('result-avg-percentage').textContent = avgPercentage + '%';
-      document.getElementById('result-avg-gpa').textContent = avgGPA;
-      document.getElementById('result-last-updated').textContent = studentResults[0].approvalDate || new Date().toLocaleDateString();
+      document.getElementById('result-avg-percentage').textContent = avgPercentage.toFixed(1) + '%';
+      document.getElementById('result-avg-gpa').textContent = avgGPA.toFixed(2);
+      document.getElementById('result-last-updated').textContent = new Date().toLocaleDateString();
     }
     
-    // ── DOWNLOAD STUDENT RESULT CARD ──
+    function calculateGPA(marks) {
+      if (marks >= 90) return { gpa: 4.0, grade: 'A+', percentage: marks };
+      if (marks >= 80) return { gpa: 3.6, grade: 'A', percentage: marks };
+      if (marks >= 70) return { gpa: 3.2, grade: 'B+', percentage: marks };
+      if (marks >= 60) return { gpa: 2.8, grade: 'B', percentage: marks };
+      if (marks >= 50) return { gpa: 2.4, grade: 'C+', percentage: marks };
+      if (marks >= 40) return { gpa: 2.0, grade: 'C', percentage: marks };
+      if (marks >= 35) return { gpa: 1.2, grade: 'D', percentage: marks };
+      return { gpa: 0.8, grade: 'NG', percentage: marks };
+    }
+
+    function closeMarksheetPreview() {
+      document.getElementById('marksheet-preview-modal').style.display = 'none';
+    }
+
+    // ── VIEW STUDENT MARKSHEET ──
     function downloadStudentResultCard() {
-      const approvedResults = JSON.parse(localStorage.getItem('approved_results') || '[]');
+      const publishedResults = JSON.parse(localStorage.getItem('published_results') || '[]');
+      const studentRoll = window.studentData?.roll || 12;
+      const studentName = window.studentData?.name || 'Student';
+      const studentClass = window.studentData?.class || '';
       
-      if (approvedResults.length === 0) {
-        alert('No results available to download');
-        return;
-      }
+      const studentResults = publishedResults.filter(r => 
+        String(r.symbolNumber).trim().toLowerCase() === String(studentRoll).trim().toLowerCase() ||
+        String(r.student_roll).trim().toLowerCase() === String(studentRoll).trim().toLowerCase() ||
+        (!isNaN(parseInt(studentRoll)) && (parseInt(r.symbolNumber) === parseInt(studentRoll) || parseInt(r.student_roll) === parseInt(studentRoll)))
+      );
       
-      // Get first student's results
-      const uniqueSymbols = new Set();
-      let currentStudentSymbol = null;
-      for (let result of approvedResults) {
-        if (!uniqueSymbols.has(result.symbolNumber)) {
-          currentStudentSymbol = result.symbolNumber;
-          break;
-        }
-      }
-      
-      const studentResults = approvedResults.filter(r => r.symbolNumber === currentStudentSymbol);
       if (studentResults.length === 0) {
-        alert('No results found');
+        alert('No results available to view marksheet.');
         return;
       }
       
-      const student = studentResults[0];
-      
-      // Create CSV content
-      let csvContent = 'data:text/csv;charset=utf-8,';
-      csvContent += 'SHREE SARASWATI SECONDARY SCHOOL\\n';
-      csvContent += 'EXAM RESULT REPORT CARD\\n\\n';
-      csvContent += `Student Name,${student.name}\\n`;
-      csvContent += `Symbol Number,${student.symbolNumber}\\n`;
-      csvContent += `Class,${student.class}\\n`;
-      csvContent += `Generated Date,${new Date().toLocaleDateString()}\\n\\n`;
-      
-      csvContent += 'Subject,Exam Type,Marks,Total,Grade,GPA,Percentage\\n';
-      let totalPerc = 0, totalGPA = 0;
-      studentResults.forEach(result => {
-        csvContent += `${result.subject},${result.examType},${result.marks},${result.totalMarks},${result.grade},${result.gpa},${result.percentage}%\\n`;
-        totalPerc += result.percentage;
-        totalGPA += result.gpa;
+      // Group by examType and pick the latest one
+      const groupedByExam = {};
+      studentResults.forEach(r => {
+        const examType = r.examType || 'Term Exam';
+        if (!groupedByExam[examType]) groupedByExam[examType] = [];
+        groupedByExam[examType].push(r);
       });
+      const examTypes = Object.keys(groupedByExam);
+      const latestExamType = examTypes[examTypes.length - 1]; // pick the last one
+      const examResults = groupedByExam[latestExamType];
       
-      const avgPerc = Math.round(totalPerc / studentResults.length);
-      const avgGPA = (totalGPA / studentResults.length).toFixed(2);
-      csvContent += `\\nAverage Percentage,${avgPerc}%\\n`;
-      csvContent += `Average GPA,${avgGPA}\\n`;
+      const profile = window.fullProfileData || {};
+      const dob = profile.dob || '-';
+
+      document.getElementById('ms-student-name').innerText = studentName;
+      document.getElementById('ms-student-dob').innerText = dob;
+      document.getElementById('ms-student-grade').innerText = studentClass;
+      document.getElementById('ms-exam-name').innerText = latestExamType.toUpperCase();
+      document.getElementById('ms-exam-title').innerText = latestExamType;
+      document.getElementById('ms-exam-year').innerText = examResults[0].academicYear || new Date().getFullYear();
+      document.getElementById('ms-issue-date').innerText = new Date().toLocaleDateString();
+
+      const tbody = document.getElementById('ms-marks-tbody');
+      const thead = document.getElementById('ms-marks-thead');
+      tbody.innerHTML = '';
       
-      // Create and trigger download
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement('a');
-      link.setAttribute('href', encodedUri);
-      link.setAttribute('download', `${student.symbolNumber}_ResultCard.csv`);
-      link.click();
+      const isFinalTerm = (latestExamType === 'Final Term');
+      if (isFinalTerm) {
+          thead.innerHTML = `
+              <tr>
+                <th rowspan="2">S.NO.</th>
+                <th rowspan="2">Subjects</th>
+                <th colspan="4">Marks (Th + Pr)</th>
+                <th rowspan="2">Total</th>
+                <th rowspan="2">Grade</th>
+              </tr>
+              <tr>
+                <th>1st Term</th>
+                <th>2nd Term</th>
+                <th>Final</th>
+                <th>Practical</th>
+              </tr>
+          `;
+      } else {
+          thead.innerHTML = `
+              <tr>
+                <th>S.NO.</th>
+                <th>Subjects</th>
+                <th>Credit Hour</th>
+                <th>Grade Point</th>
+                <th>Grade</th>
+                <th>Remarks</th>
+              </tr>
+          `;
+      }
+
+      let term1Results = [];
+      let term2Results = [];
+      if (isFinalTerm) {
+          term1Results = studentResults.filter(r => r.examType === 'First Term');
+          term2Results = studentResults.filter(r => r.examType === 'Mid Term');
+      }
+
+      let totalMarksObtained = 0;
+      let totalMaxMarks = 0;
+      let totalCreditHours = 0;
+      let weightedGpaSum = 0;
+
+      examResults.forEach((result, index) => {
+         const marks = parseInt(result.marks) || 0;
+         const maxMarks = parseInt(result.totalMarks) || 100;
+         totalMarksObtained += marks;
+         totalMaxMarks += maxMarks;
+
+         const percentage = maxMarks > 0 ? (marks / maxMarks) * 100 : 0;
+         const gpaData = calculateGPA(percentage);
+
+         let remarks = 'ACCEPTABLE';
+         if(percentage >= 90) remarks = 'OUTSTANDING';
+         else if(percentage >= 80) remarks = 'EXCELLENT';
+         else if(percentage >= 70) remarks = 'VERY GOOD';
+         else if(percentage >= 60) remarks = 'GOOD';
+         else if(percentage >= 50) remarks = 'SATISFACTORY';
+         else if(percentage >= 40) remarks = 'ACCEPTABLE';
+         else if(percentage >= 35) remarks = 'BASIC';
+         else remarks = 'NOT GRADED';
+         
+         const creditHour = maxMarks === 100 ? 4 : (maxMarks/25).toFixed(1);
+         totalCreditHours += parseFloat(creditHour);
+         weightedGpaSum += (parseFloat(creditHour) * gpaData.gpa);
+
+         if (isFinalTerm) {
+             const t1Obj = term1Results.find(r => r.subject === result.subject);
+             const t2Obj = term2Results.find(r => r.subject === result.subject);
+             
+             let t1Raw = t1Obj && t1Obj.marks ? parseInt(t1Obj.marks) : 0;
+             let t2Raw = t2Obj && t2Obj.marks ? parseInt(t2Obj.marks) : 0;
+             let finRaw = result.theoryMarks !== undefined ? result.theoryMarks : marks;
+             let pracRaw = result.practicalMarks || 0;
+             
+             let t1 = t1Raw > 0 ? t1Raw.toFixed(1) : '-';
+             let t2 = t2Raw > 0 ? t2Raw.toFixed(1) : '-';
+             let fin = finRaw.toFixed(1);
+             let prac = result.practicalMarks > 0 ? pracRaw.toFixed(1) : '-';
+             let tot = marks.toFixed(1);
+
+             tbody.innerHTML += `
+                <tr>
+                   <td>${index + 1}</td>
+                   <td>${result.subject}</td>
+                   <td>${t1}</td>
+                   <td>${t2}</td>
+                   <td>${fin}</td>
+                   <td>${prac}</td>
+                   <td><strong>${tot}</strong></td>
+                   <td>${gpaData.grade}</td>
+                </tr>
+              `;
+         } else {
+             tbody.innerHTML += `
+                <tr>
+                   <td>${index + 1}</td>
+                   <td>${result.subject}</td>
+                   <td>${creditHour}</td>
+                   <td>${gpaData.gpa.toFixed(1)}</td>
+                   <td>${gpaData.grade}</td>
+                   <td>${remarks}</td>
+                </tr>
+             `;
+         }
+      });
+
+      const overallPercentage = totalMaxMarks > 0 ? (totalMarksObtained / totalMaxMarks) * 100 : 0;
+      const overallGpaData = calculateGPA(overallPercentage);
+      overallGpaData.gpa = totalCreditHours > 0 ? (weightedGpaSum / totalCreditHours) : 0;
       
-      alert('Result card downloaded successfully!');
+      document.getElementById('ms-overall-gpa').innerText = overallGpaData.gpa.toFixed(2);
+      document.getElementById('marksheet-preview-modal').style.display = 'block';
     }
 
     // ── RENDER TERM REPORT CARDS ──
-    function renderReportCards() {
+    async function renderReportCards() {
       const container = document.getElementById('student-report-cards-container');
       const noDataMsg = document.getElementById('no-report-cards-msg');
       if (!container) return;
       
-      const published = JSON.parse(localStorage.getItem('published_report_cards') || '[]');
       const studentRoll = window.studentData?.roll || 12; // fallback to 12 if not logged in
-      
-      const myReports = published.filter(r => parseInt(r.rollNo) === parseInt(studentRoll));
 
       // Clear old rendered cards but keep noDataMsg
       Array.from(container.children).forEach(child => {
@@ -2038,19 +3029,105 @@
         }
       });
 
-      if (myReports.length === 0) {
+      // CHECK FEE STATUS FIRST
+      let unpaidTotal = 0;
+      
+      const localFees = JSON.parse(localStorage.getItem('student_fees') || '[]');
+      const myFees = localFees.filter(f => String(f.studentRoll) === String(studentRoll) || String(f.student_roll) === String(studentRoll));
+      unpaidTotal = myFees.filter(f => (f.status || '').toLowerCase() === 'unpaid' || (f.status || '').toLowerCase() === 'pending').reduce((sum, f) => sum + (parseFloat(f.amount) || 0), 0);
+
+      if (unpaidTotal > 0) {
+        if(noDataMsg) noDataMsg.style.display = 'none';
+        container.innerHTML += `
+          <div style="background: #fef2f2; padding: 3rem; text-align: center; border-radius: 12px; border: 2px dashed #f87171; max-width: 600px; margin: 0 auto;">
+            <span style="font-size: 3.5rem; margin-bottom: 1rem; display: block;">🔒</span>
+            <h3 style="color: #b91c1c; font-weight: 800; margin-bottom: 0.5rem; font-size: 1.5rem;">Report Cards Locked</h3>
+            <p style="color: #991b1b; font-size: 1.1rem; margin-bottom: 1.5rem;">You have an outstanding fee balance of <strong>Rs. ${unpaidTotal.toLocaleString('en-IN')}</strong>.</p>
+            <p style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 2rem;">School policy requires all term fees to be fully cleared before you can access and download your official report cards.</p>
+            <button onclick="switchPage('fees')" class="submit-btn" style="background: var(--danger); width: 100%; max-width: 300px; padding: 0.8rem;">Pay Remaining Dues Now</button>
+          </div>
+        `;
+        return;
+      }
+      
+      const published = JSON.parse(localStorage.getItem('published_results') || '[]');
+      
+      const studentResults = published.filter(r => 
+        String(r.symbolNumber).trim().toLowerCase() === String(studentRoll).trim().toLowerCase() ||
+        String(r.student_roll).trim().toLowerCase() === String(studentRoll).trim().toLowerCase() ||
+        (!isNaN(parseInt(studentRoll)) && (parseInt(r.symbolNumber) === parseInt(studentRoll) || parseInt(r.student_roll) === parseInt(studentRoll)))
+      );
+
+      if (studentResults.length === 0) {
         if(noDataMsg) noDataMsg.style.display = 'block';
         return;
       }
       
       if(noDataMsg) noDataMsg.style.display = 'none';
 
-      myReports.forEach(report => {
+      // Group by examType
+      const groupedByExam = {};
+      studentResults.forEach(r => {
+        const examType = r.examType || 'Term Exam';
+        if (!groupedByExam[examType]) {
+          groupedByExam[examType] = {
+            examType: examType,
+            name: r.name,
+            rollNo: studentRoll,
+            academicYear: r.academicYear || new Date().getFullYear(),
+            subjects: []
+          };
+        }
+        groupedByExam[examType].subjects.push({
+          name: r.subject,
+          obtained: parseInt(r.marks) || 0,
+          full: parseInt(r.totalMarks) || 100
+        });
+      });
+
+      Object.values(groupedByExam).forEach(report => {
+        let subjectsHtml = '';
+        let totalObtained = 0;
+        let totalMax = 0;
+        
+        report.subjects.forEach(sub => {
+          const pct = (sub.obtained / sub.full) * 100;
+          let grade = 'F';
+          if (pct >= 90) grade = 'A+';
+          else if (pct >= 80) grade = 'A';
+          else if (pct >= 70) grade = 'B+';
+          else if (pct >= 60) grade = 'B';
+          else if (pct >= 50) grade = 'C+';
+          else if (pct >= 40) grade = 'C';
+          else if (pct >= 35) grade = 'D';
+
+          subjectsHtml += `
+            <tr style="border-bottom: 1px solid #e2e8f0;">
+              <td style="padding: 1rem;">${sub.name}</td>
+              <td style="padding: 1rem; text-align: center;">${sub.full}</td>
+              <td style="padding: 1rem; text-align: center; font-weight: 600;">${sub.obtained}</td>
+              <td style="padding: 1rem; text-align: center;"><span style="color: var(--primary); font-weight: bold;">${grade}</span></td>
+            </tr>
+          `;
+          totalObtained += sub.obtained;
+          totalMax += sub.full;
+        });
+
+        const overallPct = (totalObtained / totalMax) * 100;
+        let overallGrade = 'F';
+        if (overallPct >= 90) overallGrade = 'A+';
+        else if (overallPct >= 80) overallGrade = 'A';
+        else if (overallPct >= 70) overallGrade = 'B+';
+        else if (overallPct >= 60) overallGrade = 'B';
+        else if (overallPct >= 50) overallGrade = 'C+';
+        else if (overallPct >= 40) overallGrade = 'C';
+        else if (overallPct >= 35) overallGrade = 'D';
+
         const cardHTML = `
           <div class="panel" style="border: 2px solid var(--primary); box-shadow: 0 10px 30px rgba(26,58,107,0.1);">
             <div style="text-align: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 1.5rem; margin-bottom: 1.5rem;">
               <h2 style="font-family: 'Playfair Display', serif; color: var(--primary); font-size: 2rem; margin-bottom: 0.5rem;">Shree Saraswati Secondary School</h2>
-              <p style="font-size: 1.1rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Official Term Report Card</p>
+              <p style="font-size: 1.1rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Official Term Report Card - ${report.examType}</p>
             </div>
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem; background: var(--bg-color); padding: 1.5rem; border-radius: 12px;">
@@ -2063,62 +3140,42 @@
                 <h4 style="font-size: 1.2rem; color: var(--primary);">${report.rollNo}</h4>
               </div>
               <div>
-                <p style="font-size: 0.9rem; color: var(--text-muted); font-weight: 600;">Class / Grade</p>
-                <h4 style="font-size: 1.2rem; color: var(--primary);">${report.className}</h4>
+                <p style="font-size: 0.9rem; color: var(--text-muted); font-weight: 600;">Academic Year</p>
+                <h4 style="font-size: 1.2rem; color: var(--primary);">${report.academicYear}</h4>
+              </div>
+            </div>
+            
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 2rem;">
+              <thead>
+                <tr style="background: var(--bg-color);">
+                  <th style="padding: 1rem; text-align: left; color: var(--text-muted);">Subjects</th>
+                  <th style="padding: 1rem; text-align: center; color: var(--text-muted);">Full Marks</th>
+                  <th style="padding: 1rem; text-align: center; color: var(--text-muted);">Obtained</th>
+                  <th style="padding: 1rem; text-align: center; color: var(--text-muted);">Grade</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${subjectsHtml}
+              </tbody>
+            </table>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 2px solid var(--primary); padding-top: 1.5rem;">
+              <div>
+                <p style="font-size: 0.9rem; color: var(--text-muted);">Total Marks</p>
+                <h3 style="color: var(--primary); font-size: 1.5rem;">${totalObtained} / ${totalMax}</h3>
               </div>
               <div>
-                <p style="font-size: 0.9rem; color: var(--text-muted); font-weight: 600;">Examination</p>
-                <h4 style="font-size: 1.2rem; color: var(--primary);">${report.examType}</h4>
+                <p style="font-size: 0.9rem; color: var(--text-muted);">Percentage</p>
+                <h3 style="color: var(--primary); font-size: 1.5rem;">${overallPct.toFixed(1)}%</h3>
+              </div>
+              <div style="text-align: right;">
+                <p style="font-size: 0.9rem; color: var(--text-muted);">Final Grade</p>
+                <h2 style="color: var(--success); font-size: 2rem;">${overallGrade}</h2>
               </div>
             </div>
-
-            <div class="custom-table-wrapper" style="margin-bottom: 2rem;">
-              <table class="custom-table">
-                <thead>
-                  <tr style="background: var(--primary); color: white;">
-                    <th style="color: white;">Subject</th>
-                    <th style="color: white;">Marks Obtained</th>
-                    <th style="color: white;">Max Marks</th>
-                    <th style="color: white;">Grade</th>
-                    <th style="color: white;">GPA</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${report.subjects.map(s => `
-                    <tr>
-                      <td><strong>${s.subject}</strong></td>
-                      <td>${s.marks}</td>
-                      <td>${s.totalMarks}</td>
-                      <td><span style="font-weight: 700;">${s.grade}</span></td>
-                      <td><strong>${s.gpa.toFixed(2)}</strong></td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>
-
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
-               <div style="text-align: center; background: #f8fafc; padding: 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0;">
-                 <p style="font-size: 0.85rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Total Marks</p>
-                 <h3 style="font-size: 1.8rem; color: var(--primary); margin: 0;">${report.totalMarksObtained}/${report.totalMaxMarks}</h3>
-               </div>
-               <div style="text-align: center; background: #f8fafc; padding: 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0;">
-                 <p style="font-size: 0.85rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Overall GPA</p>
-                 <h3 style="font-size: 1.8rem; color: #10b981; margin: 0;">${report.overallGpa}</h3>
-               </div>
-               <div style="text-align: center; background: #f8fafc; padding: 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0;">
-                 <p style="font-size: 0.85rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Percentage</p>
-                 <h3 style="font-size: 1.8rem; color: var(--accent); margin: 0;">${report.overallPercentage}%</h3>
-               </div>
-               <div style="text-align: center; background: #f8fafc; padding: 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0;">
-                 <p style="font-size: 0.85rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Attendance</p>
-                 <h3 style="font-size: 1.8rem; color: var(--secondary); margin: 0;">${report.attendance}</h3>
-               </div>
-            </div>
-
-            <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 1.5rem; border-radius: 8px;">
-              <p style="font-size: 0.9rem; color: #92400e; font-weight: 700; margin-bottom: 0.5rem; text-transform: uppercase;">Admin/Principal Remarks</p>
-              <p style="color: #b45309; font-size: 1.1rem; font-style: italic;">"${report.remarks}"</p>
+            
+            <div style="margin-top: 2rem; text-align: center;">
+              <button class="submit-btn" style="background: var(--primary);" onclick="window.print()">🖨️ Print Report Card</button>
             </div>
           </div>
         `;
@@ -2151,12 +3208,8 @@
       syncGPAAndRemarks();
       syncLeavesFromRegistry();
       
-      // Pull initial billing state if exists
-      const initialBilling = localStorage.getItem('student_billing_state');
-      if (initialBilling) {
-        feePaymentState = initialBilling;
-        renderPortalStates();
-      }
+      // Render fee states
+      renderPortalStates();
 
       startCrossTabSynchronizer();
 
@@ -2177,6 +3230,163 @@
         localStorage.removeItem('student_remember_username');
         window.location.href = 'student-login.html';
       }
+    }
+
+    // ── INVOICE GENERATOR ──
+    function generateInvoice(txnCode) {
+      const student = window.studentData || {};
+      const allFees = JSON.parse(localStorage.getItem('student_fees') || '[]');
+      
+      // Get the fees that were just submitted (status is 'under review' or 'pending')
+      const submittedFees = allFees.filter(f => 
+        (String(f.studentRoll) === String(student.roll) || String(f.student_roll) === String(student.roll)) && 
+        ((f.status || '').toLowerCase() === 'under review' || (f.status || '').toLowerCase() === 'pending')
+      );
+
+      if (submittedFees.length === 0) return;
+
+      const totalAmount = submittedFees.reduce((sum, f) => sum + parseFloat(f.amount || 0), 0);
+      const today = new Date().toLocaleDateString('ne-NP') || new Date().toLocaleDateString();
+
+      // Start building HTML for the popup window
+      const printWindow = window.open('', '_blank', 'width=800,height=600');
+      if (!printWindow) {
+         alert('Please allow popups to view your invoice.');
+         return;
+      }
+      
+      let html = `
+        <html>
+        <head>
+          <title>Fee Receipt - ${txnCode}</title>
+          <style>
+            body { font-family: 'Arial', sans-serif; padding: 20px; background: #fff; color: #000; }
+            .receipt-container { 
+              max-width: 600px; margin: 0 auto; border: 1px solid #000; padding: 20px; 
+              background: #fdfbc7; /* slight yellow tint */
+            }
+            .header-flex { display: flex; justify-content: space-between; align-items: flex-start; }
+            .school-header { text-align: center; margin-bottom: 20px; flex-grow: 1; }
+            .school-header h1 { margin: 0; font-size: 24px; color: #000; }
+            .school-header p { margin: 2px 0; font-size: 14px; }
+            .pan-no { font-weight: bold; font-size: 14px; margin-top: 5px; }
+            .top-meta { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; }
+            .student-info { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 15px; border-bottom: 1px solid #000; padding-bottom: 5px; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+            th, td { border: 1px solid #000; padding: 8px; text-align: left; font-size: 14px; }
+            th { background: rgba(0,0,0,0.05); }
+            .amount-col { text-align: right; width: 120px; }
+            .paisa-col { text-align: right; width: 60px; }
+            .signature-area { margin-top: 50px; display: flex; justify-content: space-between; }
+            .signature-box { border-top: 1px solid #000; width: 150px; text-align: center; font-size: 14px; padding-top: 5px; }
+            .text-center { text-align: center; }
+            .font-bold { font-weight: bold; }
+            @media print {
+              body { background: #fff; -webkit-print-color-adjust: exact; padding: 0; }
+              .receipt-container { border: none; background: #fdfbc7 !important; margin: 0; }
+              .no-print { display: none !important; }
+            }
+            .toolbar { text-align: center; margin-bottom: 20px; }
+            .toolbar button { background: #1e40af; color: #fff; border: none; padding: 10px 20px; font-size: 16px; border-radius: 6px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+            .toolbar button:hover { background: #1d4ed8; }
+          </style>
+        </head>
+        <body>
+          <div class="toolbar no-print">
+            <button onclick="window.print()">🖨️ Print / Download PDF</button>
+            <p style="font-size:12px; color:#64748b; margin-top:8px;">(To download as PDF, click the button above and select "Save as PDF" as the printer)</p>
+          </div>
+          <div class="receipt-container">
+            <div class="header-flex">
+              <div style="font-size: 30px;">✡️</div>
+              <div class="school-header">
+                <h1>Shree Saraswati Secondary School</h1>
+                <p>Waling-1, Chhahare, Syangja</p>
+                <p class="font-bold">Fee Receipt</p>
+              </div>
+              <div style="width: 30px;"></div>
+            </div>
+            
+            <div class="top-meta">
+              <div>Receipt No: <b>${txnCode}</b></div>
+              <div>Date: <b>${today}</b></div>
+            </div>
+            <div class="top-meta" style="margin-bottom: 15px;">
+              <div class="pan-no">PAN No.: 201510843</div>
+            </div>
+            
+            <div class="student-info">
+              <div style="flex:2;">Student Name: <b>${student.name || 'N/A'}</b></div>
+              <div style="flex:1;">Class: <b>${(student.class || 'N/A').split('-')[0].trim()}</b></div>
+              <div style="flex:1;">Roll No: <b>${student.roll || 'N/A'}</b></div>
+            </div>
+            
+            <table>
+              <thead>
+                <tr>
+                  <th rowspan="2" style="width:50px;" class="text-center">S.N.</th>
+                  <th rowspan="2">Particulars</th>
+                  <th colspan="2" class="text-center">Amount</th>
+                </tr>
+                <tr>
+                  <th class="text-center">Rs.</th>
+                  <th class="text-center">P.</th>
+                </tr>
+              </thead>
+              <tbody>
+      `;
+      
+      submittedFees.forEach((fee, index) => {
+        const amt = parseFloat(fee.amount || 0).toFixed(2);
+        const [rs, paisa] = amt.split('.');
+        html += `
+          <tr>
+            <td class="text-center">${index + 1}</td>
+            <td>${fee.categoryName || fee.feeType || fee.description || 'School Fee'}</td>
+            <td class="amount-col">${rs}</td>
+            <td class="paisa-col">${paisa}</td>
+          </tr>
+        `;
+      });
+      
+      // Pad empty rows to match a physical receipt pad
+      for (let i = submittedFees.length; i < 5; i++) {
+         html += `
+          <tr>
+            <td class="text-center">${i + 1}</td>
+            <td></td>
+            <td class="amount-col"></td>
+            <td class="paisa-col"></td>
+          </tr>
+        `;
+      }
+      
+      const totalAmt = totalAmount.toFixed(2);
+      const [totalRs, totalPaisa] = totalAmt.split('.');
+
+      html += `
+                <tr>
+                  <td colspan="2" class="text-center font-bold">Total</td>
+                  <td class="amount-col font-bold">${totalRs}</td>
+                  <td class="paisa-col font-bold">${totalPaisa}</td>
+                </tr>
+              </tbody>
+            </table>
+            
+            <p><strong>In Words:</strong> Rs. ${totalAmount.toLocaleString('en-IN')} only</p>
+            
+            <div class="signature-area">
+              <div class="signature-box">Paid By</div>
+              <div class="signature-box">Received By</div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+      
+      printWindow.document.open();
+      printWindow.document.write(html);
+      printWindow.document.close();
     }
   </script>
 </body>

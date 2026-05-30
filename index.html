@@ -4886,7 +4886,7 @@
       <!-- STUDENT PORTAL FORM -->
       <form class="login-portal-form" id="student-portal" onsubmit="handleLoginSubmit(event, 'student')">
         <div class="login-form-group">
-          <label for="student-name">Student Name</label>
+          <label for="student-name">Username (Student Name)</label>
           <div class="login-input-wrap">
             <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -4894,41 +4894,7 @@
               <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
               <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
             </svg>
-            <input type="text" class="login-input" id="student-name" placeholder="Enter your full name" required />
-          </div>
-        </div>
-        <div class="login-form-group">
-          <label for="student-roll">Student Roll Number</label>
-          <div class="login-input-wrap">
-            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-            </svg>
-            <input type="text" class="login-input" id="student-roll" placeholder="Enter your roll number" required />
-          </div>
-        </div>
-        <div class="login-form-group">
-          <label for="student-class">Class <span class="optional-badge">(Select if name/roll match multiple students)</span></label>
-          <div class="login-input-wrap">
-            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-            </svg>
-            <select class="login-input" id="student-class" style="cursor: pointer;">
-              <option value="">-- Select Class (Optional) --</option>
-              <option value="1">Class 1</option>
-              <option value="2">Class 2</option>
-              <option value="3">Class 3</option>
-              <option value="4">Class 4</option>
-              <option value="5">Class 5</option>
-              <option value="6">Class 6</option>
-              <option value="7">Class 7</option>
-              <option value="8">Class 8</option>
-              <option value="9">Class 9</option>
-              <option value="10">Class 10</option>
-              <option value="11">Class 11</option>
-              <option value="12">Class 12</option>
-            </select>
+            <input type="text" class="login-input" id="student-name" placeholder="Enter your username or full name" required />
           </div>
         </div>
         <div class="login-form-group">
@@ -5129,23 +5095,19 @@
       // ════════════════════════════════════════════════════
       
       const nameInput = document.getElementById('student-name');
-      const rollInput = document.getElementById('student-roll');
-      const classInput = document.getElementById('student-class');
       const passInput = document.getElementById('student-password');
       
-      if (!nameInput || !rollInput || !passInput) {
+      if (!nameInput || !passInput) {
         alert('Login form not properly initialized.');
         return;
       }
       
       const studentName = nameInput.value.trim().toLowerCase();
-      const studentRoll = rollInput.value.trim().toLowerCase();
-      const studentClass = classInput ? classInput.value.trim() : '';
       const studentPass = passInput.value.trim();
       
       // Validate inputs
-      if (!studentName || !studentRoll || !studentPass) {
-        alert('⚠️ Please enter Name, Roll Number, and Password.');
+      if (!studentName || !studentPass) {
+        alert('⚠️ Please enter Username and Password.');
         return;
       }
       
@@ -5156,81 +5118,46 @@
         isRedirectAdmin = true;
         studentAuthenticated = true;
       } else {
-        studentAuthenticated = false;
-        let studentObj = null;
-        let matchedStudents = [];
-        
-        // ────────────────────────────────────────────────────
-        // Step 1: Get all students from local storage or database
-        // ────────────────────────────────────────────────────
-        let allStudents = [];
-        try {
-          allStudents = JSON.parse(localStorage.getItem('students_registry') || '[]');
-        } catch(e) {
-          console.error('Error parsing students registry:', e);
+        // Let's find credential
+        let credentials = [];
+        if (typeof getStudentCredentialsFromCache === 'function') {
+          credentials = getStudentCredentialsFromCache();
+        } else {
+          try {
+            credentials = JSON.parse(localStorage.getItem('student_credentials') || '[]');
+          } catch(e) {}
         }
         
-        // ────────────────────────────────────────────────────
-        // Step 2: Advanced filtering logic
-        // ────────────────────────────────────────────────────
+        const cred = credentials.find(c => String(c.student_username || '').trim().toLowerCase() === studentName.toLowerCase());
         
-        // Filter by name and roll number (case-insensitive)
-        matchedStudents = allStudents.filter(student => {
-          const stuName = String(student.name || '').trim().toLowerCase();
-          const stuRoll = String(student.roll || '').trim().toLowerCase();
-          return stuName === studentName && stuRoll === studentRoll;
-        });
-        
-        if (matchedStudents.length === 0) {
-          alert('❌ No student found with the provided Name and Roll Number.\n\nPlease verify and try again.');
+        if (!cred) {
+          alert('❌ No student found with the provided Username.\n\nPlease verify and try again.');
           return;
         }
         
-        // ────────────────────────────────────────────────────
-        // Step 3: Handle duplicate students (same name+roll in different classes)
-        // ────────────────────────────────────────────────────
-        
-        if (matchedStudents.length > 1) {
-          // Multiple students with same name and roll - must select class
-          if (!studentClass) {
-            alert('⚠️ Multiple students found with the same Name and Roll Number!\n\nPlease select your Class to proceed.');
-            classInput.focus();
-            classInput.style.borderColor = '#ef4444';
-            setTimeout(() => classInput.style.borderColor = '', 2000);
-            return;
-          }
-          
-          // Filter by class
-          const filteredByClass = matchedStudents.filter(s => 
-            String(s.class || '').trim().toLowerCase() === studentClass.toLowerCase()
-          );
-          
-          if (filteredByClass.length === 1) {
-            studentObj = filteredByClass[0];
-          } else if (filteredByClass.length > 1) {
-            // Still multiple matches after class selection - use first one
-            console.warn('Multiple matches even after class filtering, using first match');
-            studentObj = filteredByClass[0];
-          } else {
-            alert('❌ No student found with the selected Class.\n\nPlease verify your Class selection.');
-            return;
-          }
-        } else {
-          // Only one match - use it
-          studentObj = matchedStudents[0];
-        }
-        
-        // ────────────────────────────────────────────────────
-        // Step 4: Verify password (basic hardcoded fallback)
-        // ────────────────────────────────────────────────────
-        
-        const validPasswords = ['saraswati123', 'student123', String(studentObj.roll)];
-        if (!validPasswords.includes(studentPass)) {
-          alert('❌ Invalid Password!\n\nPlease check your password and try again.\n\nDefault password: saraswati123');
+        if (cred.student_password !== studentPass) {
+          alert('❌ Invalid Password!\n\nPlease check your password and try again.');
           passInput.value = '';
           passInput.focus();
           return;
         }
+        
+        if (cred.is_active === false) {
+          alert('❌ Your account has been deactivated. Please contact the administrator.');
+          return;
+        }
+        
+        // Find corresponding student details in registry if needed
+        let allStudents = [];
+        try {
+          allStudents = JSON.parse(localStorage.getItem('students_registry') || '[]');
+        } catch(e) {}
+        
+        let studentObj = allStudents.find(s => String(s.roll) === String(cred.student_roll)) || {
+          roll: cred.student_roll,
+          name: cred.student_name,
+          class: cred.student_class
+        };
         
         // ────────────────────────────────────────────────────
         // Step 5: Authentication successful

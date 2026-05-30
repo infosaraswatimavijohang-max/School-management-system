@@ -38,6 +38,9 @@ async function loadProfilesStudents() {
       };
     });
 
+    // Populate the class filter dropdown
+    populateClassFilter();
+
     renderProfilesStudents();
   } catch (error) {
     console.error('Error loading student profiles:', error);
@@ -45,16 +48,68 @@ async function loadProfilesStudents() {
   }
 }
 
+/**
+ * Populate the class filter dropdown with unique class names from loaded students
+ */
+function populateClassFilter() {
+  const filterSelect = document.getElementById('id-class-filter');
+  if (!filterSelect) return;
+
+  // Get unique class names and sort them
+  const classes = [...new Set(allProfilesStudents.map(s => s.class).filter(Boolean))];
+  classes.sort((a, b) => {
+    // Try numeric sort first (e.g., "Grade 1" before "Grade 10")
+    const numA = parseInt(a.replace(/\D/g, '')) || 0;
+    const numB = parseInt(b.replace(/\D/g, '')) || 0;
+    if (numA !== numB) return numA - numB;
+    return a.localeCompare(b);
+  });
+
+  // Preserve current selection
+  const currentValue = filterSelect.value;
+
+  filterSelect.innerHTML = '<option value="">All Classes</option>';
+  classes.forEach(cls => {
+    const option = document.createElement('option');
+    option.value = cls;
+    option.textContent = cls;
+    filterSelect.appendChild(option);
+  });
+
+  // Restore selection if it still exists
+  if (currentValue && classes.includes(currentValue)) {
+    filterSelect.value = currentValue;
+  }
+}
+
+/**
+ * Filter profiles by selected class
+ */
+function filterProfilesByClass() {
+  renderProfilesStudents();
+}
+
 function renderProfilesStudents() {
   const container = document.getElementById('student-profiles-container');
   if (!container) return;
 
-  if (allProfilesStudents.length === 0) {
-    container.innerHTML = '<p>No students found.</p>';
+  // Get filter value
+  const filterSelect = document.getElementById('id-class-filter');
+  const selectedClass = filterSelect ? filterSelect.value : '';
+
+  // Filter students by class
+  const filteredStudents = selectedClass
+    ? allProfilesStudents.filter(s => s.class === selectedClass)
+    : allProfilesStudents;
+
+  if (filteredStudents.length === 0) {
+    container.innerHTML = selectedClass
+      ? `<p style="grid-column: 1 / -1; text-align: center; color: #64748b; padding: 2rem;">No students found in <strong>${selectedClass}</strong>.</p>`
+      : '<p>No students found.</p>';
     return;
   }
 
-  container.innerHTML = allProfilesStudents.map(student => {
+  container.innerHTML = filteredStudents.map(student => {
     const profile = student.student_profiles && student.student_profiles.length > 0 ? student.student_profiles[0] : null;
     const hasPhoto = profile && profile.photo_url;
     const photoHtml = hasPhoto
@@ -106,8 +161,11 @@ function openProfileModal(roll) {
   document.getElementById('sp-grade').value = student.class;
 
   document.getElementById('sp-dob').value = profile.dob || '';
-  document.getElementById('sp-parents').value = profile.father_name || '';
+  document.getElementById('sp-father').value = profile.father_name || '';
+  document.getElementById('sp-mother').value = profile.mother_name || '';
+  document.getElementById('sp-address').value = profile.address || '';
   document.getElementById('sp-contact').value = profile.contact || '';
+  document.getElementById('sp-school-email').value = profile.school_email || '';
 
   const photoPreview = document.getElementById('sp-photo-img');
   const placeholder = document.getElementById('sp-photo-placeholder');
@@ -159,8 +217,11 @@ async function saveStudentProfile(event) {
   try {
     const roll = parseInt(document.getElementById('sp-id').value);
     const dob = document.getElementById('sp-dob').value;
-    const parents_name = document.getElementById('sp-parents').value;
+    const father_name = document.getElementById('sp-father').value;
+    const mother_name = document.getElementById('sp-mother').value;
+    const address = document.getElementById('sp-address').value;
     const contact = document.getElementById('sp-contact').value;
+    const school_email = document.getElementById('sp-school-email').value;
     
     const fileInput = document.getElementById('sp-photo-upload');
     
@@ -176,8 +237,11 @@ async function saveStudentProfile(event) {
     const payload = {
       student_roll: roll,
       dob,
-      father_name: parents_name,
+      father_name,
+      mother_name,
+      address,
       contact,
+      school_email,
       photo_url,
       updated_at: new Date().toISOString()
     };
@@ -230,7 +294,9 @@ function generateIdCardHTML(student, profile) {
             <strong>Regd ID:</strong> <span>${student.roll}</span>
             <strong>Grade:</strong> <span>${student.class}</span>
             <strong>DoB:</strong> <span>${profile.dob || '-'}</span>
-            <strong>Parents:</strong> <span>${profile.father_name || '-'}</span>
+            <strong>Father:</strong> <span>${profile.father_name || '-'}</span>
+            <strong>Mother:</strong> <span>${profile.mother_name || '-'}</span>
+            <strong>Address:</strong> <span>${profile.address || '-'}</span>
             <strong>Contact:</strong> <span>${profile.contact || '-'}</span>
           </div>
         </div>
@@ -247,6 +313,7 @@ function generateIdCardHTML(student, profile) {
       <div class="id-card-footer">
         <div class="id-card-footer-top">If found, please return to the school.</div>
         <div class="id-card-footer-bottom">Phone: 079-412035 | Web: www.saraswatimavigulmi.edu.np</div>
+        ${profile.school_email ? `<div class="id-card-footer-bottom" style="margin-top: 2px;">Email: ${profile.school_email}</div>` : ''}
       </div>
     </div>
   `;
@@ -309,7 +376,7 @@ function printIdCard(roll) {
     }
 
     .id-card-wrapper {
-      width: 324px; height: 516px; background: #fff; border-radius: 14px;
+      width: 324px; height: 540px; background: #fff; border-radius: 14px;
       overflow: hidden; position: relative; font-family: 'Inter', sans-serif;
       box-shadow: 0 20px 40px rgba(0,0,0,0.2); display: flex; flex-direction: column;
     }
@@ -349,9 +416,9 @@ function printIdCard(roll) {
       align-items: center; padding: 0 20px; margin-top: 5px;
     }
     .id-card-photo-container {
-      width: 110px; height: 110px; border-radius: 50%; padding: 4px;
+      width: 100px; height: 100px; border-radius: 50%; padding: 3px;
       background: linear-gradient(135deg, #f59e0b 0%, #4f46e5 100%);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.15); margin-bottom: 12px; position: relative;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15); margin-bottom: 8px; position: relative;
     }
     .id-card-photo {
       width: 100%; height: 100%; border-radius: 50%; object-fit: cover;
@@ -359,19 +426,20 @@ function printIdCard(roll) {
     }
     .id-card-details { width: 100%; text-align: center; }
     .id-card-student-name {
-      font-size: 22px; font-weight: 800; color: #0f172a; margin-bottom: 12px; letter-spacing: -0.5px;
+      font-size: 19px; font-weight: 800; color: #0f172a; margin-bottom: 8px; letter-spacing: -0.5px;
     }
     .id-card-info-grid {
-      display: grid; grid-template-columns: 65px 1fr; gap: 6px 8px; text-align: left;
-      background: #f8fafc; padding: 12px 14px; border-radius: 10px; font-size: 11px;
+      display: grid; grid-template-columns: 60px 1fr; gap: 3px 6px; text-align: left;
+      background: #f8fafc; padding: 8px 10px; border-radius: 8px; font-size: 10px;
       border: 1px solid #e2e8f0; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
     }
     .id-card-info-grid strong {
-      color: #4f46e5; font-weight: 700; font-size: 10px; text-transform: uppercase;
+      color: #4f46e5; font-weight: 700; font-size: 9px; text-transform: uppercase;
       letter-spacing: 0.5px; display: flex; align-items: center;
     }
     .id-card-info-grid span {
       color: #334155; font-weight: 600; border-bottom: 1px dashed #cbd5e1; padding-bottom: 1px;
+      font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
     .id-card-signatures {
       position: absolute; bottom: 40px; left: 0; width: 100%; display: flex;
@@ -392,15 +460,15 @@ function printIdCard(roll) {
     }
     .id-card-footer {
       position: absolute; bottom: 0; left: 0; width: 100%; background: #1e1b4b;
-      color: #fff; text-align: center; padding: 8px 10px; font-size: 8px; z-index: 2;
+      color: #fff; text-align: center; padding: 6px 10px; font-size: 8px; z-index: 2;
     }
-    .id-card-footer-top { color: #fbbf24; font-weight: 700; margin-bottom: 3px; }
+    .id-card-footer-top { color: #fbbf24; font-weight: 700; margin-bottom: 2px; }
     .id-card-footer-bottom { opacity: 0.85; letter-spacing: 0.5px; }
   </style>
 </head>
 <body>
   ${cardHTML}
-  <script>
+  <scr` + `ipt>
     // Wait for fonts and images to load, then auto-print
     window.onload = function() {
       setTimeout(function() {
@@ -412,4 +480,3 @@ function printIdCard(roll) {
 </html>`);
   printWin.document.close();
 }
-

@@ -1696,6 +1696,30 @@
             </table>
           </div>
         </div>
+
+        <div class="panel" style="margin-top: 2rem;">
+          <div class="panel-header">
+            <h3>Global Student Fee Ledger (All Assigned Fees)</h3>
+            <button class="submit-btn" onclick="renderGlobalFeeLedger()" style="padding:0.4rem 0.8rem; font-size:0.8rem; background:var(--bg-color); color:var(--primary); border:1px solid var(--border);">🔄 Refresh Ledger</button>
+          </div>
+          <div class="custom-table-wrapper">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Student Name</th>
+                  <th>Total Assigned Fees</th>
+                  <th>Amount Cleared</th>
+                  <th>Remaining Balance</th>
+                  <th>Overall Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-global-fee-ledger-tbody">
+                <!-- Loaded dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       <!-- ================= PAGE: BROADCAST NOTICES ================= -->
@@ -3637,14 +3661,20 @@
 
   <!-- ================= MASTER PROOF PREVIEW MODAL ================= -->
   <div class="modal-overlay" id="admin-proof-modal">
-    <div class="modal-content" style="max-width: 440px; text-align:center;">
+    <div class="modal-content" style="max-width: 600px; text-align:center;">
       <button class="modal-close-btn" onclick="closeAdminProofModal()">&times;</button>
-      <h3 style="font-family:'Playfair Display', serif; color:var(--primary); margin-bottom:1rem;">Verified RBB Receipt Proof</h3>
-      <div style="background:#f5f3ff; padding:2rem; border-radius:12px; margin-bottom:1.5rem; display:flex; flex-direction:column; align-items:center; justify-content:center; border: 2px dashed var(--accent);">
-        <span style="font-size:3.5rem; margin-bottom:0.5rem;">💸</span>
-        <h4 style="font-weight:700; color:var(--primary);" id="admin-proof-filename">rbb_receipt_9847.png</h4>
-        <p style="font-size:0.8rem; color:var(--text-muted); margin-top:0.3rem;">Rastriya Banijya Bank Digital Roster</p>
+      <h3 style="font-family:'Playfair Display', serif; color:var(--primary); margin-bottom:1rem;">Verified Receipt Proof</h3>
+      
+      <div id="admin-proof-image-container" style="margin-bottom:1.5rem; display:flex; justify-content:center; max-height:60vh; overflow:auto; border-radius:12px; border: 1px solid var(--border); display:none;">
+        <img id="admin-proof-image" src="" style="max-width:100%; object-fit:contain;" alt="Payment Proof">
       </div>
+
+      <div id="admin-proof-text-container" style="background:#f5f3ff; padding:2rem; border-radius:12px; margin-bottom:1.5rem; display:flex; flex-direction:column; align-items:center; justify-content:center; border: 2px dashed var(--accent);">
+        <span style="font-size:3.5rem; margin-bottom:0.5rem;">💸</span>
+        <h4 style="font-weight:700; color:var(--primary); word-break:break-all;" id="admin-proof-filename">rbb_receipt_9847.png</h4>
+        <p style="font-size:0.8rem; color:var(--text-muted); margin-top:0.3rem;">Digital Receipt Log</p>
+      </div>
+
       <button onclick="closeAdminProofModal()" class="submit-btn" style="width:100%;">Close Preview View</button>
     </div>
   </div>
@@ -5894,27 +5924,319 @@
         let actionButtons = '';
         if (p.status === 'pending') {
           actionButtons = `
-            <div style="display:flex; gap:0.5rem;">
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
               <button onclick="approvePayment(${p.id})" class="submit-btn" style="padding:0.4rem 0.8rem; font-size:0.8rem; background:var(--success);">Clear Dues</button>
               <button onclick="rejectPayment(${p.id})" class="submit-btn" style="padding:0.4rem 0.8rem; font-size:0.8rem; background:var(--danger);">Reject</button>
             </div>
           `;
         } else {
-          actionButtons = `<span class="status-badge ${badgeClass}">${p.status}</span>`;
+          actionButtons = `
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+              <span class="status-badge ${badgeClass}" style="text-transform:uppercase;">${p.status === 'approved' ? 'CLEARED ✓' : p.status.toUpperCase()}</span>
+              ${p.status === 'approved' ? `<button onclick="generateAdminBill(${p.roll})" class="submit-btn" style="padding:0.3rem 0.6rem; font-size:0.7rem; background:var(--accent);">Generate Bill</button>` : ''}
+              <button onclick="deletePaymentRecord(${p.id})" class="submit-btn" style="padding:0.3rem 0.6rem; font-size:0.7rem; background:var(--danger);">🗑 Delete</button>
+            </div>
+          `;
         }
 
         tbody.innerHTML += `
           <tr id="admin-pay-row-${p.id}">
             <td><strong>${p.name} (#Roll-${p.roll})</strong></td>
             <td>${p.category}</td>
-            <td><code style="background:#f5f3ff; padding:0.2rem 0.5rem; border-radius:4px; font-weight:700;">${p.txnId}</code></td>
+            <td><code style="background:#f5f3ff; padding:0.2rem 0.5rem; border-radius:4px; font-weight:700;">${p.txn_id || p.txnId}</code></td>
             <td>
-              <button onclick="openAdminProofModal('${p.proofFile}')" style="background:none; border:none; color:var(--accent); font-weight:700; cursor:pointer;">🖼️ View Screenshot</button>
+              <button onclick="openAdminProofModal('${p.proof_file || p.proofFile}')" style="background:none; border:none; color:var(--accent); font-weight:700; cursor:pointer;">🖼️ View Screenshot</button>
             </td>
             <td>${actionButtons}</td>
           </tr>
         `;
       });
+    }
+
+    function renderGlobalFeeLedger() {
+      const tbody = document.getElementById('admin-global-fee-ledger-tbody');
+      if (!tbody) return;
+      
+      // Show loading spinner first
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:3rem;"><div style="display:inline-block; width:30px; height:30px; border:3px solid #e2e8f0; border-top:3px solid var(--primary); border-radius:50%; animation: spin 0.8s linear infinite;"></div><p style="margin-top:1rem; color:var(--text-muted); font-weight:600;">Compiling Fee Ledgers...</p></td></tr>`;
+
+      setTimeout(() => {
+        try {
+          const students = JSON.parse(localStorage.getItem('students_registry') || '[]');
+          const allFees = JSON.parse(localStorage.getItem('student_fees') || '[]');
+          
+          if (!students || students.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:2rem; color:var(--text-muted);">No students registered in the system.</td></tr>`;
+            return;
+          }
+
+          let studentsWithFees = 0;
+          let htmlBuffer = "";
+
+          students.forEach(student => {
+            if (!student || !student.roll) return;
+            // Find all fees for this student safely
+            const studentFees = allFees.filter(f => f && (String(f.studentRoll) === String(student.roll) || String(f.student_roll) === String(student.roll)));
+            
+            if (!studentFees || studentFees.length === 0) return; // Skip students with no assigned fees
+            studentsWithFees++;
+
+            let totalDue = 0;
+            let totalPaid = 0;
+            let hasUnderReview = false;
+            let hasRejected = false;
+
+            studentFees.forEach(fee => {
+              const status = (fee.status || 'unpaid').toLowerCase();
+              const amount = parseFloat(fee.amount || 0);
+              totalDue += amount;
+
+              if (status === 'paid' || status === 'cleared') {
+                totalPaid += amount;
+              } else if (status === 'under review') {
+                hasUnderReview = true;
+              } else if (status === 'rejected') {
+                hasRejected = true;
+              }
+            });
+
+            const remainingBalance = totalDue - totalPaid;
+            let overallStatus = '';
+            let badgeClass = '';
+
+            if (remainingBalance <= 0 && totalDue > 0) {
+              overallStatus = 'Cleared ✓';
+              badgeClass = 'approved';
+            } else if (hasUnderReview) {
+              overallStatus = 'Under Review ⏳';
+              badgeClass = 'pending-verification';
+            } else if (hasRejected) {
+              overallStatus = 'Rejected ❌';
+              badgeClass = 'rejected';
+            } else if (remainingBalance > 0) {
+              overallStatus = 'Pending / Unpaid';
+              badgeClass = 'pending';
+            }
+
+            htmlBuffer += `
+              <tr>
+                <td><strong>${student.name}</strong> <br><small>Roll: ${student.roll}</small></td>
+                <td>Rs. ${totalDue.toLocaleString('en-IN')}</td>
+                <td style="color:var(--success); font-weight:600;">Rs. ${totalPaid.toLocaleString('en-IN')}</td>
+                <td style="color:var(--danger); font-weight:600;">Rs. ${remainingBalance.toLocaleString('en-IN')}</td>
+                <td><span class="status-badge ${badgeClass}">${overallStatus}</span></td>
+                <td>
+                  <div style="display:flex; flex-direction:column; gap:0.4rem;">
+                    <button onclick="document.getElementById('directory-search').value = '${student.roll}'; switchAdminPage('page-directory'); handleDirectorySearch(); setTimeout(() => openStudentAdminModal(${student.roll}), 300);" class="submit-btn" style="padding:0.3rem 0.6rem; font-size:0.7rem;">View Ledger</button>
+                    ${remainingBalance > 0 ? `<button onclick="markCashPaid(${student.roll})" class="submit-btn" style="padding:0.3rem 0.6rem; font-size:0.7rem; background:var(--success);">Mark Cash Paid</button>` : ''}
+                    <button onclick="generateAdminBill(${student.roll})" class="submit-btn" style="padding:0.3rem 0.6rem; font-size:0.7rem; background:var(--accent);">Generate Bill</button>
+                  </div>
+                </td>
+              </tr>
+            `;
+          });
+
+          if (studentsWithFees === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:2rem; color:var(--text-muted);">No fees assigned to any students yet.</td></tr>`;
+          } else {
+            tbody.innerHTML = htmlBuffer;
+          }
+        } catch (e) {
+          console.error("Error rendering global fee ledger:", e);
+          tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:2rem; color:var(--danger);">Error loading fee data. Please refresh the page.</td></tr>`;
+        }
+      }, 600); // 600ms artificial delay to show loader and prevent main thread blocking
+    }
+
+    async function markCashPaid(roll) {
+      if (!confirm("Are you sure you want to mark ALL pending/unpaid fees for this student as Paid via Cash?")) return;
+      
+      const allFees = JSON.parse(localStorage.getItem('student_fees') || '[]');
+      let updatedFees = false;
+      allFees.forEach(f => {
+        if (String(f.studentRoll) === String(roll) || String(f.student_roll) === String(roll)) {
+          const s = (f.status || '').toLowerCase();
+          if (s === 'unpaid' || s === 'pending' || s === 'under review') {
+             f.status = 'cleared';
+             f.paidAmount = f.amount || 0;
+             f.paidDate = new Date().toISOString().split('T')[0];
+             updatedFees = true;
+          }
+        }
+      });
+
+      if (updatedFees) {
+        localStorage.setItem('student_fees', JSON.stringify(allFees));
+        if (typeof supabaseDb !== 'undefined' && supabaseDb) {
+          try {
+            await supabaseDb.from('school_config').delete().eq('key', 'student_fees_json');
+            await supabaseDb.from('school_config').insert([{ key: 'student_fees_json', val: JSON.stringify(allFees) }]);
+            await supabaseDb.from('students_registry').update({ billing_state: 'paid' }).eq('roll', roll);
+          } catch(e) { console.error("Error updating fees in DB:", e); }
+        }
+        alert("Success! All pending dues for this student have been cleared.");
+        renderGlobalFeeLedger();
+        renderDashboardMetrics();
+      } else {
+        alert("No unpaid fees found for this student.");
+      }
+    }
+
+    function generateAdminBill(roll) {
+      const students = JSON.parse(localStorage.getItem('students_registry') || '[]');
+      const student = students.find(s => String(s.roll) === String(roll)) || { name: 'Student', roll: roll, class: 'Unknown' };
+      const allFees = JSON.parse(localStorage.getItem('student_fees') || '[]');
+      
+      const studentFees = allFees.filter(f => String(f.studentRoll) === String(roll) || String(f.student_roll) === String(roll));
+      if (studentFees.length === 0) {
+        alert("No fees found to generate a bill.");
+        return;
+      }
+
+      const totalAmount = studentFees.reduce((sum, f) => sum + parseFloat(f.amount || 0), 0);
+      const paidAmount = studentFees.filter(f => (f.status || '').toLowerCase() === 'paid' || (f.status || '').toLowerCase() === 'cleared').reduce((sum, f) => sum + parseFloat(f.amount || 0), 0);
+      const remainingAmount = totalAmount - paidAmount;
+      const today = new Date().toLocaleDateString('ne-NP') || new Date().toLocaleDateString();
+      const txnCode = 'CASH-' + Math.floor(1000 + Math.random() * 9000);
+
+      const printWindow = window.open('', '_blank', 'width=800,height=600');
+      if (!printWindow) {
+         alert('Please allow popups to view the invoice.');
+         return;
+      }
+      
+      let html = `
+        <html>
+        <head>
+          <title>Fee Receipt - ${student.name}</title>
+          <style>
+            body { font-family: 'Arial', sans-serif; padding: 20px; background: #fff; color: #000; }
+            .receipt-container { 
+              max-width: 600px; margin: 0 auto; border: 1px solid #000; padding: 20px; 
+              background: #fdfbc7; 
+            }
+            .header-flex { display: flex; justify-content: space-between; align-items: flex-start; }
+            .school-header { text-align: center; margin-bottom: 20px; flex-grow: 1; }
+            .school-header h1 { margin: 0; font-size: 24px; color: #000; }
+            .school-header p { margin: 2px 0; font-size: 14px; }
+            .pan-no { font-weight: bold; font-size: 14px; margin-top: 5px; }
+            .top-meta { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; }
+            .student-info { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 15px; border-bottom: 1px solid #000; padding-bottom: 5px; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+            th, td { border: 1px solid #000; padding: 8px; text-align: left; font-size: 14px; }
+            th { background: rgba(0,0,0,0.05); }
+            .amount-col { text-align: right; width: 120px; }
+            .paisa-col { text-align: right; width: 60px; }
+            .signature-area { margin-top: 50px; display: flex; justify-content: space-between; }
+            .signature-box { border-top: 1px solid #000; width: 150px; text-align: center; font-size: 14px; padding-top: 5px; }
+            .text-center { text-align: center; }
+            .font-bold { font-weight: bold; }
+            @media print {
+              body { background: #fff; -webkit-print-color-adjust: exact; padding: 0; }
+              .receipt-container { border: none; background: #fdfbc7 !important; margin: 0; }
+              .no-print { display: none !important; }
+            }
+            .toolbar { text-align: center; margin-bottom: 20px; }
+            .toolbar button { background: #1e40af; color: #fff; border: none; padding: 10px 20px; font-size: 16px; border-radius: 6px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+            .toolbar button:hover { background: #1d4ed8; }
+          </style>
+        </head>
+        <body>
+          <div class="toolbar no-print">
+            <button onclick="window.print()">🖨️ Print / Download PDF</button>
+            <p style="font-size:12px; color:#64748b; margin-top:8px;">(To download as PDF, click the button above and select "Save as PDF" as the printer)</p>
+          </div>
+          <div class="receipt-container">
+            <div class="header-flex">
+              <div style="font-size: 30px;">✡️</div>
+              <div class="school-header">
+                <h1>Shree Saraswati Secondary School</h1>
+                <p>Waling-1, Chhahare, Syangja</p>
+                <p class="font-bold">Statement of Account</p>
+              </div>
+              <div style="width: 30px;"></div>
+            </div>
+            
+            <div class="top-meta">
+              <div>Receipt No: <b>${txnCode}</b></div>
+              <div>Date: <b>${today}</b></div>
+            </div>
+            <div class="top-meta" style="margin-bottom: 15px;">
+              <div class="pan-no">PAN No.: 201510843</div>
+            </div>
+            
+            <div class="student-info">
+              <div style="flex:2;">Student Name: <b>${student.name || 'N/A'}</b></div>
+              <div style="flex:1;">Class: <b>${(student.class || 'N/A').split('-')[0].trim()}</b></div>
+              <div style="flex:1;">Roll No: <b>${student.roll || 'N/A'}</b></div>
+            </div>
+            
+            <table>
+              <thead>
+                <tr>
+                  <th rowspan="2" style="width:50px;" class="text-center">S.N.</th>
+                  <th rowspan="2">Particulars</th>
+                  <th rowspan="2">Status</th>
+                  <th colspan="2" class="text-center">Amount</th>
+                </tr>
+                <tr>
+                  <th class="text-center">Rs.</th>
+                  <th class="text-center">P.</th>
+                </tr>
+              </thead>
+              <tbody>
+      `;
+      
+      studentFees.forEach((f, idx) => {
+         const amt = parseFloat(f.amount || 0);
+         const stat = (f.status || 'unpaid').toUpperCase();
+         html += `
+           <tr>
+             <td class="text-center">${idx + 1}</td>
+             <td>${f.fee_name || 'General Fee'}</td>
+             <td style="font-size:11px;">${stat}</td>
+             <td class="amount-col">${amt.toLocaleString('en-IN')}</td>
+             <td class="paisa-col">00</td>
+           </tr>
+         `;
+      });
+      
+      html += `
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="3" style="text-align:right; font-weight:bold;">Total Amount:</td>
+                  <td class="amount-col font-bold">${totalAmount.toLocaleString('en-IN')}</td>
+                  <td class="paisa-col font-bold">00</td>
+                </tr>
+                <tr>
+                  <td colspan="3" style="text-align:right; font-weight:bold;">Amount Paid:</td>
+                  <td class="amount-col font-bold" style="color:green;">${paidAmount.toLocaleString('en-IN')}</td>
+                  <td class="paisa-col font-bold">00</td>
+                </tr>
+                <tr>
+                  <td colspan="3" style="text-align:right; font-weight:bold;">Remaining Balance:</td>
+                  <td class="amount-col font-bold" style="color:red;">${remainingAmount.toLocaleString('en-IN')}</td>
+                  <td class="paisa-col font-bold">00</td>
+                </tr>
+              </tfoot>
+            </table>
+            
+            <div class="signature-area">
+              <div class="signature-box">
+                Depositor's Signature
+              </div>
+              <div class="signature-box">
+                Receiver's Signature
+              </div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+      
+      printWindow.document.write(html);
+      printWindow.document.close();
     }
 
     async function approvePayment(id) {
@@ -5929,10 +6251,35 @@
         }
         target.status = 'approved';
         localStorage.setItem('fee_payments', JSON.stringify(payments));
-        
         localStorage.setItem('student_billing_state', 'paid');
         
+        // Sync student_fees to Cleared
+        const allFees = JSON.parse(localStorage.getItem('student_fees') || '[]');
+        let updatedFees = false;
+        allFees.forEach(f => {
+          if (String(f.studentRoll) === String(target.roll) || String(f.student_roll) === String(target.roll)) {
+            if ((f.status || '').toLowerCase() === 'under review') {
+               f.status = 'cleared';
+               f.paidAmount = f.amount || 0;
+               f.paidDate = new Date().toISOString().split('T')[0];
+               updatedFees = true;
+            }
+          }
+        });
+        if (updatedFees) {
+          localStorage.setItem('student_fees', JSON.stringify(allFees));
+          if (typeof supabaseDb !== 'undefined' && supabaseDb) {
+            try {
+              await supabaseDb.from('school_config').delete().eq('key', 'student_fees_json');
+              await supabaseDb.from('school_config').insert([{ key: 'student_fees_json', val: JSON.stringify(allFees) }]);
+            } catch(e) {
+              console.error("Cloud fee sync error:", e);
+            }
+          }
+        }
+        
         renderPayments();
+        renderGlobalFeeLedger();
         renderDashboardMetrics();
         alert("Success! Transaction payment verified cleanly and student dues cleared!");
       }
@@ -5958,10 +6305,55 @@
         localStorage.setItem('student_billing_state', 'rejected');
         localStorage.setItem('student_billing_rejection_remark', comment);
 
+        // Sync student_fees back to Unpaid so they can try again
+        const allFees = JSON.parse(localStorage.getItem('student_fees') || '[]');
+        let updatedFees = false;
+        allFees.forEach(f => {
+          if (String(f.studentRoll) === String(target.roll) || String(f.student_roll) === String(target.roll)) {
+            if ((f.status || '').toLowerCase() === 'under review') {
+               f.status = 'unpaid';
+               updatedFees = true;
+            }
+          }
+        });
+        if (updatedFees) {
+          localStorage.setItem('student_fees', JSON.stringify(allFees));
+          if (typeof supabaseDb !== 'undefined' && supabaseDb) {
+            try {
+              await supabaseDb.from('school_config').delete().eq('key', 'student_fees_json');
+              await supabaseDb.from('school_config').insert([{ key: 'student_fees_json', val: JSON.stringify(allFees) }]);
+            } catch(e) {
+              console.error("Cloud fee sync error:", e);
+            }
+          }
+        }
+
         renderPayments();
+        renderGlobalFeeLedger();
         renderDashboardMetrics();
         alert("Transaction proof rejected. Rejection remark returned to student billing desk.");
       }
+    }
+
+    async function deletePaymentRecord(id) {
+      if (!confirm('Are you sure you want to delete this payment record? This action cannot be undone.')) return;
+      
+      let payments = JSON.parse(localStorage.getItem('fee_payments') || '[]');
+      payments = payments.filter(p => p.id !== id);
+      localStorage.setItem('fee_payments', JSON.stringify(payments));
+      
+      // Also delete from Supabase
+      if (typeof supabaseDb !== 'undefined' && supabaseDb) {
+        try {
+          await supabaseDb.from('fee_payments').delete().eq('id', id);
+        } catch(e) {
+          console.error('Error deleting payment record from DB:', e);
+        }
+      }
+      
+      renderPayments();
+      renderDashboardMetrics();
+      alert('Payment record deleted successfully.');
     }
 
     // ── LEAVE AUDITS MODULE ──
@@ -8439,6 +8831,7 @@
       loadStudentAccounts();
       renderTeachers();
       renderPayments();
+      renderGlobalFeeLedger();
       renderNotices();
       renderAdminLeaves();
       renderTimetable();
@@ -11493,7 +11886,20 @@
 
     function openAdminProofModal(filename) {
       const modal = document.getElementById('admin-proof-modal');
-      document.getElementById('admin-proof-filename').textContent = filename;
+      const imgContainer = document.getElementById('admin-proof-image-container');
+      const textContainer = document.getElementById('admin-proof-text-container');
+      const imgEl = document.getElementById('admin-proof-image');
+      const textEl = document.getElementById('admin-proof-filename');
+
+      if (filename && (filename.startsWith('http') || filename.startsWith('data:image'))) {
+        imgEl.src = filename;
+        imgContainer.style.display = 'flex';
+        textContainer.style.display = 'none';
+      } else {
+        textEl.textContent = filename || 'No proof provided';
+        imgContainer.style.display = 'none';
+        textContainer.style.display = 'flex';
+      }
       modal.classList.add('active');
     }
 

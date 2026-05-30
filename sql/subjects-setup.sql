@@ -15,12 +15,16 @@ CREATE TABLE IF NOT EXISTS public.subjects (
   subject_name TEXT NOT NULL,           -- e.g., "Compulsory Mathematics"
   subject_code TEXT UNIQUE NOT NULL,    -- e.g., "MATH-10"
   subject_type TEXT NOT NULL,           -- "Theory Only", "Practical Only", "Both Theory & Practical"
+  credit_hour NUMERIC,                  -- e.g., 4
   category TEXT NOT NULL,               -- e.g., "Secondary", "Primary", "High School"
   status TEXT NOT NULL DEFAULT 'Active', -- "Active" or "Inactive"
   created_by TEXT,                      -- optional email reference
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Quick patch if the table already exists
+ALTER TABLE public.subjects ADD COLUMN IF NOT EXISTS credit_hour NUMERIC;
 
 -- Index for faster queries
 CREATE INDEX IF NOT EXISTS idx_subjects_status ON public.subjects(status);

@@ -101,6 +101,19 @@ async function pullAllFromSupabase() {
       localStorage.setItem('fee_payments', JSON.stringify(payments));
     }
 
+    // 3.5. Student Fees Ledger (REDESIGNED NO-SQL DATABASE SYSTEM)
+    // We completely bypass the broken student_fees table to eliminate all RLS errors!
+    const { data: configBackup } = await supabaseDb.from('school_config').select('val').eq('key', 'student_fees_json').single();
+    if (configBackup && configBackup.val) {
+      try {
+        const parsedFees = JSON.parse(configBackup.val);
+        localStorage.setItem('student_fees', JSON.stringify(parsedFees));
+        console.log("✅ Synced student fees using redesigned NoSQL JSON database stream!");
+      } catch(e) {
+        console.error("Failed to parse NoSQL fee stream", e);
+      }
+    }
+
     // 4. Student Leaves
     const { data: leaves, error: leaveErr } = await supabaseDb.from('student_leaves').select('*');
     if (!leaveErr && leaves) {

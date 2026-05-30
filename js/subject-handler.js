@@ -140,6 +140,7 @@ class SubjectHandler {
         subject_name: subjectData.subject_name.trim(),
         subject_code: subjectData.subject_code.trim(),
         subject_type: subjectData.subject_type || "Theory Only",
+        credit_hour: subjectData.credit_hour !== undefined ? subjectData.credit_hour : null,
         category: subjectData.category ? subjectData.category.trim() : "Secondary",
         status: subjectData.status || "Active",
         created_by: subjectData.created_by || null
@@ -187,6 +188,7 @@ class SubjectHandler {
       if (subjectData.subject_name) updateData.subject_name = subjectData.subject_name.trim();
       if (subjectData.subject_code) updateData.subject_code = subjectData.subject_code.trim();
       if (subjectData.subject_type) updateData.subject_type = subjectData.subject_type;
+      if (subjectData.credit_hour !== undefined) updateData.credit_hour = subjectData.credit_hour;
       if (subjectData.category) updateData.category = subjectData.category.trim();
       if (subjectData.status) updateData.status = subjectData.status;
 

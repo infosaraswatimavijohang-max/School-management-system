@@ -225,63 +225,143 @@ async function deleteFeeCategory(categoryId) {
 // ASSIGN STUDENT FEES
 // ========================================
 
+function handleFeeAssignTypeChange() {
+  const assignType = document.getElementById('fee-assign-type').value;
+  const classGroup = document.getElementById('fee-class-group');
+  const studentGroup = document.getElementById('fee-student-group');
+  const studentInput = document.getElementById('fee-student');
+  const classInput = document.getElementById('fee-class');
+  
+  if (assignType === 'all') {
+    classGroup.style.display = 'none';
+    studentGroup.style.display = 'none';
+    studentInput.removeAttribute('required');
+    classInput.removeAttribute('required');
+  } else if (assignType === 'class') {
+    classGroup.style.display = 'block';
+    studentGroup.style.display = 'none';
+    classInput.setAttribute('required', 'required');
+    studentInput.removeAttribute('required');
+  } else {
+    // Specific Student
+    classGroup.style.display = 'block';
+    studentGroup.style.display = 'block';
+    classInput.setAttribute('required', 'required');
+    studentInput.setAttribute('required', 'required');
+    handleFeeClassChange(); // Filter students based on current class
+  }
+}
+
+function handleFeeClassChange() {
+  const selectedClass = document.getElementById('fee-class').value;
+  const studentSelect = document.getElementById('fee-student');
+  if (!studentSelect) return;
+  
+  const filteredStudents = selectedClass ? feeData.students.filter(s => s.class === selectedClass) : feeData.students;
+  
+  studentSelect.innerHTML = '<option value="">-- Choose Student --</option>' +
+    filteredStudents.map(student =>
+      `<option value="${student.roll}">${student.name} (Roll: ${student.roll}, ${student.class})</option>`
+    ).join('');
+}
+
 async function assignStudentFee(event) {
   event.preventDefault();
   
   try {
+    const assignType = document.getElementById('fee-assign-type').value;
+    const selectedClass = document.getElementById('fee-class').value;
     const studentRoll = parseInt(document.getElementById('fee-student').value);
+    
     const categoryId = parseInt(document.getElementById('fee-category').value);
     const amount = parseFloat(document.getElementById('fee-amount').value);
     const dueDate = document.getElementById('fee-due-date').value;
     const description = document.getElementById('fee-description').value;
     const installmentNumber = parseInt(document.getElementById('fee-installment').value) || 1;
     
-    // Validate inputs
-    if (!studentRoll || !categoryId || !amount || !dueDate) {
-      showNotification('Please fill all required fields', 'warning');
+    // Validate common inputs
+    if (!categoryId || !amount || !dueDate) {
+      showNotification('Please fill all required fee details', 'warning');
       return;
     }
     
-    // Get student and category info
-    const student = feeData.students.find(s => s.roll === studentRoll);
+    // Get category info
     const category = feeData.categories.find(c => c.id === categoryId);
-    
-    if (!student || !category) {
-      showNotification('Invalid student or category', 'warning');
+    if (!category) {
+      showNotification('Invalid category', 'warning');
       return;
     }
+
+    let targetStudents = [];
+
+    if (assignType === 'all') {
+      targetStudents = feeData.students;
+      if (targetStudents.length === 0) {
+        showNotification('No active students found in the system.', 'warning');
+        return;
+      }
+      if (!confirm(`Are you sure you want to assign this fee to ALL ${targetStudents.length} students?`)) return;
+    } else if (assignType === 'class') {
+      if (!selectedClass) {
+        showNotification('Please select a class', 'warning');
+        return;
+      }
+      targetStudents = feeData.students.filter(s => s.class === selectedClass);
+      if (targetStudents.length === 0) {
+        showNotification(`No active students found in ${selectedClass}.`, 'warning');
+        return;
+      }
+      if (!confirm(`Are you sure you want to assign this fee to all ${targetStudents.length} students in ${selectedClass}?`)) return;
+    } else {
+      if (!studentRoll) {
+        showNotification('Please select a student', 'warning');
+        return;
+      }
+      const student = feeData.students.find(s => s.roll === studentRoll);
+      if (!student) {
+        showNotification('Invalid student', 'warning');
+        return;
+      }
+      targetStudents = [student];
+    }
     
-    // Insert student fee record
+    // Prepare fee records
+    const feeRecords = targetStudents.map(student => ({
+      student_roll: student.roll,
+      student_name: student.name,
+      student_class: student.class,
+      fee_category_id: categoryId,
+      category_name: category.category_name,
+      amount: amount,
+      academic_year: feeData.academicYear,
+      due_date: dueDate,
+      description: description,
+      installment_number: installmentNumber,
+      status: 'pending',
+      assigned_by: typeof getCurrentAdminEmail === 'function' ? getCurrentAdminEmail() : 'admin'
+    }));
+
+    // Disable button to prevent double submission
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '⏳ Assigning...';
+    submitBtn.disabled = true;
+
+    // Insert student fee records
     const { data, error } = await supabaseDb
       .from('student_fees')
-      .insert([
-        {
-          student_roll: studentRoll,
-          student_name: student.name,
-          student_class: student.class,
-          fee_category_id: categoryId,
-          category_name: category.category_name,
-          amount: amount,
-          academic_year: feeData.academicYear,
-          due_date: dueDate,
-          description: description,
-          installment_number: installmentNumber,
-          status: 'pending',
-          assigned_by: getCurrentAdminEmail()
-        }
-      ])
+      .insert(feeRecords)
       .select();
     
     if (error) throw error;
     
     // Add to local array
-    feeData.studentFees.push(data[0]);
+    if (data) {
+        feeData.studentFees.push(...data);
+    }
     
     // Clear form
-    document.getElementById('fee-student').value = '';
-    document.getElementById('fee-category').value = '';
     document.getElementById('fee-amount').value = '';
-    document.getElementById('fee-due-date').value = '';
     document.getElementById('fee-description').value = '';
     document.getElementById('fee-installment').value = '1';
     
@@ -289,10 +369,22 @@ async function assignStudentFee(event) {
     displayStudentFees();
     loadFeeLedger();
     
-    showNotification(`✅ Fee of Rs. ${amount} assigned to ${student.name} (Roll: ${studentRoll})`, 'success');
+    let successMessage = '';
+    if (assignType === 'student') {
+        successMessage = `✅ Fee of Rs. ${amount} assigned to ${targetStudents[0].name}`;
+    } else {
+        successMessage = `✅ Fee of Rs. ${amount} assigned to ${targetStudents.length} students successfully`;
+    }
+    showNotification(successMessage, 'success');
   } catch (error) {
     console.error('Error assigning student fee:', error);
-    showNotification('Failed to assign fee', 'error');
+    showNotification('Failed to assign fee: ' + error.message, 'error');
+  } finally {
+      const submitBtn = event.target.querySelector('button[type="submit"]');
+      if (submitBtn) {
+          submitBtn.innerHTML = '💰 Assign Fee';
+          submitBtn.disabled = false;
+      }
   }
 }
 
@@ -866,13 +958,24 @@ function populateFeeDropdowns() {
 }
 
 function populateStudentDropdowns() {
-  const studentSelect = document.getElementById('fee-student');
-  if (studentSelect) {
-    studentSelect.innerHTML = '<option value="">-- Choose Student --</option>' +
-      feeData.students.map(student =>
-        `<option value="${student.roll}">${student.name} (Roll: ${student.roll}, ${student.class})</option>`
-      ).join('');
+  const classSelect = document.getElementById('fee-class');
+  
+  if (classSelect) {
+    // Get unique classes
+    const classes = [...new Set(feeData.students.map(s => s.class).filter(Boolean))];
+    classes.sort((a, b) => {
+        const numA = parseInt(a.replace(/\D/g, '')) || 0;
+        const numB = parseInt(b.replace(/\D/g, '')) || 0;
+        if (numA !== numB) return numA - numB;
+        return a.localeCompare(b);
+    });
+    
+    classSelect.innerHTML = '<option value="">-- Choose Class --</option>' +
+      classes.map(cls => `<option value="${cls}">${cls}</option>`).join('');
   }
+  
+  // Also populate initial student list based on current assignment type
+  handleFeeAssignTypeChange();
 }
 
 function getStatusBadge(status) {
