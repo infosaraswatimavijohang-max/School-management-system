@@ -1,3 +1,12 @@
+﻿// ============================================================================
+// FILE:    class-handler.js
+// MODULE:  Classes & Sections
+// PURPOSE: Class & Section Handler - CRUD for academic classes, sections, and class-student assignments
+//
+// PROJECT: Shree Saraswati Secondary School — Management System
+// STACK:   Vanilla JS + Supabase (PostgreSQL) + HTML/CSS
+// UPDATED: 2026-06-03
+// ============================================================================
 // ====================================================================
 // CLASS MANAGEMENT HANDLER - Dynamic Class Setup & Population
 // ====================================================================

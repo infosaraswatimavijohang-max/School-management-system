@@ -1,3 +1,12 @@
+﻿// ============================================================================
+// FILE:    student-fee-portal.js
+// MODULE:  Student Fee Portal
+// PURPOSE: Student Fee Portal - Student-side fee status viewer: outstanding dues, payment history, and fee receipts
+//
+// PROJECT: Shree Saraswati Secondary School — Management System
+// STACK:   Vanilla JS + Supabase (PostgreSQL) + HTML/CSS
+// UPDATED: 2026-06-03
+// ============================================================================
 /**
  * STUDENT PORTAL - FEE MANAGEMENT COMPONENT
  * Displays student fees, payment status, and payment history

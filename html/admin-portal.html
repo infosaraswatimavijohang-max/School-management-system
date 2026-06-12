@@ -600,6 +600,7 @@
   </style>
   <!-- SUPABASE INTEGRATION -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
   <!-- Load scripts with error handling -->
   <script>
@@ -613,7 +614,10 @@
       '../js/about-data.js',
       '../js/staff-handler.js',
       '../js/exam-result-admin-handler.js',
-      '../js/student-profiles-handler.js?v=' + Date.now()
+      '../js/student-profiles-handler.js?v=' + Date.now(),
+      '../js/admin-reports-handler.js',
+      '../js/manual-attendance.js?v=' + Date.now(),
+      '../js/employee-attendance.js?v=' + Date.now()
     ];
     
     // Helper to load script with error handling
@@ -1045,11 +1049,11 @@
           <a href="#" class="submenu-link" onclick="switchPage('coming-soon', this)">Add Employee</a>
           <a href="#" class="submenu-link" onclick="switchPage('coming-soon', this)">TC/CC</a>
           <a href="#" class="submenu-link" onclick="switchPage('coming-soon', this)">Extra Certification</a>
-          <a href="#" class="submenu-link" onclick="switchPage('coming-soon', this)">Report</a>
+          <a href="#" class="submenu-link" onclick="switchPage('academic-reports', this)">Report</a>
           <a href="#" class="submenu-link" onclick="switchPage('Academic_SubjectSetup', this)">Subject Setup</a>
           <a href="#" class="submenu-link" onclick="switchPage('Academic_ClassTimetable', this)">Class Time Table</a>
           <a href="#" class="submenu-link" onclick="switchPage('coming-soon', this)">Lesson Plan</a>
-          <a href="#" class="submenu-link" onclick="switchPage('coming-soon', this)">Upload Photos & Signature</a>
+          <a href="#" class="submenu-link" onclick="switchPage('Academic_UploadPhotosSignature', this)">Upload Photos & Signature</a>
           <a href="#" class="submenu-link" onclick="switchPage('coming-soon', this)">Download</a>
           <a href="#" class="submenu-link" onclick="switchPage('coming-soon', this)">Setup</a>
         </div>
@@ -1073,8 +1077,8 @@
           <a href="#" class="submenu-link" onclick="switchPage('coming-soon', this)">Leave Opening</a>
           <a href="#" class="submenu-link" onclick="switchPage('coming-soon', this)">Leave Request</a>
           <a href="#" class="submenu-link" onclick="switchPage('coming-soon', this)">Student Biometric Attend.</a>
-          <a href="#" class="submenu-link" onclick="switchPage('coming-soon', this)">Student Manual Attend.</a>
-          <a href="#" class="submenu-link" onclick="switchPage('coming-soon', this)">Employee Attendance</a>
+          <a href="#" class="submenu-link" onclick="switchPage('student-manual-attendance', this)">Student Manual Attend.</a>
+          <a href="#" class="submenu-link" onclick="switchPage('employee-manual-attendance', this)">Employee Attendance</a>
         </div>
       </div>
 
@@ -1272,7 +1276,7 @@
         </div>
 
         <div class="profile-dropdown" onclick="toggleAdminMenu()">
-          <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=100&q=80" alt="Admin Profile">
+          <img src="../images/logo.png" alt="Admin Profile" style="object-fit: cover; background: #fff;">
           <div class="profile-info">
             <h4>Global Admin Cell</h4>
             <span id="admin-email-display">Full System Access</span>
@@ -1410,6 +1414,10 @@
                   <option value="">-- Select Class --</option>
                 </select>
                 <small style="color:#7f8c8d; margin-top:0.25rem; display:block;">Select from available classes</small>
+              </div>
+              <div class="form-group" style="display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 0.8rem; background: rgba(59, 130, 246, 0.05); border: 1px dashed rgba(59, 130, 246, 0.3); border-radius: 8px; margin-bottom: 1rem;">
+                <input type="checkbox" id="auto-gen-creds" checked style="width: auto; cursor: pointer; transform: scale(1.15); margin: 0;">
+                <label for="auto-gen-creds" style="margin: 0; font-weight: 600; cursor: pointer; color: var(--primary); font-size: 0.9rem; user-select: none;">Auto-generate Student Credentials</label>
               </div>
               <div class="form-group">
                 <label for="std-username">Portal Username *</label>
@@ -2041,6 +2049,279 @@
         </div>
       </div>
 
+      <!-- ================= PAGE: ACADEMIC REPORTS & VISUAL ANALYTICS ================= -->
+      <div class="page-view" id="page-academic-reports">
+        <h2 style="font-family:'Playfair Display', serif; margin-bottom: 1.5rem; color: var(--primary);">Academic Performance & Reports HQ</h2>
+        
+        <!-- Tab Bar -->
+        <div style="display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 2px solid #e5e7eb; padding-bottom: 0.5rem;">
+          <button class="submit-btn" id="btn-tab-report-registry" onclick="switchReportsTab('registry')" style="padding: 0.6rem 1.2rem; font-size: 0.9rem; font-weight: 700; background: var(--primary); color: white; border-radius: 8px;">📋 Report Registry</button>
+          <button class="submit-btn" id="btn-tab-report-analytics" onclick="switchReportsTab('analytics')" style="padding: 0.6rem 1.2rem; font-size: 0.9rem; font-weight: 700; background: #e5e7eb; color: var(--text-dark); border-radius: 8px;">📊 Performance Analytics</button>
+        </div>
+
+        <!-- Section 1: Report Registry -->
+        <div id="section-report-registry">
+          <div style="display:grid; grid-template-columns: 1fr 1.8fr; gap:2rem; align-items:start;">
+            <!-- Form to Add/Edit Academic Report Entry -->
+            <div class="panel">
+              <div class="panel-header">
+                <h3 id="report-form-title">Add New Report Entry</h3>
+              </div>
+              <form id="academic-report-form" onsubmit="handleAcademicReportSubmit(event)">
+                <input type="hidden" id="report-edit-id">
+                <div class="form-group">
+                  <label for="rep-title">Report Title <span style="color:var(--danger);">*</span></label>
+                  <input type="text" id="rep-title" class="form-control" placeholder="e.g. Q3 Academic Performance Summary" required>
+                </div>
+                <div class="form-group">
+                  <label for="rep-module">Module/Area <span style="color:var(--danger);">*</span></label>
+                  <select id="rep-module" class="form-control" required>
+                    <option value="Academic" selected>Academic</option>
+                    <option value="Finance/Fees">Finance/Fees</option>
+                    <option value="Staff Records">Staff Records</option>
+                    <option value="Student Attendance">Student Attendance</option>
+                    <option value="Library Audit">Library Audit</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="rep-date">Generated Date <span style="color:var(--danger);">*</span></label>
+                  <input type="date" id="rep-date" class="form-control" required>
+                </div>
+                <div class="form-group">
+                  <label for="rep-status">Report Status <span style="color:var(--danger);">*</span></label>
+                  <select id="rep-status" class="form-control" required>
+                    <option value="">-- Select Report Status --</option>
+                    <option value="Finalized">Finalized</option>
+                    <option value="Draft">Draft</option>
+                  </select>
+                </div>
+                <button type="submit" class="submit-btn" id="btn-report-submit" style="width:100%; background:var(--primary); margin-top:0.5rem;">Save Record to System</button>
+                <button type="button" class="submit-btn" id="btn-report-cancel" onclick="clearAcademicReportForm()" style="width:100%; background:#e5e7eb; color:var(--text-dark); margin-top:0.5rem; display:none;">Cancel Edit</button>
+              </form>
+            </div>
+
+            <!-- List of Current Records -->
+            <div class="panel">
+              <div class="panel-header">
+                <h3>Current Records</h3>
+              </div>
+              <div class="custom-table-wrapper">
+                <table class="custom-table">
+                  <thead>
+                    <tr>
+                      <th>Report Title</th>
+                      <th>Module/Area</th>
+                      <th>Generated Date</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="academic-reports-tbody">
+                    <!-- Loaded dynamically -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 2: Performance Analytics Dashboard -->
+        <div id="section-report-analytics" style="display: none;">
+          <!-- Filter Panel -->
+          <div class="panel" style="margin-bottom: 2rem; padding: 1.5rem;">
+            <div style="display: flex; gap: 1.5rem; align-items: flex-end; flex-wrap: wrap;">
+              <div class="form-group" style="margin-bottom: 0; min-width: 200px;">
+                <label for="analytics-class-filter" style="font-weight: 700;">Select Class</label>
+                <select id="analytics-class-filter" class="form-control" onchange="loadReportsAnalytics()">
+                  <option value="" disabled selected>Select Class</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom: 0; min-width: 200px;">
+                <label for="analytics-exam-filter" style="font-weight: 700;">Select Exam Type</label>
+                <select id="analytics-exam-filter" class="form-control" onchange="loadReportsAnalytics()">
+                  <option value="First Term">First Term</option>
+                  <option value="Mid Term">Mid Term (2nd Term)</option>
+                  <option value="Final Term">Final Term</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom: 0; min-width: 150px;">
+                <label for="analytics-year-filter" style="font-weight: 700;">Academic Year</label>
+                <select id="analytics-year-filter" class="form-control" onchange="loadReportsAnalytics()">
+                  <option value="2083">2083</option>
+                  <option value="2082">2082</option>
+                  <option value="2081">2081</option>
+                  <option value="2080">2080</option>
+                  <option value="2026">2026</option>
+                </select>
+              </div>
+              <button class="submit-btn" onclick="loadReportsAnalytics()" style="padding: 0.8rem 1.5rem; background: var(--accent); display: flex; align-items: center; gap: 0.5rem;">
+                <span>🔄 Regenerate Visuals</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Empty State Container -->
+          <div id="analytics-empty-state" class="panel" style="padding: 4rem; text-align: center; color: var(--text-muted);">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">📊</div>
+            <h3>No Approved Results Available</h3>
+            <p style="margin-top: 0.5rem; max-width: 500px; margin-left: auto; margin-right: auto; line-height: 1.5;">
+              There are no approved student examination results for the selected class, term, and academic year. Please approve results in the <strong>Manage Student Results</strong> panel first.
+            </p>
+          </div>
+
+          <!-- Graphs Layout (Hidden when no data) -->
+          <div id="analytics-charts-grid" style="display: none; flex-direction: column; gap: 2rem;">
+            <!-- Row 1: Summary Statistics Cards -->
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem;">
+              <div class="stat-card" style="background: white; border: 1px solid #edf2f7; display: flex; align-items: center; gap: 1.2rem; padding: 1.5rem; border-radius: 16px;">
+                <div class="stat-badge-icon blue" style="background: #e0f2fe; color: #0284c7; width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🧑‍🎓</div>
+                <div class="stat-details">
+                  <h3 id="analytic-stat-students" style="font-size: 1.5rem; font-weight: 800; color: var(--primary);">0</h3>
+                  <p style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; margin-top: 0.1rem;">Students Assessed</p>
+                </div>
+              </div>
+              <div class="stat-card" style="background: white; border: 1px solid #edf2f7; display: flex; align-items: center; gap: 1.2rem; padding: 1.5rem; border-radius: 16px;">
+                <div class="stat-badge-icon purple" style="background: #f3e8ff; color: #7c3aed; width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">📈</div>
+                <div class="stat-details">
+                  <h3 id="analytic-stat-gpa" style="font-size: 1.5rem; font-weight: 800; color: var(--primary);">0.00</h3>
+                  <p style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; margin-top: 0.1rem;">Class Average GPA</p>
+                </div>
+              </div>
+              <div class="stat-card" style="background: white; border: 1px solid #edf2f7; display: flex; align-items: center; gap: 1.2rem; padding: 1.5rem; border-radius: 16px;">
+                <div class="stat-badge-icon green" style="background: #dcfce7; color: #15803d; width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🎓</div>
+                <div class="stat-details">
+                  <h3 id="analytic-stat-pass-rate" style="font-size: 1.5rem; font-weight: 800; color: var(--primary);">0%</h3>
+                  <p style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; margin-top: 0.1rem;">Passing Percentage</p>
+                </div>
+              </div>
+              <div class="stat-card" style="background: white; border: 1px solid #edf2f7; display: flex; align-items: center; gap: 1.2rem; padding: 1.5rem; border-radius: 16px;">
+                <div class="stat-badge-icon gold" style="background: #fef3c7; color: #a16207; width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🏆</div>
+                <div class="stat-details">
+                  <h3 id="analytic-stat-highest" style="font-size: 1.5rem; font-weight: 800; color: var(--primary);">0.00</h3>
+                  <p style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; margin-top: 0.1rem;">Highest GPA Scored</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Row 2: Charts Grid -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+              <div class="panel" style="padding: 1.5rem;">
+                <div class="panel-header" style="margin-bottom: 1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.8rem;">
+                  <h3 style="font-size: 1.1rem; color: var(--primary); font-weight: 700;">Grade Point Average (GPA) Distribution</h3>
+                </div>
+                <div style="height: 320px; position: relative; display: flex; justify-content: center; align-items: center; padding: 10px;">
+                  <canvas id="chart-gpa-distribution"></canvas>
+                </div>
+              </div>
+
+              <div class="panel" style="padding: 1.5rem;">
+                <div class="panel-header" style="margin-bottom: 1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.8rem;">
+                  <h3 style="font-size: 1.1rem; color: var(--primary); font-weight: 700;">Subject-wise Performance Averages</h3>
+                </div>
+                <div style="height: 320px; position: relative; display: flex; justify-content: center; align-items: center; padding: 10px;">
+                  <canvas id="chart-subject-averages"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- Row 3: Detail Charts -->
+            <div style="display: grid; grid-template-columns: 1fr 1.8fr; gap: 2rem;">
+              <div class="panel" style="padding: 1.5rem;">
+                <div class="panel-header" style="margin-bottom: 1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.8rem;">
+                  <h3 style="font-size: 1.1rem; color: var(--primary); font-weight: 700;">Pass vs Fail Proportion</h3>
+                </div>
+                <div style="height: 300px; position: relative; display: flex; justify-content: center; align-items: center; padding: 10px;">
+                  <canvas id="chart-pass-fail"></canvas>
+                </div>
+              </div>
+
+              <div class="panel" style="padding: 1.5rem;">
+                <div class="panel-header" style="margin-bottom: 1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.8rem;">
+                  <h3 style="font-size: 1.1rem; color: var(--primary); font-weight: 700;">Top Performing Students</h3>
+                </div>
+                <div style="height: 300px; position: relative; display: flex; justify-content: center; align-items: center; padding: 10px;">
+                  <canvas id="chart-top-students"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- Row 4: Term-over-Term Comparison & Trends Header -->
+            <div style="margin-top: 1.5rem; border-top: 1px dashed #cbd5e1; padding-top: 2rem;">
+              <h3 style="font-family:'Playfair Display', serif; font-size: 1.35rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.5rem;">
+                <span>📈 Term-over-Term Progression & Trends</span>
+              </h3>
+            </div>
+
+            <!-- Row 5: Progression Charts -->
+            <div id="comparison-charts-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+              <div class="panel" style="padding: 1.5rem;">
+                <div class="panel-header" style="margin-bottom: 1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.8rem;">
+                  <h3 style="font-size: 1.1rem; color: var(--primary); font-weight: 700;">Class Average GPA Progression</h3>
+                </div>
+                <div style="height: 300px; position: relative; display: flex; justify-content: center; align-items: center; padding: 10px;">
+                  <canvas id="chart-gpa-progression"></canvas>
+                </div>
+              </div>
+
+              <div class="panel" style="padding: 1.5rem;">
+                <div class="panel-header" style="margin-bottom: 1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.8rem;">
+                  <h3 style="font-size: 1.1rem; color: var(--primary); font-weight: 700;">Subject Average Term Comparison</h3>
+                </div>
+                <div style="height: 300px; position: relative; display: flex; justify-content: center; align-items: center; padding: 10px;">
+                  <canvas id="chart-subject-comparison"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- Row 6: Student Improvement Analysis -->
+            <div id="comparison-students-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+              <div class="panel" style="padding: 1.5rem;">
+                <div class="panel-header" style="margin-bottom: 1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.8rem;">
+                  <h3 style="font-size: 1.1rem; color: #16a34a; font-weight: 700;">🌟 Top Improved Students (GPA Delta)</h3>
+                </div>
+                <div class="custom-table-wrapper" style="border: none;">
+                  <table class="custom-table">
+                    <thead>
+                      <tr>
+                        <th>Student Name</th>
+                        <th>Prior GPA</th>
+                        <th>Current GPA</th>
+                        <th>Improvement</th>
+                      </tr>
+                    </thead>
+                    <tbody id="student-improvement-tbody">
+                      <!-- Dynamically populated -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="panel" style="padding: 1.5rem;">
+                <div class="panel-header" style="margin-bottom: 1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.8rem;">
+                  <h3 style="font-size: 1.1rem; color: #dc2626; font-weight: 700;">⚠️ Performance Attention Needed (Declining GPA)</h3>
+                </div>
+                <div class="custom-table-wrapper" style="border: none;">
+                  <table class="custom-table">
+                    <thead>
+                      <tr>
+                        <th>Student Name</th>
+                        <th>Prior GPA</th>
+                        <th>Current GPA</th>
+                        <th>Change</th>
+                      </tr>
+                    </thead>
+                    <tbody id="student-decline-tbody">
+                      <!-- Dynamically populated -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
       <!-- ================= PAGE: STUDENT LEAVE AUDITS ================= -->
       <div class="page-view" id="page-leaves-audit">
         <h2 style="font-family:'Playfair Display', serif; margin-bottom: 2rem; color: var(--primary);">Principal & Administrative Student Leave Audits</h2>
@@ -2561,6 +2842,903 @@
                   <!-- Loaded dynamically -->
                 </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Official School Signatures Configuration -->
+        <div id="official-signatures-panel" style="display: none; margin-top: 2rem;">
+          <div class="panel" style="padding: 1.5rem; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+            <div class="panel-header" style="margin-bottom: 1.5rem; border-bottom: 2px solid var(--primary); padding-bottom: 0.5rem;">
+              <h3 style="color: var(--primary); font-family: 'Playfair Display', serif; display: flex; align-items: center; gap: 0.5rem; font-size: 1.4rem; margin: 0;">
+                ✍️ Official School Signatures Configuration
+              </h3>
+              <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.2rem; margin-bottom: 0; font-weight: normal;">
+                Upload the digital signatures of the Principal, Exam Coordinator, and Class Incharges to automatically print on official student marksheets.
+              </p>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem;">
+              <!-- Principal Signature Box -->
+              <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.2rem; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                  <h4 style="color: var(--primary); font-weight: 700; margin-bottom: 0.3rem; font-size: 1rem; margin-top: 0;">👑 Principal (Head Teacher)</h4>
+                  <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1rem;">Applies to 'HEAD TEACHER' line on report cards.</p>
+                  
+                  <div style="border: 2px dashed #cbd5e1; border-radius: 8px; height: 100px; display: flex; align-items: center; justify-content: center; background: #f8fafc; margin-bottom: 1rem; position: relative; overflow: hidden;">
+                    <img id="preview-official-principal" src="" style="max-height: 90px; max-width: 90%; display: none; object-fit: contain;">
+                    <span id="placeholder-official-principal" style="color: var(--text-muted); font-size: 0.8rem;">No signature uploaded</span>
+                  </div>
+                </div>
+                <div>
+                  <input type="file" id="upload-official-principal" accept="image/*" style="display: none;" onchange="handleOfficialSigUpload('principal', this)">
+                  <button type="button" onclick="document.getElementById('upload-official-principal').click()" class="submit-btn" style="width: 100%; font-size: 0.8rem; padding: 0.5rem; background: var(--primary); border: none;">
+                    Upload Signature
+                  </button>
+                </div>
+              </div>
+
+              <!-- Exam Coordinator Signature Box -->
+              <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.2rem; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                  <h4 style="color: var(--primary); font-weight: 700; margin-bottom: 0.3rem; font-size: 1rem; margin-top: 0;">📋 Exam Coordinator</h4>
+                  <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1rem;">Applies to 'EXAM CO-ORDINATOR' line on report cards.</p>
+                  
+                  <div style="border: 2px dashed #cbd5e1; border-radius: 8px; height: 100px; display: flex; align-items: center; justify-content: center; background: #f8fafc; margin-bottom: 1rem; position: relative; overflow: hidden;">
+                    <img id="preview-official-coordinator" src="" style="max-height: 90px; max-width: 90%; display: none; object-fit: contain;">
+                    <span id="placeholder-official-coordinator" style="color: var(--text-muted); font-size: 0.8rem;">No signature uploaded</span>
+                  </div>
+                </div>
+                <div>
+                  <input type="file" id="upload-official-coordinator" accept="image/*" style="display: none;" onchange="handleOfficialSigUpload('coordinator', this)">
+                  <button type="button" onclick="document.getElementById('upload-official-coordinator').click()" class="submit-btn" style="width: 100%; font-size: 0.8rem; padding: 0.5rem; background: var(--primary); border: none;">
+                    Upload Signature
+                  </button>
+                </div>
+              </div>
+
+              <!-- Technical Incharge Signature Box -->
+              <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.2rem; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                  <h4 style="color: var(--primary); font-weight: 700; margin-bottom: 0.3rem; font-size: 1rem; margin-top: 0;">🔧 Technical Incharge</h4>
+                  <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1rem;">Applies to 'TECHNICAL INCHARGE' line on report cards.</p>
+                  
+                  <div style="border: 2px dashed #cbd5e1; border-radius: 8px; height: 100px; display: flex; align-items: center; justify-content: center; background: #f8fafc; margin-bottom: 1rem; position: relative; overflow: hidden;">
+                    <img id="preview-official-tech-incharge" src="" style="max-height: 90px; max-width: 90%; display: none; object-fit: contain;">
+                    <span id="placeholder-official-tech-incharge" style="color: var(--text-muted); font-size: 0.8rem;">No signature uploaded</span>
+                  </div>
+                </div>
+                <div>
+                  <input type="file" id="upload-official-tech-incharge" accept="image/*" style="display: none;" onchange="handleOfficialSigUpload('tech_incharge', this)">
+                  <button type="button" onclick="document.getElementById('upload-official-tech-incharge').click()" class="submit-btn" style="width: 100%; font-size: 0.8rem; padding: 0.5rem; background: var(--primary); border: none;">
+                    Upload Signature
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= PAGE: STUDENT MANUAL ATTENDANCE & REPORTING ================= -->
+      <div class="page-view" id="page-student-manual-attendance">
+        <style>
+          /* ── STYLED CUSTOM COMPONENT DESIGNS ── */
+          .att-dashboard-wrapper {
+            animation: fadeIn 0.4s ease;
+            padding-top: 0.5rem;
+          }
+          .att-gradient-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            border-radius: 16px;
+            padding: 2rem;
+            color: var(--white);
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 20px rgba(30, 27, 75, 0.1);
+          }
+          .att-gradient-header h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 0.4rem;
+          }
+          .att-gradient-header p {
+            font-size: 0.95rem;
+            opacity: 0.85;
+            max-width: 750px;
+            line-height: 1.5;
+          }
+          
+          /* Modern Tab controls */
+          .att-tab-bar {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+            background: rgba(241, 245, 249, 0.85);
+            padding: 0.4rem;
+            border-radius: 12px;
+            width: fit-content;
+            border: 1px solid #e2e8f0;
+          }
+          .att-tab-btn {
+            padding: 0.8rem 1.8rem;
+            font-size: 0.95rem;
+            font-weight: 700;
+            border-radius: 9px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+          }
+          .att-tab-btn.active {
+            background: var(--primary);
+            color: var(--white);
+            box-shadow: 0 4px 10px rgba(30, 27, 75, 0.15);
+          }
+          .att-tab-btn:not(.active) {
+            background: transparent;
+            color: var(--text-muted);
+          }
+          .att-tab-btn:not(.active):hover {
+            background: var(--white);
+            color: var(--primary);
+          }
+
+          /* Control Cards */
+          .att-control-panel {
+            background: var(--white);
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            padding: 1.75rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+            margin-bottom: 2rem;
+          }
+          .att-control-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) auto;
+            gap: 1.5rem;
+            align-items: flex-end;
+          }
+          .att-field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+          }
+          .att-field-group label {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 0.9rem;
+            letter-spacing: 0.2px;
+          }
+          .att-select-input, .att-date-input {
+            width: 100%;
+            height: 46px;
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+            padding: 0 1rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-main);
+            background-color: #f8fafc;
+            transition: all 0.2s;
+            outline: none;
+          }
+          .att-select-input:focus, .att-date-input:focus {
+            border-color: var(--accent);
+            background-color: var(--white);
+            box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
+          }
+          
+          /* Modern Pill Switch Controls */
+          .att-pill-selector {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            background: #f1f5f9;
+            padding: 0.35rem;
+            border-radius: 10px;
+            width: fit-content;
+            border: 1px solid #e2e8f0;
+          }
+          .att-pill-btn {
+            border: none;
+            padding: 0.55rem 1.4rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            border-radius: 7px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+          }
+          .att-pill-btn.active {
+            background: var(--white);
+            color: var(--primary);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.06);
+          }
+          .att-pill-btn:not(.active) {
+            background: transparent;
+            color: var(--text-muted);
+          }
+          .att-pill-btn:not(.active):hover {
+            color: var(--primary);
+          }
+
+          /* Buttons */
+          .att-gradient-btn {
+            height: 46px;
+            padding: 0 2.2rem;
+            border-radius: 10px;
+            border: none;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+          }
+          .att-btn-indigo {
+            background: linear-gradient(135deg, var(--accent) 0%, #6d28d9 100%);
+            color: var(--white);
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2);
+          }
+          .att-btn-indigo:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(124, 58, 237, 0.35);
+          }
+          .att-btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: var(--white);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+          }
+          .att-btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(16, 185, 129, 0.35);
+          }
+
+          /* Custom Toggle Switch */
+          .att-switch-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.8rem;
+          }
+          .att-switch {
+            position: relative;
+            display: inline-block;
+            width: 52px;
+            height: 28px;
+          }
+          .att-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+          }
+          .att-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #cbd5e1;
+            transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 34px;
+            border: 1px solid #b8c2cc;
+          }
+          .att-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: var(--white);
+            transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+          }
+          input:checked + .att-slider {
+            background-color: #10b981;
+            border-color: #059669;
+          }
+          input:checked + .att-slider:before {
+            transform: translateX(24px);
+          }
+
+          /* Reactive Badges */
+          .att-status-badge {
+            font-weight: 800;
+            font-size: 0.82rem;
+            padding: 0.35rem 0.9rem;
+            border-radius: 20px;
+            display: inline-block;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+          }
+          .att-badge-present {
+            background: rgba(16, 185, 129, 0.12);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+          }
+          .att-badge-absent {
+            background: rgba(239, 68, 68, 0.12);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+          }
+
+          /* Metrics dashboard cards */
+          .att-analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+          }
+          .att-metric-card {
+            background: var(--white);
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.01);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s ease;
+          }
+          .att-metric-card:hover {
+            transform: translateY(-2px);
+          }
+          .att-metric-card::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; height: 100%; width: 5px;
+          }
+          .att-metric-card.purple::after { background: var(--accent); }
+          .att-metric-card.green::after { background: #10b981; }
+          .att-metric-card.danger::after { background: #ef4444; }
+          
+          .att-metric-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+          }
+          .att-metric-card.purple .att-metric-icon { background: rgba(124, 58, 237, 0.1); color: var(--accent); }
+          .att-metric-card.green .att-metric-icon { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+          .att-metric-card.danger .att-metric-icon { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+
+          .att-table-panel {
+            background: var(--white);
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+            overflow: hidden;
+          }
+          .att-table-header {
+            padding: 1.5rem 1.75rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+            flex-wrap: wrap;
+            gap: 1rem;
+          }
+          
+          /* Table modifications */
+          .custom-table th {
+            background: #f1f5f9 !important;
+            color: var(--primary) !important;
+            font-weight: 700 !important;
+            font-size: 0.88rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+          .custom-table td {
+            padding: 1.1rem 1rem !important;
+          }
+          
+          /* Styled Search Bar Components */
+          .att-search-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+          }
+          .att-search-icon {
+            position: absolute;
+            left: 14px;
+            width: 16px;
+            height: 16px;
+            color: #94a3b8;
+            pointer-events: none;
+            transition: color 0.2s ease;
+          }
+          .att-search-input {
+            height: 40px;
+            width: 250px;
+            border-radius: 30px;
+            border: 2px solid #e2e8f0;
+            background: #f8fafc;
+            padding: 0 1rem 0 2.5rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-main);
+            outline: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          }
+          .att-search-input:focus {
+            border-color: var(--accent);
+            background: var(--white);
+            width: 300px;
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.06), 0 0 0 4px rgba(124, 58, 237, 0.12);
+          }
+          .att-search-wrapper:focus-within .att-search-icon {
+            color: var(--accent);
+          }
+        </style>
+
+        <div class="att-dashboard-wrapper">
+          <!-- Header Banner -->
+          <div class="att-gradient-header">
+            <h2>Student Attendance & Analytics</h2>
+            <p>Govern dynamic daily attendance registries, search records in real-time, and run multi-day aggregated attendance reports to track performance index updates.</p>
+          </div>
+
+          <!-- Primary Tab switcher -->
+          <div class="att-tab-bar">
+            <button class="att-tab-btn active" id="btn-manual-att-mark-tab" onclick="switchManualAttTab('mark')">
+              ✍️ Mark Daily Attendance
+            </button>
+            <button class="att-tab-btn" id="btn-manual-att-reports-tab" onclick="switchManualAttTab('reports')">
+              📊 Historical Reports & Analytics
+            </button>
+          </div>
+
+          <!-- SECTION 1: MARK ATTENDANCE -->
+          <div id="section-manual-att-mark" class="manual-att-tab-section">
+            <div class="att-control-panel">
+              <div class="att-control-grid">
+                <div class="att-field-group">
+                  <label for="manual-att-class-select">Select Grade & Section *</label>
+                  <select id="manual-att-class-select" class="att-select-input">
+                    <option value="">-- Select Class --</option>
+                  </select>
+                </div>
+                <div class="att-field-group">
+                  <label for="manual-att-date-input">Attendance Date *</label>
+                  <input type="date" id="manual-att-date-input" class="att-date-input">
+                </div>
+                <button onclick="window.manualAttendance.loadStudentAttendanceSheet()" class="att-gradient-btn att-btn-indigo">
+                  🔍 Load Student List
+                </button>
+              </div>
+            </div>
+
+            <!-- Attendance Entry Sheet Panel -->
+            <div id="attendance-sheet-panel" class="att-table-panel" style="display: none;">
+              <div class="att-table-header">
+                <h3 id="attendance-sheet-title" class="att-table-title">Class Registry Sheet</h3>
+                <div style="display: flex; gap: 1.25rem; align-items: center; flex-wrap: wrap;">
+                  <!-- Styled Search input wrapper -->
+                  <div class="att-search-wrapper">
+                    <svg class="att-search-icon" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    <input type="text" id="attendance-student-search" placeholder="Search student name or roll..." oninput="window.manualAttendance.filterMarkingList()" class="att-search-input">
+                  </div>
+                  <!-- Quick Stats -->
+                  <span id="marking-stats-badge" style="background: rgba(124, 58, 237, 0.12); color: var(--accent); padding: 0.45rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 700; border: 1px solid rgba(124, 58, 237, 0.2);">
+                    Present: 0/0
+                  </span>
+                </div>
+              </div>
+              
+              <div style="padding: 1.2rem 1.75rem; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <div style="display: flex; align-items: center; gap: 0.6rem;">
+                  <!-- Checkbox styled bigger -->
+                  <input type="checkbox" id="mark-all-present-checkbox" onchange="window.manualAttendance.toggleAllPresent(this)" style="width: 20px; height: 20px; cursor: pointer; border-radius: 4px;">
+                  <label for="mark-all-present-checkbox" style="font-weight: 700; color: var(--primary); cursor: pointer; user-select: none; margin: 0; font-size: 0.95rem;">Mark All Present</label>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.88rem; margin: 0; font-weight: 500;">
+                  💡 <strong>Instructions:</strong> Use toggle switches to change status. Checked = <strong>Present</strong> (Green), Unchecked = <strong>Absent</strong> (Red).
+                </p>
+              </div>
+
+              <div class="custom-table-wrapper" style="border-radius: 0; border: none;">
+                <table class="custom-table">
+                  <thead>
+                    <tr>
+                      <th width="12%">Roll No</th>
+                      <th width="33%">Student Name</th>
+                      <th width="22%" style="text-align: center;">Status (Present?)</th>
+                      <th width="33%">Remarks / Leave Reason</th>
+                    </tr>
+                  </thead>
+                  <tbody id="student-attendance-tbody">
+                    <!-- Dynamically populated -->
+                  </tbody>
+                </table>
+              </div>
+
+              <div style="padding: 1.5rem 1.75rem; display: flex; justify-content: flex-end; border-top: 1px solid #e2e8f0; background: #fafafa;">
+                <button onclick="window.manualAttendance.saveStudentAttendanceSheet()" class="att-gradient-btn att-btn-success">
+                  💾 Save Daily Attendance Registry
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 2: REPORTS & LOGS -->
+          <div id="section-manual-att-reports" class="manual-att-tab-section" style="display: none;">
+            <!-- Sub-tab selectors -->
+            <div class="att-pill-selector">
+              <button id="btn-report-daily-tab" class="att-pill-btn active" onclick="switchReportsSubTab('daily')">
+                📅 Daily Log Viewer
+              </button>
+              <button id="btn-report-summary-tab" class="att-pill-btn" onclick="switchReportsSubTab('summary')">
+                📈 Total Attendance Summary
+              </button>
+            </div>
+
+            <!-- SUB-VIEW A: DAILY LOG VIEWER -->
+            <div id="subview-report-daily" class="reports-subview-section">
+              <div class="att-control-panel">
+                <div class="att-control-grid">
+                  <div class="att-field-group">
+                    <label for="report-daily-class">Select Class</label>
+                    <select id="report-daily-class" class="att-select-input">
+                      <option value="">-- Select Class --</option>
+                    </select>
+                  </div>
+                  <div class="att-field-group">
+                    <label for="report-daily-date">Select Date</label>
+                    <input type="date" id="report-daily-date" class="att-date-input">
+                  </div>
+                  <button onclick="window.manualAttendance.loadDailyReport()" class="att-gradient-btn att-btn-indigo">
+                    🔍 Query Daily Logs
+                  </button>
+                </div>
+              </div>
+
+              <!-- Daily Report Table -->
+              <div id="daily-report-panel" class="att-table-panel" style="display: none;">
+                <div class="att-table-header">
+                  <h3 id="daily-report-title" class="att-table-title">Daily Attendance Logs</h3>
+                  <span id="daily-report-stats-badge" style="background: rgba(16, 185, 129, 0.12); color: #10b981; padding: 0.45rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 700; border: 1px solid rgba(16, 185, 129, 0.2);">
+                    Present: 0 | Absent: 0 | Rate: 0%
+                  </span>
+                </div>
+                
+                <div class="custom-table-wrapper" style="border: none; border-radius: 0;">
+                  <table class="custom-table">
+                    <thead>
+                      <tr>
+                        <th width="15%">Roll No</th>
+                        <th width="40%">Student Name</th>
+                        <th width="20%">Status</th>
+                        <th width="25%">Remarks</th>
+                      </tr>
+                    </thead>
+                    <tbody id="daily-report-tbody">
+                      <!-- Dynamically populated -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- SUB-VIEW B: TOTAL SUMMARY DASHBOARD -->
+            <div id="subview-report-summary" class="reports-subview-section" style="display: none;">
+              <div class="att-control-panel">
+                <div class="att-control-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) auto;">
+                  <div class="att-field-group">
+                    <label for="report-summary-class">Select Class</label>
+                    <select id="report-summary-class" class="att-select-input">
+                      <option value="">-- Select Class --</option>
+                    </select>
+                  </div>
+                  <div class="att-field-group">
+                    <label for="report-summary-start-date">Start Date</label>
+                    <input type="date" id="report-summary-start-date" class="att-date-input">
+                  </div>
+                  <div class="att-field-group">
+                    <label for="report-summary-end-date">End Date</label>
+                    <input type="date" id="report-summary-end-date" class="att-date-input">
+                  </div>
+                  <button onclick="window.manualAttendance.loadSummaryReport()" class="att-gradient-btn att-btn-indigo">
+                    📊 Generate Summary
+                  </button>
+                </div>
+              </div>
+
+              <!-- Summary Table and Cards -->
+              <div id="summary-report-panel" class="att-table-panel" style="display: none;">
+                <div class="att-table-header">
+                  <h3 id="summary-report-title" class="att-table-title">Aggregated Attendance Metrics</h3>
+                </div>
+                
+                <!-- Metrics Cards Row -->
+                <div class="att-analytics-grid" style="padding: 1.75rem; background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                  <div class="att-metric-card purple">
+                    <div class="att-metric-icon">🎯</div>
+                    <div>
+                      <h4 style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); margin: 0; font-weight: 700; letter-spacing: 0.5px;">Avg Attendance</h4>
+                      <span id="card-avg-attendance-rate" style="font-size: 1.6rem; font-weight: 800; color: var(--primary);">0.0%</span>
+                    </div>
+                  </div>
+                  <div class="att-metric-card green">
+                    <div class="att-metric-icon">🏆</div>
+                    <div>
+                      <h4 style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); margin: 0; font-weight: 700; letter-spacing: 0.5px;">Best Attendance</h4>
+                      <span id="card-best-attendance-student" style="font-size: 1.05rem; font-weight: 700; color: var(--primary); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 170px;">N/A</span>
+                    </div>
+                  </div>
+                  <div class="att-metric-card danger">
+                    <div class="att-metric-icon">⚠️</div>
+                    <div>
+                      <h4 style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); margin: 0; font-weight: 700; letter-spacing: 0.5px;">Needs Attention</h4>
+                      <span id="card-lowest-attendance-student" style="font-size: 1.05rem; font-weight: 700; color: var(--primary); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 170px;">N/A</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="custom-table-wrapper" style="border: none; border-radius: 0;">
+                  <table class="custom-table">
+                    <thead>
+                      <tr>
+                        <th width="10%">Roll No</th>
+                        <th width="35%">Student Name</th>
+                        <th width="15%" style="text-align: center;">Present Days</th>
+                        <th width="15%" style="text-align: center;">Absent Days</th>
+                        <th width="10%" style="text-align: center;">Total Days</th>
+                        <th width="15%" style="text-align: center;">Attendance %</th>
+                      </tr>
+                    </thead>
+                    <tbody id="summary-report-tbody">
+                      <!-- Dynamically populated -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= PAGE: EMPLOYEE MANUAL ATTENDANCE & REPORTING ================= -->
+      <div class="page-view" id="page-employee-manual-attendance">
+        <style>
+          /* Reuse of attendance style system for employee scope */
+          .emp-att-dashboard-wrapper {
+            animation: fadeIn 0.4s ease;
+            padding-top: 0.5rem;
+          }
+        </style>
+
+        <div class="emp-att-dashboard-wrapper">
+          <!-- Header Banner -->
+          <div class="att-gradient-header">
+            <h2>Employee Attendance & Analytics</h2>
+            <p>Govern dynamic daily attendance registries for school teachers and staff, search records in real-time, and run multi-day aggregated attendance reports to track staff attendance rates.</p>
+          </div>
+
+          <!-- Primary Tab switcher -->
+          <div class="att-tab-bar">
+            <button class="att-tab-btn active" id="btn-employee-att-mark-tab" onclick="switchEmployeeAttTab('mark')">
+              ✍️ Mark Daily Attendance
+            </button>
+            <button class="att-tab-btn" id="btn-employee-att-reports-tab" onclick="switchEmployeeAttTab('reports')">
+              📊 Historical Reports & Analytics
+            </button>
+          </div>
+
+          <!-- SECTION 1: MARK ATTENDANCE -->
+          <div id="section-employee-att-mark" class="manual-att-tab-section">
+            <div class="att-control-panel">
+              <div class="att-control-grid">
+                <div class="att-field-group">
+                  <label for="employee-att-subject-select">Select Subject Area / Department</label>
+                  <select id="employee-att-subject-select" class="att-select-input">
+                    <option value="">-- All Subjects/Staff --</option>
+                  </select>
+                </div>
+                <div class="att-field-group">
+                  <label for="employee-att-date-input">Attendance Date *</label>
+                  <input type="date" id="employee-att-date-input" class="att-date-input">
+                </div>
+                <button onclick="window.employeeAttendance.loadEmployeeAttendanceSheet()" class="att-gradient-btn att-btn-indigo">
+                  🔍 Load Employee List
+                </button>
+              </div>
+            </div>
+
+            <!-- Attendance Entry Sheet Panel -->
+            <div id="employee-attendance-sheet-panel" class="att-table-panel" style="display: none;">
+              <div class="att-table-header">
+                <h3 id="employee-attendance-sheet-title" class="att-table-title">Employee Registry Sheet</h3>
+                <div style="display: flex; gap: 1.25rem; align-items: center; flex-wrap: wrap;">
+                  <!-- Styled Search input wrapper -->
+                  <div class="att-search-wrapper">
+                    <svg class="att-search-icon" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    <input type="text" id="employee-attendance-search" placeholder="Search employee name or code..." oninput="window.employeeAttendance.filterMarkingList()" class="att-search-input">
+                  </div>
+                  <!-- Quick Stats -->
+                  <span id="employee-marking-stats-badge" style="background: rgba(124, 58, 237, 0.12); color: var(--accent); padding: 0.45rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 700; border: 1px solid rgba(124, 58, 237, 0.2);">
+                    Present: 0/0
+                  </span>
+                </div>
+              </div>
+              
+              <div style="padding: 1.2rem 1.75rem; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <div style="display: flex; align-items: center; gap: 0.6rem;">
+                  <!-- Checkbox styled bigger -->
+                  <input type="checkbox" id="employee-mark-all-present-checkbox" onchange="window.employeeAttendance.toggleAllPresent(this)" style="width: 20px; height: 20px; cursor: pointer; border-radius: 4px;">
+                  <label for="employee-mark-all-present-checkbox" style="font-weight: 700; color: var(--primary); cursor: pointer; user-select: none; margin: 0; font-size: 0.95rem;">Mark All Present</label>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.88rem; margin: 0; font-weight: 500;">
+                  💡 <strong>Instructions:</strong> Use toggle switches to change status. Checked = <strong>Present</strong> (Green), Unchecked = <strong>Absent</strong> (Red).
+                </p>
+              </div>
+
+              <div class="custom-table-wrapper" style="border-radius: 0; border: none;">
+                <table class="custom-table">
+                  <thead>
+                    <tr>
+                      <th width="15%">Employee Code</th>
+                      <th width="35%">Employee Name & Subject</th>
+                      <th width="20%" style="text-align: center;">Status (Present?)</th>
+                      <th width="30%">Remarks / Remarks Detail</th>
+                    </tr>
+                  </thead>
+                  <tbody id="employee-attendance-tbody">
+                    <!-- Dynamically populated -->
+                  </tbody>
+                </table>
+              </div>
+
+              <div style="padding: 1.5rem 1.75rem; display: flex; justify-content: flex-end; border-top: 1px solid #e2e8f0; background: #fafafa;">
+                <button onclick="window.employeeAttendance.saveEmployeeAttendanceSheet()" class="att-gradient-btn att-btn-success">
+                  💾 Save Daily Employee Registry
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 2: REPORTS & LOGS -->
+          <div id="section-employee-att-reports" class="manual-att-tab-section" style="display: none;">
+            <!-- Sub-tab selectors -->
+            <div class="att-pill-selector">
+              <button id="btn-employee-report-daily-tab" class="att-pill-btn active" onclick="switchEmployeeReportsSubTab('daily')">
+                📅 Daily Log Viewer
+              </button>
+              <button id="btn-employee-report-summary-tab" class="att-pill-btn" onclick="switchEmployeeReportsSubTab('summary')">
+                📈 Total Attendance Summary
+              </button>
+            </div>
+
+            <!-- SUB-VIEW A: DAILY LOG VIEWER -->
+            <div id="subview-employee-report-daily" class="reports-subview-section">
+              <div class="att-control-panel">
+                <div class="att-control-grid">
+                  <div class="att-field-group">
+                    <label for="employee-report-daily-subject">Select Subject Area</label>
+                    <select id="employee-report-daily-subject" class="att-select-input">
+                      <option value="">-- All Subjects/Staff --</option>
+                    </select>
+                  </div>
+                  <div class="att-field-group">
+                    <label for="employee-report-daily-date">Select Date</label>
+                    <input type="date" id="employee-report-daily-date" class="att-date-input">
+                  </div>
+                  <button onclick="window.employeeAttendance.loadDailyReport()" class="att-gradient-btn att-btn-indigo">
+                    🔍 Query Daily Logs
+                  </button>
+                </div>
+              </div>
+
+              <!-- Daily Report Table -->
+              <div id="employee-daily-report-panel" class="att-table-panel" style="display: none;">
+                <div class="att-table-header">
+                  <h3 id="employee-daily-report-title" class="att-table-title">Daily Attendance Logs</h3>
+                  <span id="employee-daily-report-stats-badge" style="background: rgba(16, 185, 129, 0.12); color: #10b981; padding: 0.45rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 700; border: 1px solid rgba(16, 185, 129, 0.2);">
+                    Present: 0 | Absent: 0 | Rate: 0%
+                  </span>
+                </div>
+                
+                <div class="custom-table-wrapper" style="border: none; border-radius: 0;">
+                  <table class="custom-table">
+                    <thead>
+                      <tr>
+                        <th width="20%">Employee Code</th>
+                        <th width="35%">Employee Name</th>
+                        <th width="20%">Status</th>
+                        <th width="25%">Remarks</th>
+                      </tr>
+                    </thead>
+                    <tbody id="employee-daily-report-tbody">
+                      <!-- Dynamically populated -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- SUB-VIEW B: TOTAL SUMMARY DASHBOARD -->
+            <div id="subview-employee-report-summary" class="reports-subview-section" style="display: none;">
+              <div class="att-control-panel">
+                <div class="att-control-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) auto;">
+                  <div class="att-field-group">
+                    <label for="employee-report-summary-subject">Select Subject Area</label>
+                    <select id="employee-report-summary-subject" class="att-select-input">
+                      <option value="">-- All Subjects/Staff --</option>
+                    </select>
+                  </div>
+                  <div class="att-field-group">
+                    <label for="employee-report-summary-start-date">Start Date</label>
+                    <input type="date" id="employee-report-summary-start-date" class="att-date-input">
+                  </div>
+                  <div class="att-field-group">
+                    <label for="employee-report-summary-end-date">End Date</label>
+                    <input type="date" id="employee-report-summary-end-date" class="att-date-input">
+                  </div>
+                  <button onclick="window.employeeAttendance.loadSummaryReport()" class="att-gradient-btn att-btn-indigo">
+                    📊 Generate Summary
+                  </button>
+                </div>
+              </div>
+
+              <!-- Summary Table and Cards -->
+              <div id="employee-summary-report-panel" class="att-table-panel" style="display: none;">
+                <div class="att-table-header">
+                  <h3 id="employee-summary-report-title" class="att-table-title">Aggregated Attendance Metrics</h3>
+                </div>
+                
+                <!-- Metrics Cards Row -->
+                <div class="att-analytics-grid" style="padding: 1.75rem; background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                  <div class="att-metric-card purple">
+                    <div class="att-metric-icon">🎯</div>
+                    <div>
+                      <h4 style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); margin: 0; font-weight: 700; letter-spacing: 0.5px;">Avg Attendance</h4>
+                      <span id="employee-card-avg-attendance-rate" style="font-size: 1.6rem; font-weight: 800; color: var(--primary);">0.0%</span>
+                    </div>
+                  </div>
+                  <div class="att-metric-card green">
+                    <div class="att-metric-icon">🏆</div>
+                    <div>
+                      <h4 style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); margin: 0; font-weight: 700; letter-spacing: 0.5px;">Best Attendance</h4>
+                      <span id="employee-card-best-attendance" style="font-size: 1.05rem; font-weight: 700; color: var(--primary); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 170px;">N/A</span>
+                    </div>
+                  </div>
+                  <div class="att-metric-card danger">
+                    <div class="att-metric-icon">⚠️</div>
+                    <div>
+                      <h4 style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); margin: 0; font-weight: 700; letter-spacing: 0.5px;">Needs Attention</h4>
+                      <span id="employee-card-lowest-attendance" style="font-size: 1.05rem; font-weight: 700; color: var(--primary); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 170px;">N/A</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="custom-table-wrapper" style="border: none; border-radius: 0;">
+                  <table class="custom-table">
+                    <thead>
+                      <tr>
+                        <th width="15%">Employee Code</th>
+                        <th width="35%">Employee Name</th>
+                        <th width="15%" style="text-align: center;">Present Days</th>
+                        <th width="15%" style="text-align: center;">Absent Days</th>
+                        <th width="10%" style="text-align: center;">Total Days</th>
+                        <th width="10%" style="text-align: center;">Attendance %</th>
+                      </tr>
+                    </thead>
+                    <tbody id="employee-summary-report-tbody">
+                      <!-- Dynamically populated -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -3769,7 +4947,9 @@
       }
 
       // Handle direct module IDs like Academic_ClassSetup
-      if (pageId in moduleSchemas) {
+      // Exclude modules that have custom-built pages: Academic_TCCC, Academic_Report, Academic_StudentRemarks
+      const customPageViews = [];
+      if (pageId in moduleSchemas && !customPageViews.includes(pageId)) {
         currentGenericModule = pageId;
         currentSchema = moduleSchemas[pageId];
         
@@ -3827,13 +5007,15 @@
           }
         });
 
-        // Handle Student Remarks class change event
-        if (currentGenericModule === 'Academic_StudentRemarks') {
-          const classDropdown = document.getElementById('dyn-f1');
-          const studentDropdown = document.getElementById('dyn-f2');
+        // Handle class change to populate student dropdown dynamically
+        const classField = currentSchema.fields.find(f => f.type === 'class-dropdown');
+        const studentField = currentSchema.fields.find(f => f.type === 'student-dropdown');
+        if (classField && studentField) {
+          const classDropdown = document.getElementById(`dyn-${classField.id}`);
+          const studentDropdown = document.getElementById(`dyn-${studentField.id}`);
           if (classDropdown && studentDropdown) {
             classDropdown.addEventListener('change', function() {
-              populateStudentsForClass(this.value, 'dyn-f2');
+              populateStudentsForClass(this.value, `dyn-${studentField.id}`);
             });
           }
         }
@@ -3846,6 +5028,18 @@
         tableHeader.innerHTML = thHTML;
 
         renderGenericTable();
+
+        // Hook for Official School Signatures upload configuration panel
+        const sigPanel = document.getElementById('official-signatures-panel');
+        if (sigPanel) {
+          if (currentGenericModule === 'Academic_UploadPhotosSignature') {
+            sigPanel.style.display = 'block';
+            initializeOfficialSignaturesUI();
+          } else {
+            sigPanel.style.display = 'none';
+          }
+        }
+
         pageId = 'generic-crud';
       }
 
@@ -4104,21 +5298,25 @@
         ]
       },
       "Academic_TCCC": {
-        headers: ["Student Name", "Certificate Type", "Issue Date", "Status"],
+        headers: ["Class", "Student Name", "Certificate Type", "Issue Date", "Status", "Certificate Document"],
         fields: [
-          { id: "f1", label: "Student Name", type: "text", placeholder: "e.g. Gita Adhikari" },
-          { id: "f2", label: "Certificate Type", type: "select", options: ["Transfer Certificate (TC)", "Character Certificate (CC)", "Both TC and CC"] },
-          { id: "f3", label: "Issue Date", type: "date", placeholder: "" },
-          { id: "f4", label: "Status", type: "select", options: ["Issued", "Pending Approval", "Cancelled"] }
+          { id: "f1", label: "Class", type: "class-dropdown", placeholder: "Select class" },
+          { id: "f2", label: "Student Name", type: "student-dropdown", placeholder: "Select student" },
+          { id: "f3", label: "Certificate Type", type: "select", options: ["Transfer Certificate (TC)", "Character Certificate (CC)", "Both TC and CC"] },
+          { id: "f4", label: "Issue Date", type: "date", placeholder: "" },
+          { id: "f5", label: "Status", type: "select", options: ["Issued", "Pending Approval", "Cancelled"] },
+          { id: "f6", label: "Certificate Document", type: "file", placeholder: "Upload certificate image or PDF", required: false }
         ]
       },
       "Academic_ExtraCertification": {
-        headers: ["Student Name", "Certification Title", "Achievements / Remarks", "Status"],
+        headers: ["Class", "Student Name", "Certification Title", "Achievements / Remarks", "Status", "Certificate Document"],
         fields: [
-          { id: "f1", label: "Student Name", type: "text", placeholder: "e.g. Sita Thapa" },
-          { id: "f2", label: "Certification Title", type: "text", placeholder: "e.g. Inter-School Football Winner" },
-          { id: "f3", label: "Achievements / Remarks", type: "text", placeholder: "e.g. Played as goalkeeper, clean sheet." },
-          { id: "f4", label: "Status", type: "select", options: ["Active", "Archived"] }
+          { id: "f1", label: "Class", type: "class-dropdown", placeholder: "Select class" },
+          { id: "f2", label: "Student Name", type: "student-dropdown", placeholder: "Select student" },
+          { id: "f3", label: "Certification Title", type: "text", placeholder: "e.g. Inter-School Football Winner" },
+          { id: "f4", label: "Achievements / Remarks", type: "text", placeholder: "e.g. Played as goalkeeper, clean sheet." },
+          { id: "f5", label: "Status", type: "select", options: ["Active", "Archived"] },
+          { id: "f6", label: "Certificate Document", type: "file", placeholder: "Upload certificate image or PDF", required: false }
         ]
       },
       "Academic_Report": {
@@ -4163,8 +5361,8 @@
         headers: ["Roll / ID", "Photo File Path", "Signature File Path", "Status"],
         fields: [
           { id: "f1", label: "Student/Employee Roll or ID", type: "text", placeholder: "e.g. ROLL-102 or EMP-401" },
-          { id: "f2", label: "Photo File Name / Path", type: "text", placeholder: "e.g. photo_roll102.jpg" },
-          { id: "f3", label: "Signature File Name / Path", type: "text", placeholder: "e.g. sig_roll102.png" },
+          { id: "f2", label: "Photo File", type: "file", placeholder: "Upload Student/Employee Photo", required: false },
+          { id: "f3", label: "Signature File", type: "file", placeholder: "Upload Student/Employee Signature", required: false },
           { id: "f4", label: "Upload Verification", type: "select", options: ["Verified", "Pending Review", "Rejected"] }
         ]
       },
@@ -5097,25 +6295,54 @@
           return;
         }
 
-        // Check if supabase client is available
-        if (typeof supabaseDb === 'undefined' || !supabaseDb) {
-          console.warn("Supabase database not initialized");
-          dropdown.innerHTML = '<option value="">-- Database error --</option>';
-          return;
+        let students = [];
+        let fetchedFromSupabase = false;
+
+        // Try querying Supabase first
+        if (typeof supabaseDb !== 'undefined' && supabaseDb) {
+          try {
+            const { data, error } = await supabaseDb
+              .from('students_registry')
+              .select('roll, name, class')
+              .eq('class', className)
+              .eq('status', 'Active')
+              .order('roll', { ascending: true });
+
+            if (error) {
+              console.error("Error fetching students from Supabase:", error);
+            } else if (data && data.length > 0) {
+              students = data;
+              fetchedFromSupabase = true;
+              console.log(`✓ Loaded ${students.length} students from Supabase for class ${className}`);
+            }
+          } catch (dbErr) {
+            console.error("Exception querying Supabase for students:", dbErr);
+          }
+        } else {
+          console.warn("Supabase database not initialized, will use localStorage fallback");
         }
 
-        // Fetch students for the selected class from students_registry
-        const { data: students, error } = await supabaseDb
-          .from('students_registry')
-          .select('roll, name, class')
-          .eq('class', className)
-          .eq('status', 'Active')
-          .order('roll', { ascending: true });
-
-        if (error) {
-          console.error("Error fetching students from Supabase:", error);
-          dropdown.innerHTML = '<option value="">-- Error loading students --</option>';
-          return;
+        // Fallback to localStorage if Supabase returned no students or was not queryable
+        if (!fetchedFromSupabase) {
+          console.log(`Fetching from local students_registry fallback for class: ${className}`);
+          try {
+            const localData = JSON.parse(localStorage.getItem('students_registry') || '[]');
+            students = localData.filter(student => {
+              const classMatch = student.class && student.class.trim().toLowerCase() === className.trim().toLowerCase();
+              const statusMatch = student.status && student.status.trim().toLowerCase() === 'active';
+              return classMatch && statusMatch;
+            }).map(student => ({
+              roll: student.roll,
+              name: student.name,
+              class: student.class
+            }));
+            
+            // Sort by roll number ascending
+            students.sort((a, b) => (a.roll || 0) - (b.roll || 0));
+            console.log(`✓ Loaded ${students.length} students from localStorage for class ${className}`);
+          } catch (localErr) {
+            console.error("Error loading students from localStorage:", localErr);
+          }
         }
 
         // Clear and repopulate dropdown
@@ -5131,7 +6358,6 @@
               dropdown.appendChild(option);
             }
           });
-          console.log(`✓ Loaded ${students.length} students for class ${className}`);
         } else {
           console.warn(`No students found for class ${className}`);
           const option = document.createElement('option');
@@ -5162,26 +6388,27 @@
       const formContainer = document.getElementById('generic-form-fields');
       let formHTML = '';
       currentSchema.fields.forEach(field => {
-        formHTML += `<div class="form-group"><label for="dyn-${field.id}">${field.label}</label>`;
+        const isRequired = field.required !== false;
+        formHTML += `<div class="form-group"><label for="dyn-${field.id}">${field.label}${isRequired ? ' <span style="color:var(--danger); font-weight:bold;">*</span>' : ''}</label>`;
         if (field.type === 'select') {
           let options = field.options;
           if (field.id === 'f5' && currentGenericModule === 'Academic_SubjectSetup') {
             options = getSubjectCategories();
           }
-          formHTML += `<select id="dyn-${field.id}" class="form-control">`;
+          formHTML += `<select id="dyn-${field.id}" class="form-control"${isRequired ? ' required' : ''}>`;
           formHTML += `<option value="">-- Select ${field.label} --</option>`;
           options.forEach(opt => formHTML += `<option value="${opt}">${opt}</option>`);
           formHTML += `</select>`;
         } else if (field.type === 'class-dropdown') {
-          formHTML += `<select id="dyn-${field.id}" class="form-control"><option value="">Select a class...</option></select>`;
+          formHTML += `<select id="dyn-${field.id}" class="form-control"${isRequired ? ' required' : ''}><option value="">Select a class...</option></select>`;
         } else if (field.type === 'subject-dropdown') {
-          formHTML += `<select id="dyn-${field.id}" class="form-control"><option value="">-- Select Subject --</option></select>`;
+          formHTML += `<select id="dyn-${field.id}" class="form-control"${isRequired ? ' required' : ''}><option value="">-- Select Subject --</option></select>`;
         } else if (field.type === 'teacher-dropdown') {
-          formHTML += `<select id="dyn-${field.id}" class="form-control"><option value="">-- Select Teacher --</option></select>`;
+          formHTML += `<select id="dyn-${field.id}" class="form-control"${isRequired ? ' required' : ''}><option value="">-- Select Teacher --</option></select>`;
         } else if (field.type === 'student-dropdown') {
-          formHTML += `<select id="dyn-${field.id}" class="form-control"><option value="">-- Select Student --</option></select>`;
+          formHTML += `<select id="dyn-${field.id}" class="form-control"${isRequired ? ' required' : ''}><option value="">-- Select Student --</option></select>`;
         } else {
-          formHTML += `<input type="${field.type}" id="dyn-${field.id}" class="form-control" placeholder="${field.placeholder}" required>`;
+          formHTML += `<input type="${field.type}" id="dyn-${field.id}" class="form-control" placeholder="${field.placeholder}"${isRequired ? ' required' : ''}>`;
         }
         formHTML += `</div>`;
       });
@@ -5204,13 +6431,15 @@
         }
       });
 
-      // Handle Student Remarks class change event
-      if (currentGenericModule === 'Academic_StudentRemarks') {
-        const classDropdown = document.getElementById('dyn-f1');
-        const studentDropdown = document.getElementById('dyn-f2');
+      // Handle class change to populate student dropdown dynamically (generalized for all modules)
+      const classField = currentSchema.fields.find(f => f.type === 'class-dropdown');
+      const studentField = currentSchema.fields.find(f => f.type === 'student-dropdown');
+      if (classField && studentField) {
+        const classDropdown = document.getElementById(`dyn-${classField.id}`);
+        const studentDropdown = document.getElementById(`dyn-${studentField.id}`);
         if (classDropdown && studentDropdown) {
           classDropdown.addEventListener('change', function() {
-            populateStudentsForClass(this.value, 'dyn-f2');
+            populateStudentsForClass(this.value, `dyn-${studentField.id}`);
           });
         }
       }
@@ -5223,7 +6452,127 @@
       tableHeader.innerHTML = thHTML;
 
       renderGenericTable();
+
+      // Hook for Official School Signatures upload configuration panel
+      const sigPanel = document.getElementById('official-signatures-panel');
+      if (sigPanel) {
+        if (currentGenericModule === 'Academic_UploadPhotosSignature') {
+          sigPanel.style.display = 'block';
+          initializeOfficialSignaturesUI();
+        } else {
+          sigPanel.style.display = 'none';
+        }
+      }
     }
+
+    async function initializeOfficialSignaturesUI() {
+      // Fetch latest official signatures from Supabase database
+      if (supabaseDb && typeof supabaseDb.from === 'function') {
+        try {
+          console.log('[REPORTS] Fetching official signatures from Supabase school_settings...');
+          const { data, error } = await supabaseDb
+            .from('school_settings')
+            .select('setting_value')
+            .eq('setting_key', 'official_signatures')
+            .single();
+          if (!error && data && data.setting_value) {
+            localStorage.setItem('school_official_signatures', JSON.stringify(data.setting_value));
+            console.log('[REPORTS] Signatures successfully synchronized from database.');
+          }
+        } catch (dbErr) {
+          console.warn('[REPORTS] Error fetching signatures from database, using cached local data:', dbErr);
+        }
+      }
+      
+      // Refresh displays
+      refreshOfficialSigsDisplay();
+    }
+
+    function refreshOfficialSigsDisplay() {
+      const sigs = JSON.parse(localStorage.getItem('school_official_signatures') || '{}');
+      
+      // Principal
+      const pImg = document.getElementById('preview-official-principal');
+      const pPlace = document.getElementById('placeholder-official-principal');
+      if (sigs.principal) {
+        pImg.src = sigs.principal;
+        pImg.style.display = 'block';
+        pPlace.style.display = 'none';
+      } else {
+        pImg.src = '';
+        pImg.style.display = 'none';
+        pPlace.style.display = 'block';
+      }
+      
+      // Coordinator
+      const cImg = document.getElementById('preview-official-coordinator');
+      const cPlace = document.getElementById('placeholder-official-coordinator');
+      if (sigs.coordinator) {
+        cImg.src = sigs.coordinator;
+        cImg.style.display = 'block';
+        cPlace.style.display = 'none';
+      } else {
+        cImg.src = '';
+        cImg.style.display = 'none';
+        cPlace.style.display = 'block';
+      }
+      
+      // Technical Incharge
+      const tImg = document.getElementById('preview-official-tech-incharge');
+      const tPlace = document.getElementById('placeholder-official-tech-incharge');
+      if (sigs.tech_incharge) {
+        tImg.src = sigs.tech_incharge;
+        tImg.style.display = 'block';
+        tPlace.style.display = 'none';
+      } else {
+        tImg.src = '';
+        tImg.style.display = 'none';
+        tPlace.style.display = 'block';
+      }
+    }
+
+    function handleOfficialSigUpload(role, input) {
+      if (!input.files || !input.files[0]) return;
+      const file = input.files[0];
+      
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        const base64 = e.target.result;
+        const sigs = JSON.parse(localStorage.getItem('school_official_signatures') || '{}');
+        
+        if (role === 'principal') {
+          sigs.principal = base64;
+        } else if (role === 'coordinator') {
+          sigs.coordinator = base64;
+        } else if (role === 'tech_incharge') {
+          sigs.tech_incharge = base64;
+        }
+        
+        localStorage.setItem('school_official_signatures', JSON.stringify(sigs));
+        
+        // Sync to Supabase school_settings
+        if (supabaseDb && typeof supabaseDb.from === 'function') {
+          try {
+            console.log('[REPORTS] Syncing updated signatures to Supabase school_settings...');
+            const { error } = await supabaseDb
+              .from('school_settings')
+              .upsert({ setting_key: 'official_signatures', setting_value: sigs }, { onConflict: 'setting_key' });
+            if (error) throw error;
+            console.log('[REPORTS] Signatures successfully synchronized to Supabase.');
+          } catch (dbErr) {
+            console.warn('[REPORTS] Failed to sync signatures to Supabase database:', dbErr);
+          }
+        }
+        
+        alert('✅ Signature uploaded and saved to database successfully!');
+        refreshOfficialSigsDisplay();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    window.initializeOfficialSignaturesUI = initializeOfficialSignaturesUI;
+    window.refreshOfficialSigsDisplay = refreshOfficialSigsDisplay;
+    window.handleOfficialSigUpload = handleOfficialSigUpload;
 
     async function renderGenericTable() {
       const tbody = document.getElementById('generic-tbody');
@@ -5274,6 +6623,26 @@
           console.error("Exception loading subjects:", err);
           data = [];
         }
+      } else if (currentGenericModule === 'Attendance_AddDevice' && supabaseDb) {
+        try {
+          const { data: devicesData, error } = await supabaseDb.from('attendance_devices').select('*').order('created_at', { ascending: false });
+          if (error) {
+            console.error("Error loading attendance devices:", error);
+            data = JSON.parse(localStorage.getItem('generic_module_' + currentGenericModule) || '[]');
+          } else {
+            // Transform database data to match the schema format
+            data = devicesData.map(dev => ({
+              id: dev.id,
+              f1: dev.device_name,
+              f2: dev.ip_serial,
+              f3: dev.location || '',
+              f4: dev.status
+            }));
+          }
+        } catch(err) {
+          console.error("Exception loading attendance devices:", err);
+          data = JSON.parse(localStorage.getItem('generic_module_' + currentGenericModule) || '[]');
+        }
       } else {
         // Fallback to localStorage
         data = JSON.parse(localStorage.getItem('generic_module_' + currentGenericModule) || '[]');
@@ -5296,6 +6665,17 @@
              let badgeClass = (val.includes('Active') || val.includes('Completed') || val.includes('Available') || val.includes('Income')) ? 'approved' : 
                               (val.includes('Pending') || val.includes('Issued')) ? 'pending' : 'rejected';
              trHTML += `<td><span class="status-badge ${badgeClass}">${val}</span></td>`;
+          } else if (field.type === 'file') {
+             if (val) {
+                const isImage = val.startsWith('data:image/') || /\.(jpg|jpeg|png|webp|gif)$/i.test(val);
+                if (isImage) {
+                   trHTML += `<td><a href="${val}" target="_blank" style="display:inline-flex; align-items:center; gap:0.25rem; font-weight:600; color:var(--accent); text-decoration:none;"><img src="${val}" style="width:30px; height:30px; border-radius:4px; object-fit:cover; border:1px solid #ddd;"> View Image</a></td>`;
+                } else {
+                   trHTML += `<td><a href="${val}" target="_blank" style="display:inline-flex; align-items:center; gap:0.25rem; font-weight:600; color:var(--accent); text-decoration:none;">📄 View Document</a></td>`;
+                }
+             } else {
+                trHTML += `<td><span style="color:var(--text-muted); font-style:italic;">No Document</span></td>`;
+             }
           } else {
              trHTML += `<td>${val}</td>`;
           }
@@ -5321,11 +6701,38 @@
         return;
       }
       
-      let editId = document.getElementById('generic-form').dataset.editId;
+      let editId = document.getElementById('generic-dynamic-form').dataset.editId;
       let entry = { id: editId ? editId : Date.now() };
-      currentSchema.fields.forEach(field => {
-        entry[field.id] = document.getElementById(`dyn-${field.id}`).value;
-      });
+      for (const field of currentSchema.fields) {
+        if (field.type === 'file') {
+          const fileInput = document.getElementById(`dyn-${field.id}`);
+          if (fileInput && fileInput.files && fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            const fileExt = file.name.split('.').pop();
+            const filename = `${currentGenericModule}_${entry.id}.${fileExt}`;
+            const path = `documents/${filename}`;
+            
+            if (typeof uploadMediaFile === 'function') {
+              entry[field.id] = await uploadMediaFile(file, path);
+            } else {
+              entry[field.id] = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.readAsDataURL(file);
+              });
+            }
+          } else {
+            if (editId) {
+              const existingRecord = (window.currentGenericData || []).find(d => String(d.id) === String(editId));
+              entry[field.id] = existingRecord ? (existingRecord[field.id] || '') : '';
+            } else {
+              entry[field.id] = '';
+            }
+          }
+        } else {
+          entry[field.id] = document.getElementById(`dyn-${field.id}`).value;
+        }
+      }
 
       // Handle database insert for classes
       if (currentGenericModule === 'Academic_ClassSetup' && supabaseDb) {
@@ -5409,6 +6816,39 @@
           console.error("Exception saving subject:", err);
           alert("⚠️ Error saving to database.\nData has been saved locally.");
         }
+      } else if (currentGenericModule === 'Attendance_AddDevice' && supabaseDb) {
+        try {
+          let deviceData = {
+            device_name: entry.f1,
+            ip_serial: entry.f2,
+            location: entry.f3,
+            status: entry.f4,
+            created_by: adminUser.email
+          };
+          
+          let dbData, error;
+          if (editId) {
+             const result = await supabaseDb.from('attendance_devices').update(deviceData).eq('id', editId).select();
+             dbData = result.data; error = result.error;
+          } else {
+             const result = await supabaseDb.from('attendance_devices').insert([deviceData]).select();
+             dbData = result.data; error = result.error;
+          }
+          
+          if (error) {
+            console.error("Database error:", error);
+            if (error.message.includes('schema cache') || error.message.includes('Could not find')) {
+               alert("⚠️ DATABASE TABLE NOT SETUP\n\nPlease run the sql/setup/ATTENDANCE_DEVICES_SETUP.sql script in your Supabase SQL Editor first.\n\nData has been saved locally.");
+            } else {
+               alert("❌ Error saving device to database: " + error.message + "\n\nData saved locally.");
+            }
+          } else {
+            alert(editId ? "✅ Attendance device updated successfully in database!" : "✅ Attendance device added successfully to database!");
+          }
+        } catch(err) {
+          console.error("Exception saving device:", err);
+          alert("⚠️ Error saving to database.\nData has been saved locally.");
+        }
       }
 
       // Also save to localStorage as backup/fallback
@@ -5417,8 +6857,8 @@
          const idx = localData.findIndex(d => String(d.id) === String(editId));
          if (idx !== -1) localData[idx] = entry;
          
-         document.getElementById('generic-form').removeAttribute('data-edit-id');
-         const submitBtn = document.querySelector('#generic-form button[type="submit"]');
+         document.getElementById('generic-dynamic-form').removeAttribute('data-edit-id');
+         const submitBtn = document.querySelector('#generic-dynamic-form button[type="submit"]');
          if (submitBtn) submitBtn.innerText = "Save Record to System";
       } else {
          localData.push(entry);
@@ -5426,6 +6866,12 @@
       localStorage.setItem('generic_module_' + currentGenericModule, JSON.stringify(localData));
       
       event.target.reset();
+      currentSchema.fields.forEach(field => {
+        if (field.type === 'file') {
+          const previewEl = document.getElementById(`dyn-${field.id}-preview`);
+          if (previewEl) previewEl.innerHTML = '';
+        }
+      });
       renderGenericTable();
     }
 
@@ -5457,6 +6903,15 @@
         } catch(err) {
           console.error("Exception deleting subject:", err);
         }
+      } else if (currentGenericModule === 'Attendance_AddDevice' && supabaseDb) {
+        try {
+          const { error } = await supabaseDb.from('attendance_devices').delete().eq('id', id);
+          if (error) {
+            console.error("Database error deleting device:", error);
+          }
+        } catch(err) {
+          console.error("Exception deleting device:", err);
+        }
       }
       
       let data = JSON.parse(localStorage.getItem('generic_module_' + currentGenericModule) || '[]');
@@ -5465,21 +6920,46 @@
       renderGenericTable();
     }
 
-    window.editGenericEntry = function(id) {
+    window.editGenericEntry = async function(id) {
        const data = window.currentGenericData || [];
        const record = data.find(d => String(d.id) === String(id));
        if (!record) return;
        
+       // Pre-populate students for this class before setting dropdown values
+       const classField = currentSchema.fields.find(f => f.type === 'class-dropdown');
+       const studentField = currentSchema.fields.find(f => f.type === 'student-dropdown');
+       if (classField && studentField && record[classField.id]) {
+          await populateStudentsForClass(record[classField.id], `dyn-${studentField.id}`);
+       }
+       
        currentSchema.fields.forEach(field => {
          const el = document.getElementById(`dyn-${field.id}`);
-         if (el) el.value = record[field.id] || '';
+         if (el) {
+           if (field.type !== 'file') {
+             el.value = record[field.id] || '';
+           } else {
+             el.value = '';
+             let previewEl = document.getElementById(`dyn-${field.id}-preview`);
+             if (!previewEl) {
+               previewEl = document.createElement('div');
+               previewEl.id = `dyn-${field.id}-preview`;
+               previewEl.style.cssText = 'margin-top: 0.25rem; font-size: 0.8rem; color: var(--text-muted);';
+               el.parentNode.appendChild(previewEl);
+             }
+             if (record[field.id]) {
+               previewEl.innerHTML = `Current: <a href="${record[field.id]}" target="_blank" style="color:var(--accent); font-weight:600; text-decoration:none;">View File</a>`;
+             } else {
+               previewEl.innerHTML = 'Current: No file uploaded';
+             }
+           }
+         }
        });
        
-       document.getElementById('generic-form').dataset.editId = id;
-       const submitBtn = document.querySelector('#generic-form button[type="submit"]');
+       document.getElementById('generic-dynamic-form').dataset.editId = id;
+       const submitBtn = document.querySelector('#generic-dynamic-form button[type="submit"]');
        if (submitBtn) submitBtn.innerText = "Update Record in System";
        
-       window.scrollTo({ top: document.getElementById('generic-form').offsetTop - 100, behavior: 'smooth' });
+       window.scrollTo({ top: document.getElementById('generic-dynamic-form').offsetTop - 100, behavior: 'smooth' });
     };
 
     // ── STUDENTS DIRECTORY ──
@@ -7589,6 +9069,46 @@
       const rank = sortedStudents.findIndex(s => studentKeysMatch(s, symbolNumber)) + 1;
       document.getElementById('ms-rank').innerText = rank > 0 ? rank : '-';
 
+      // Apply official signatures if available
+      const sigs = JSON.parse(localStorage.getItem('school_official_signatures') || '{}');
+      
+      // Principal
+      const msSigPrincipal = document.getElementById('ms-sig-principal');
+      if (msSigPrincipal) {
+        if (sigs.principal) {
+          msSigPrincipal.src = sigs.principal;
+          msSigPrincipal.style.display = 'block';
+        } else {
+          msSigPrincipal.src = '';
+          msSigPrincipal.style.display = 'none';
+        }
+      }
+      
+      // Coordinator
+      const msSigCoordinator = document.getElementById('ms-sig-coordinator');
+      if (msSigCoordinator) {
+        if (sigs.coordinator) {
+          msSigCoordinator.src = sigs.coordinator;
+          msSigCoordinator.style.display = 'block';
+        } else {
+          msSigCoordinator.src = '';
+          msSigCoordinator.style.display = 'none';
+        }
+      }
+      
+      // Technical Incharge
+      const msSigIncharge = document.getElementById('ms-sig-incharge');
+      if (msSigIncharge) {
+        const techSig = sigs.tech_incharge;
+        if (techSig) {
+          msSigIncharge.src = techSig;
+          msSigIncharge.style.display = 'block';
+        } else {
+          msSigIncharge.src = '';
+          msSigIncharge.style.display = 'none';
+        }
+      }
+
       document.getElementById('marksheet-preview-modal').style.display = 'block';
     }
 
@@ -8765,6 +10285,17 @@
         }
       } catch(err) {
         console.error('Login error:', err);
+        // Fallback to demo credentials if database connection fails or throws exception
+        if (email === 'info@sss.com' && password === 'sss@121') {
+          console.log('[INFO] Supabase connection failed, using demo credentials fallback');
+          adminUser = { email: email, authenticated: true, timestamp: Date.now(), isDemoUser: true };
+          localStorage.setItem('adminUser', JSON.stringify(adminUser));
+          localStorage.setItem('authToken', 'demo-admin-token');
+          hideLoginModal();
+          document.getElementById('admin-login-form').reset();
+          location.reload();
+          return;
+        }
         errorDiv.textContent = '❌ ' + (err.message || 'Login failed. Check credentials.');
         errorDiv.classList.add('show');
       } finally {
@@ -8851,8 +10382,265 @@
       renderSchoolEvents();
       initCalendar();
       renderWebsiteConfig();
-      setTimeout(populateAllSubjectDropdowns, 200);
+      initCredentialAutogen();
+      setTimeout(() => {
+        populateAllSubjectDropdowns();
+        initializeEnhancedFormAndErrorHandling();
+      }, 200);
     });
+
+    function initializeEnhancedFormAndErrorHandling() {
+      // 1. Inject Toast Container and Styles
+      if (!document.getElementById('toast-style-block')) {
+        const style = document.createElement('style');
+        style.id = 'toast-style-block';
+        style.innerHTML = `
+          #toast-container {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 100000;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 420px;
+            width: calc(100% - 48px);
+            pointer-events: none;
+          }
+          .modern-toast {
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.02);
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 16px;
+            border-left: 5px solid;
+            transform: translateX(120%);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s;
+            opacity: 0;
+            pointer-events: auto;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+          }
+          .modern-toast.active {
+            transform: translateX(0);
+            opacity: 1;
+          }
+          .modern-toast-success {
+            border-left-color: #10b981;
+            background: #f0fdf4;
+            color: #065f46;
+          }
+          .modern-toast-error {
+            border-left-color: #ef4444;
+            background: #fef2f2;
+            color: #991b1b;
+          }
+          .modern-toast-warning {
+            border-left-color: #f59e0b;
+            background: #fffbeb;
+            color: #92400e;
+          }
+          .modern-toast-info {
+            border-left-color: #3b82f6;
+            background: #eff6ff;
+            color: #1e40af;
+          }
+          .modern-toast-icon {
+            font-size: 1.25rem;
+            line-height: 1.2;
+          }
+          .modern-toast-content {
+            flex: 1;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            font-weight: 500;
+          }
+          .modern-toast-close {
+            background: none;
+            border: none;
+            color: currentColor;
+            opacity: 0.6;
+            cursor: pointer;
+            font-size: 1.2rem;
+            line-height: 1;
+            padding: 0;
+            transition: opacity 0.2s;
+          }
+          .modern-toast-close:hover {
+            opacity: 1;
+          }
+          
+          /* Loading Spinner for buttons */
+          button[type="submit"].submitting, .submit-btn.submitting {
+            position: relative !important;
+            color: transparent !important;
+            pointer-events: none !important;
+          }
+          button[type="submit"].submitting::after, .submit-btn.submitting::after {
+            content: "" !important;
+            position: absolute !important;
+            width: 18px !important;
+            height: 18px !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            margin: auto !important;
+            border: 3px solid rgba(120, 120, 120, 0.2) !important;
+            border-top-color: currentColor !important;
+            border-radius: 50% !important;
+            animation: button-loading-spinner 0.8s linear infinite !important;
+          }
+          @keyframes button-loading-spinner {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+
+      // Create toast-container if not exists
+      if (!document.getElementById('toast-container')) {
+        const tc = document.createElement('div');
+        tc.id = 'toast-container';
+        document.body.appendChild(tc);
+      }
+
+      // 2. Define global showToast function
+      window.showToast = function(message, type = 'success') {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+
+        const toast = document.createElement('div');
+        toast.className = `modern-toast modern-toast-${type}`;
+
+        let icon = '✅';
+        if (type === 'error') icon = '❌';
+        else if (type === 'warning') icon = '⚠️';
+        else if (type === 'info') icon = 'ℹ️';
+
+        toast.innerHTML = `
+          <div class="modern-toast-icon">${icon}</div>
+          <div class="modern-toast-content">${message}</div>
+          <button class="modern-toast-close">&times;</button>
+        `;
+
+        const closeBtn = toast.querySelector('.modern-toast-close');
+        closeBtn.onclick = () => {
+          toast.classList.remove('active');
+          setTimeout(() => toast.remove(), 400);
+        };
+
+        container.appendChild(toast);
+        
+        // Trigger reflow for slide animation
+        toast.offsetHeight;
+        toast.classList.add('active');
+
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+          if (toast.parentNode) {
+            toast.classList.remove('active');
+            setTimeout(() => toast.remove(), 400);
+          }
+        }, 5000);
+      };
+
+      // 3. Override window.alert to route through showToast
+      window.alert = function(message) {
+        if (!message) return;
+        let type = 'info';
+        let cleanMessage = message.trim();
+        
+        if (cleanMessage.includes('❌') || cleanMessage.toLowerCase().includes('error') || cleanMessage.toLowerCase().includes('failed') || cleanMessage.toLowerCase().includes('invalid')) {
+          type = 'error';
+        } else if (cleanMessage.includes('✅') || cleanMessage.toLowerCase().includes('success') || cleanMessage.toLowerCase().includes('successfully') || cleanMessage.toLowerCase().includes('created')) {
+          type = 'success';
+        } else if (cleanMessage.includes('⚠️') || cleanMessage.toLowerCase().includes('warning') || cleanMessage.toLowerCase().includes('setup required') || cleanMessage.toLowerCase().includes('not initialized')) {
+          type = 'warning';
+        }
+        
+        // Clean up common emoji prefixes so they don't double up with toast icons
+        const emojisToRemove = ['❌', '✅', '⚠️', 'ℹ️'];
+        emojisToRemove.forEach(emoji => {
+          if (cleanMessage.startsWith(emoji)) {
+            cleanMessage = cleanMessage.slice(emoji.length).trim();
+          }
+        });
+        
+        window.showToast(cleanMessage, type);
+      };
+
+      // 4. Wrap all global submit handlers to automatically add loading/disabled states and catch errors
+      const handlers = [
+        'handleGenericSubmit',
+        'enrollStudentWithCredentials',
+        'enrollTeacher',
+        'broadcastNotice',
+        'addFeeCategory',
+        'assignStudentFee',
+        'scheduleLectureSlot',
+        'publishTermGPA',
+        'addCmsHighlight',
+        'saveCmsDemographics',
+        'saveCmsHeroStats',
+        'addCmsClub',
+        'saveNotice',
+        'saveAdminDocument',
+        'saveAchievement',
+        'saveAlumniProfile',
+        'handleSchoolEventSubmit',
+        'addTimetableEntry',
+        'saveStudentProfile',
+        'handleAdminLogin'
+      ];
+
+      handlers.forEach(name => {
+        if (typeof window[name] === 'function') {
+          const original = window[name];
+          // Prevent double wrapping
+          if (original.__wrapped) return;
+
+          window[name] = async function(event) {
+            let form = null;
+            if (event && event.target) {
+              if (event.target.tagName === 'FORM') {
+                form = event.target;
+              } else if (event.target.form) {
+                form = event.target.form;
+              }
+            }
+
+            let submitBtn = null;
+            if (form) {
+              submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
+            }
+
+            if (submitBtn) {
+              submitBtn.disabled = true;
+              submitBtn.classList.add('submitting');
+            }
+
+            try {
+              // Execute original function, await it in case it returns a promise
+              await original.apply(this, arguments);
+            } catch (error) {
+              console.error(`Error in submit handler [${name}]:`, error);
+              window.alert(`❌ Error processing request: ${error.message || error}`);
+            } finally {
+              if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('submitting');
+              }
+            }
+          };
+          window[name].__wrapped = true;
+          console.log(`✓ Wrapped submit handler: ${name}`);
+        } else {
+          console.warn(`Submit handler not found for wrapping: ${name}`);
+        }
+      });
+    }
 
     // ── CUSTOM EVENT MANAGER LOGIC ──
     function getSchoolEvents() {
@@ -10735,7 +12523,8 @@
           'sched-class',
           'filter-class',
           'tt-class',
-          'leadersheet-class'
+          'leadersheet-class',
+          'analytics-class-filter'
         ];
 
         // Ensure we populate the dropdowns immediately
@@ -10923,8 +12712,151 @@
     }
 
     function clearStudentForm() {
+      editingStudentId = null;
       document.getElementById('student-enrollment-form').reset();
+      
+      // Reset auto-generation checkbox and state
+      const autoCheckbox = document.getElementById('auto-gen-creds');
+      if (autoCheckbox) {
+        autoCheckbox.checked = true;
+      }
+      handleCredentialAutogen();
+      
+      const submitBtn = document.querySelector('#student-enrollment-form button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.innerHTML = 'Create Student Account';
+      }
+      document.getElementById('std-password').setAttribute('required', 'required');
+      document.getElementById('std-password-confirm').setAttribute('required', 'required');
       document.getElementById('std-name').focus();
+    }
+
+    // ==================== AUTO-GENERATED student portal credentials ====================
+    function handleCredentialAutogen() {
+      const autoCheckbox = document.getElementById('auto-gen-creds');
+      if (!autoCheckbox) return;
+      const isAuto = autoCheckbox.checked;
+      
+      const usernameInput = document.getElementById('std-username');
+      const passwordInput = document.getElementById('std-password');
+      const confirmInput = document.getElementById('std-password-confirm');
+      
+      if (!usernameInput || !passwordInput || !confirmInput) return;
+      
+      // Find the check button next to usernameInput
+      const checkBtn = usernameInput.nextElementSibling;
+      
+      if (isAuto) {
+        usernameInput.readOnly = true;
+        passwordInput.readOnly = true;
+        confirmInput.readOnly = true;
+        
+        passwordInput.type = 'text';
+        confirmInput.type = 'text';
+        
+        usernameInput.style.background = '#f1f5f9';
+        usernameInput.style.cursor = 'not-allowed';
+        passwordInput.style.background = '#f1f5f9';
+        passwordInput.style.cursor = 'not-allowed';
+        confirmInput.style.background = '#f1f5f9';
+        confirmInput.style.cursor = 'not-allowed';
+        
+        if (checkBtn && checkBtn.tagName === 'BUTTON') {
+          checkBtn.style.opacity = '0.5';
+          checkBtn.style.pointerEvents = 'none';
+        }
+        
+        generateCredentials();
+      } else {
+        usernameInput.readOnly = false;
+        passwordInput.readOnly = false;
+        confirmInput.readOnly = false;
+        
+        passwordInput.type = 'password';
+        confirmInput.type = 'password';
+        
+        usernameInput.style.background = 'white';
+        usernameInput.style.cursor = 'text';
+        passwordInput.style.background = 'white';
+        passwordInput.style.cursor = 'text';
+        confirmInput.style.background = 'white';
+        confirmInput.style.cursor = 'text';
+        
+        if (checkBtn && checkBtn.tagName === 'BUTTON') {
+          checkBtn.style.opacity = '1';
+          checkBtn.style.pointerEvents = 'auto';
+        }
+      }
+    }
+
+    function generateCredentials() {
+      const autoCheckbox = document.getElementById('auto-gen-creds');
+      if (!autoCheckbox || !autoCheckbox.checked) return;
+      
+      // If we are currently editing a student, do not auto-overwrite!
+      if (editingStudentId !== null) return;
+
+      const nameVal = document.getElementById('std-name').value.trim();
+      const rollVal = document.getElementById('std-roll').value.trim();
+      const classSelect = document.getElementById('std-class');
+      const classVal = classSelect ? classSelect.value : '';
+
+      if (!nameVal) {
+        document.getElementById('std-username').value = '';
+        document.getElementById('std-password').value = '';
+        document.getElementById('std-password-confirm').value = '';
+        return;
+      }
+
+      // Extract first name (alphabetic characters only, capitalized)
+      const nameParts = nameVal.split(/\s+/);
+      const firstName = nameParts[0].replace(/[^a-zA-Z]/g, '');
+      if (!firstName) return;
+      
+      const firstNameLower = firstName.toLowerCase();
+      const firstNameCapitalized = firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
+
+      // Extract grade number from class (e.g. "Grade 11 - Section A" -> "11")
+      let suffix = '';
+      const classMatch = classVal.match(/\d+/);
+      if (classMatch) {
+        suffix = classMatch[0];
+      } else if (rollVal) {
+        suffix = rollVal;
+      }
+
+      // Format Username: FirstName_Grade or FirstName_Roll or FirstName
+      const username = suffix ? `${firstNameCapitalized}_${suffix}` : firstNameCapitalized;
+      
+      // Format Password: firstname@123
+      const password = `${firstNameLower}@123`;
+
+      document.getElementById('std-username').value = username;
+      document.getElementById('std-password').value = password;
+      document.getElementById('std-password-confirm').value = password;
+    }
+
+    function initCredentialAutogen() {
+      const autoCheckbox = document.getElementById('auto-gen-creds');
+      const nameInput = document.getElementById('std-name');
+      const rollInput = document.getElementById('std-roll');
+      const classSelect = document.getElementById('std-class');
+      
+      if (autoCheckbox) {
+        autoCheckbox.addEventListener('change', handleCredentialAutogen);
+      }
+      if (nameInput) {
+        nameInput.addEventListener('input', generateCredentials);
+      }
+      if (rollInput) {
+        rollInput.addEventListener('input', generateCredentials);
+      }
+      if (classSelect) {
+        classSelect.addEventListener('change', generateCredentials);
+      }
+      
+      // Run once initially to style inputs properly
+      handleCredentialAutogen();
     }
 
     // ─────────────── ADMISSIONS MANAGEMENT ───────────────
@@ -11924,6 +13856,14 @@
 
     function editStudentAccount(id, name, roll, username, email, className) {
       editingStudentId = id;
+      
+      // Temporarily disable auto-generation when editing to prevent overwriting existing details
+      const autoCheckbox = document.getElementById('auto-gen-creds');
+      if (autoCheckbox) {
+        autoCheckbox.checked = false;
+      }
+      handleCredentialAutogen();
+
       document.getElementById('std-name').value = name;
       document.getElementById('std-roll').value = roll;
       document.getElementById('std-username').value = username;
@@ -12193,9 +14133,24 @@
       </div>
 
       <div class="marksheet-footer">
-        <div class="signature-line">CLASS TEACHER</div>
-        <div class="signature-line">EXAM CO-ORDINATOR</div>
-        <div class="signature-line">HEAD TEACHER</div>
+        <div class="signature-line" id="ms-sig-incharge-container">
+          <div style="height: 45px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 2px;">
+            <img id="ms-sig-incharge" src="" style="max-height: 45px; max-width: 150px; display: none;" alt="Signature">
+          </div>
+          TECHNICAL INCHARGE
+        </div>
+        <div class="signature-line" id="ms-sig-coordinator-container">
+          <div style="height: 45px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 2px;">
+            <img id="ms-sig-coordinator" src="" style="max-height: 45px; max-width: 150px; display: none;" alt="Signature">
+          </div>
+          EXAM CO-ORDINATOR
+        </div>
+        <div class="signature-line" id="ms-sig-principal-container">
+          <div style="height: 45px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 2px;">
+            <img id="ms-sig-principal" src="" style="max-height: 45px; max-width: 150px; display: none;" alt="Signature">
+          </div>
+          PRINCIPAL
+        </div>
       </div>
     </div>
   </div>

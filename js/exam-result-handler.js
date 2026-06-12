@@ -1,3 +1,12 @@
+﻿// ============================================================================
+// FILE:    exam-result-handler.js
+// MODULE:  Exam Results
+// PURPOSE: Exam Result Handler - Student-facing exam results viewer: fetch, render marks, grades, and GPA calculations
+//
+// PROJECT: Shree Saraswati Secondary School — Management System
+// STACK:   Vanilla JS + Supabase (PostgreSQL) + HTML/CSS
+// UPDATED: 2026-06-03
+// ============================================================================
 // ====================================================================
 // EXAM RESULTS HANDLER - Teacher Portal
 // ====================================================================

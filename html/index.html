@@ -4061,12 +4061,10 @@
           <input type="text" id="result-symbol" class="form-control" placeholder="e.g., SYM001" style="padding: 0.9rem 1.2rem; border-radius: 12px; border: 1.5px solid #cbd5e1; font-size: 0.95rem;"/>
         </div>
         
-        <!-- Class Input -->
+        <!-- Date of Birth Input -->
         <div class="form-group">
-          <label for="result-class" style="font-size: 0.95rem; font-weight: 700; color: var(--primary); margin-bottom: 0.6rem; display: block;">Class <span style="color: #ef4444;">*</span></label>
-          <select id="result-class" class="form-control" style="padding: 0.9rem 1.2rem; border-radius: 12px; border: 1.5px solid #cbd5e1; font-size: 0.95rem; appearance: auto;">
-            <option value="" disabled selected>Select Class</option>
-          </select>
+          <label for="result-dob" style="font-size: 0.95rem; font-weight: 700; color: var(--primary); margin-bottom: 0.6rem; display: block;">Date of Birth <span style="color: #ef4444;">*</span></label>
+          <input type="date" id="result-dob" class="form-control" style="padding: 0.9rem 1.2rem; border-radius: 12px; border: 1.5px solid #cbd5e1; font-size: 0.95rem;"/>
         </div>
       </div>
       
@@ -4205,9 +4203,24 @@
             <div style="font-weight: bold; font-size: 14px; margin-bottom: 30px;">DATE OF ISSUE: <span id="ms-issue-date"></span></div>
 
             <div class="ms-signatures">
-              <div class="ms-sig-block"><div class="ms-sig-line">CLASS TEACHER</div></div>
-              <div class="ms-sig-block"><div class="ms-sig-line">EXAM CO-ORDINATOR</div></div>
-              <div class="ms-sig-block"><div class="ms-sig-line">HEAD TEACHER</div></div>
+              <div class="ms-sig-block">
+                <div style="height: 45px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 2px;">
+                  <img id="ms-sig-incharge" src="" style="max-height: 45px; max-width: 150px; display: none;" alt="Signature">
+                </div>
+                <div class="ms-sig-line">TECHNICAL INCHARGE</div>
+              </div>
+              <div class="ms-sig-block">
+                <div style="height: 45px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 2px;">
+                  <img id="ms-sig-coordinator" src="" style="max-height: 45px; max-width: 150px; display: none;" alt="Signature">
+                </div>
+                <div class="ms-sig-line">EXAM CO-ORDINATOR</div>
+              </div>
+              <div class="ms-sig-block">
+                <div style="height: 45px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 2px;">
+                  <img id="ms-sig-principal" src="" style="max-height: 45px; max-width: 150px; display: none;" alt="Signature">
+                </div>
+                <div class="ms-sig-line">PRINCIPAL</div>
+              </div>
             </div>
 
           </div>
@@ -6079,7 +6092,7 @@
     }
 
     // ✅ Populate class dropdown for results form
-    if (window.classHandler) {
+    if (window.classHandler && document.getElementById('result-class')) {
       try {
         await window.classHandler.populateClassDropdown('result-class');
       } catch (error) {
@@ -6102,7 +6115,7 @@
     return { gpa: 0, grade: 'NG' };
   }
 
-  function checkStudentResult() {
+  function checkStudentResultLegacy() {
     const symbolNumber = document.getElementById('result-symbol')?.value.trim();
     const studentClass = document.getElementById('result-class')?.value;
     const resultDisplay = document.getElementById('result-display');
@@ -6202,6 +6215,229 @@
     const sortedStudents = Object.keys(studentTotals).sort((a, b) => studentTotals[b] - studentTotals[a]);
     const rank = sortedStudents.indexOf(symbolNumber) + 1;
     document.getElementById('ms-rank-val').innerText = rank;
+  }
+
+  function resultRemarks(percentage) {
+    if (percentage >= 90) return 'OUTSTANDING';
+    if (percentage >= 80) return 'EXCELLENT';
+    if (percentage >= 70) return 'VERY GOOD';
+    if (percentage >= 60) return 'GOOD';
+    if (percentage >= 50) return 'SATISFACTORY';
+    if (percentage >= 40) return 'ACCEPTABLE';
+    if (percentage >= 35) return 'BASIC';
+    return 'NOT GRADED';
+  }
+
+  async function checkStudentResult() {
+    const symbolNumber = document.getElementById('result-symbol')?.value.trim();
+    const studentDob = document.getElementById('result-dob')?.value;
+    const resultDisplay = document.getElementById('result-display');
+    const resultMessage = document.getElementById('result-message');
+    const resultTableWrapper = document.getElementById('result-table-wrapper');
+    const searchBtn = document.getElementById('marksheet-search-btn');
+
+    if (!symbolNumber || !studentDob) {
+      alert('Please enter both Symbol Number and Date of Birth');
+      return;
+    }
+
+    if (!window.supabaseDb) {
+      alert('Database connection is not ready. Please refresh and try again.');
+      return;
+    }
+
+    if (searchBtn) {
+      searchBtn.disabled = true;
+      searchBtn.textContent = 'Checking Result...';
+    }
+
+    try {
+      resultDisplay.style.display = 'block';
+      resultMessage.innerHTML = '<strong>Checking...</strong><br/>Verifying symbol number and date of birth.';
+      resultMessage.style.background = '#eff6ff';
+      resultMessage.style.borderColor = '#93c5fd';
+      resultTableWrapper.style.display = 'none';
+
+      const { data: symbolRows, error: symbolError } = await supabaseDb
+        .from('exam_symbol_numbers')
+        .select('*')
+        .eq('date_of_birth', studentDob)
+        .eq('is_active', true);
+
+      if (symbolError) throw symbolError;
+
+      const symbolRecord = (symbolRows || []).find((row) =>
+        String(row.symbol_number || '').trim().toUpperCase() === symbolNumber.toUpperCase()
+      );
+
+      if (!symbolRecord) {
+        resultMessage.innerHTML = '&#9888; <strong>Result Not Found</strong><br/>The symbol number and date of birth did not match any generated exam record.';
+        resultMessage.style.background = '#fee2e2';
+        resultMessage.style.borderColor = '#fca5a5';
+        return;
+      }
+
+      const { data: studentResults, error: resultError } = await supabaseDb
+        .from('exam_results')
+        .select(`
+          *,
+          exam_configurations!inner (
+            id,
+            subject,
+            class,
+            exam_type,
+            full_marks,
+            pass_marks,
+            credit_hour,
+            exam_session_id,
+            exam_sessions!inner (
+              id,
+              session_name,
+              academic_year,
+              terminal_number
+            )
+          )
+        `)
+        .eq('student_roll', symbolRecord.student_roll)
+        .eq('approval_status', 'Approved')
+        .eq('exam_configurations.exam_session_id', symbolRecord.exam_session_id);
+
+      if (resultError) throw resultError;
+
+      if (!studentResults || studentResults.length === 0) {
+        resultMessage.innerHTML = '&#9888; <strong>Results Not Published</strong><br/>Symbol number verified, but approved marks are not published yet.';
+        resultMessage.style.background = '#fee2e2';
+        resultMessage.style.borderColor = '#fca5a5';
+        return;
+      }
+
+      const firstConfig = studentResults[0].exam_configurations || {};
+      const firstSession = firstConfig.exam_sessions || {};
+      const studentName = symbolRecord.student_name || studentResults[0].student_name || 'Student';
+      const examType = firstConfig.exam_type || firstSession.session_name || 'Term Exam';
+      const className = symbolRecord.class || firstConfig.class || '';
+      const currentYear = firstSession.academic_year || new Date().getFullYear();
+
+      resultMessage.innerHTML = '&#9989; <strong>Results Found!</strong><br/>Displaying approved exam results for ' + studentName;
+      resultMessage.style.background = '#ecfdf5';
+      resultMessage.style.borderColor = '#6ee7b7';
+      resultTableWrapper.style.display = 'block';
+
+      document.getElementById('ms-exam-title').innerText = `${firstSession.session_name || examType} - ${currentYear}`;
+      document.getElementById('ms-student-name').innerText = studentName;
+      document.getElementById('ms-student-dob').innerText = symbolRecord.date_of_birth || 'N/A';
+      document.getElementById('ms-student-grade').innerText = className;
+      document.getElementById('ms-exam-name').innerText = examType.toUpperCase();
+      document.getElementById('ms-exam-year').innerText = currentYear;
+      document.getElementById('ms-issue-date').innerText = new Date().toLocaleDateString();
+
+      const tbody = document.getElementById('ms-marks-tbody');
+      tbody.innerHTML = '';
+
+      let totalMarksObtained = 0;
+      let totalMaxMarks = 0;
+      let weightedGpa = 0;
+      let totalCredit = 0;
+
+      studentResults.forEach((result, index) => {
+        const config = result.exam_configurations || {};
+        const marks = parseFloat(result.total_marks) || 0;
+        const maxMarks = parseFloat(config.full_marks) || 100;
+        const creditHour = parseFloat(config.credit_hour) || 4;
+        totalMarksObtained += marks;
+        totalMaxMarks += maxMarks;
+
+        const percentage = maxMarks > 0 ? (marks / maxMarks) * 100 : 0;
+        const gpaData = calculateGPA(percentage);
+        weightedGpa += gpaData.gpa * creditHour;
+        totalCredit += creditHour;
+
+        tbody.innerHTML += `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${config.subject || result.subject || '-'}</td>
+            <td>${creditHour}</td>
+            <td>${gpaData.gpa.toFixed(1)}</td>
+            <td>${gpaData.grade}</td>
+            <td>${resultRemarks(percentage)}</td>
+          </tr>
+        `;
+      });
+
+      const overallGpa = totalCredit > 0
+        ? weightedGpa / totalCredit
+        : calculateGPA(totalMaxMarks > 0 ? (totalMarksObtained / totalMaxMarks) * 100 : 0).gpa;
+
+      document.getElementById('ms-overall-gpa').innerText = overallGpa.toFixed(1);
+      document.getElementById('ms-rank-val').innerText = '-';
+
+      // Pull latest official signatures from Supabase and apply to layout
+      if (window.supabaseDb) {
+        try {
+          const { data: sigData, error: sigErr } = await window.supabaseDb
+            .from('school_settings')
+            .select('setting_value')
+            .eq('setting_key', 'official_signatures')
+            .single();
+          if (!sigErr && sigData && sigData.setting_value) {
+            localStorage.setItem('school_official_signatures', JSON.stringify(sigData.setting_value));
+          }
+        } catch(e) {
+          console.warn('Failed to load official signatures:', e);
+        }
+      }
+
+      const sigs = JSON.parse(localStorage.getItem('school_official_signatures') || '{}');
+      
+      // Principal signature
+      const msSigPrincipal = document.getElementById('ms-sig-principal');
+      if (msSigPrincipal) {
+        if (sigs.principal) {
+          msSigPrincipal.src = sigs.principal;
+          msSigPrincipal.style.display = 'block';
+        } else {
+          msSigPrincipal.src = '';
+          msSigPrincipal.style.display = 'none';
+        }
+      }
+      
+      // Coordinator signature
+      const msSigCoordinator = document.getElementById('ms-sig-coordinator');
+      if (msSigCoordinator) {
+        if (sigs.coordinator) {
+          msSigCoordinator.src = sigs.coordinator;
+          msSigCoordinator.style.display = 'block';
+        } else {
+          msSigCoordinator.src = '';
+          msSigCoordinator.style.display = 'none';
+        }
+      }
+      
+      // Technical Incharge signature
+      const msSigIncharge = document.getElementById('ms-sig-incharge');
+      if (msSigIncharge) {
+        const techSig = sigs.tech_incharge;
+        if (techSig) {
+          msSigIncharge.src = techSig;
+          msSigIncharge.style.display = 'block';
+        } else {
+          msSigIncharge.src = '';
+          msSigIncharge.style.display = 'none';
+        }
+      }
+    } catch (error) {
+      console.error('Public result lookup failed:', error);
+      resultDisplay.style.display = 'block';
+      resultMessage.innerHTML = '&#9888; <strong>Unable to Check Result</strong><br/>' + (error.message || 'Please try again later.');
+      resultMessage.style.background = '#fee2e2';
+      resultMessage.style.borderColor = '#fca5a5';
+      resultTableWrapper.style.display = 'none';
+    } finally {
+      if (searchBtn) {
+        searchBtn.disabled = false;
+        searchBtn.textContent = 'Search Results';
+      }
+    }
   }
 
   function switchAdminCalTab(event, tabId) {
@@ -6495,28 +6731,34 @@
     if (!container) return;
 
     try {
+      console.log('[NOTICES] Starting initialization...');
       let notices = getSchoolNoticesFromCache();
+      console.log('[NOTICES] Cache check:', notices);
       
       if (!notices || notices.length === 0) {
+        console.log('[NOTICES] Cache empty, fetching from Supabase...');
         const result = await getSchoolNotices(true);
+        console.log('[NOTICES] Supabase result:', result);
         notices = result.success ? result.data : [];
       }
 
       if (!notices || notices.length === 0) {
-        container.innerHTML = '<div class="notice-card" style="grid-column: 1 / -1; text-align: center;"><p>No notices available.</p></div>';
+        console.log('[NOTICES] No notices found after fetch');
+        container.innerHTML = '<div class="notice-card" style="grid-column: 1 / -1; text-align: center;"><p>No notices available. Check database.</p></div>';
         return;
       }
 
+      console.log('[NOTICES] Rendering', notices.length, 'notices');
       container.innerHTML = notices.map(notice => `
         <div class="notice-card">
-          <div class="date">${notice.date}</div>
+          <div class="date">${notice.date || 'N/A'}</div>
           <h4>${notice.icon_emoji ? notice.icon_emoji + ' ' : ''}${notice.title}</h4>
           <p>${notice.description}</p>
         </div>
       `).join('');
     } catch(e) {
-      console.error('Error initializing notices:', e);
-      container.innerHTML = '<div class="notice-card" style="grid-column: 1 / -1; text-align: center;"><p>Failed to load notices. Please try again later.</p></div>';
+      console.error('[NOTICES] Error initializing notices:', e);
+      container.innerHTML = '<div class="notice-card" style="grid-column: 1 / -1; text-align: center;"><p>Error: ' + e.message + '</p></div>';
     }
   }
 
@@ -6715,6 +6957,7 @@
     initializeAlumni(); // Load alumni from cache
     initializeGallery(); // Load gallery from cache
     initializeSchoolDocuments(); // Load documents from cache
+    initializeNotices(); // Load notices from cache
 
     // Then sync from Supabase (if online) and re-render with fresh data
     try {
@@ -6725,6 +6968,7 @@
       initializeAlumni(); // Re-load alumni with fresh data
       initializeGallery(); // Re-load gallery with fresh data
       initializeSchoolDocuments(); // Re-load school documents with fresh data
+      initializeNotices(); // Re-load notices with fresh data
     } catch(e) {
       console.warn('Supabase sync skipped (offline or unavailable). Displaying cached data.', e);
     }

@@ -1,3 +1,12 @@
+// ============================================================================
+// FILE:    student-profiles-handler.js
+// MODULE:  Student Profiles
+// PURPOSE: Student Profiles Handler - Student CRUD operations: enrolment, profile updates, class assignment, and ID card data
+//
+// PROJECT: Shree Saraswati Secondary School — Management System
+// STACK:   Vanilla JS + Supabase (PostgreSQL) + HTML/CSS
+// UPDATED: 2026-06-03
+// ============================================================================
 // Student Profiles & ID Card Handler
 
 let allProfilesStudents = [];
@@ -9,6 +18,22 @@ async function initStudentProfiles() {
 
 async function loadProfilesStudents() {
   try {
+    // Load official signatures from database
+    if (typeof supabaseDb !== 'undefined' && supabaseDb) {
+      try {
+        const { data: sigData, error: sigErr } = await supabaseDb
+          .from('school_settings')
+          .select('setting_value')
+          .eq('setting_key', 'official_signatures')
+          .single();
+        if (!sigErr && sigData && sigData.setting_value) {
+          localStorage.setItem('school_official_signatures', JSON.stringify(sigData.setting_value));
+        }
+      } catch (e) {
+        console.warn('Failed to load official signatures:', e);
+      }
+    }
+
     // Load students from registry
     const { data: students, error: studErr } = await supabaseDb
       .from('students_registry')
@@ -118,16 +143,19 @@ function renderProfilesStudents() {
     const missingInfo = !profile ? '<span style="color:red; font-size:12px;">(Info Missing)</span>' : '';
     
     return `
-      <div class="profile-card" style="background:#fff; border:1px solid #ddd; border-radius:8px; padding:15px; margin-bottom:15px; display:flex; align-items:center; gap:20px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
-        ${photoHtml}
-        <div style="flex:1;">
-          <h3 style="margin:0 0 5px 0; font-size:16px;">${student.name} ${missingInfo}</h3>
-          <p style="margin:0; font-size:13px; color:#555;">Roll: ${student.roll} | Class: ${student.class}</p>
+      <div class="profile-card" style="background:#fff; border:1px solid #ddd; border-radius:10px; padding:15px; display:flex; flex-direction:column; gap:15px; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
+        <div style="display:flex; align-items:center; gap:15px;">
+          ${photoHtml}
+          <div style="flex:1;">
+            <h3 style="margin:0; font-size:16px; color:var(--primary);">${student.name}</h3>
+            ${missingInfo}
+            <p style="margin:5px 0 0; font-size:13px; color:#555;"><strong>Roll:</strong> ${student.roll} &nbsp;|&nbsp; <strong>Class:</strong> ${student.class}</p>
+          </div>
         </div>
-        <div style="display:flex; gap:10px;">
-          <button onclick="openProfileModal(${student.roll})" style="background:var(--secondary); color:#fff; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;">Edit Info & Photo</button>
-          <button onclick="previewIdCard(${student.roll})" style="background:#0ea5e9; color:#fff; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;" ${!profile ? 'disabled title="Please add info first"' : ''}>Preview ID</button>
-          <button onclick="printIdCard(${student.roll})" style="background:var(--primary); color:#fff; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;" ${!profile ? 'disabled title="Please add info first"' : ''}>Print ID</button>
+        <div style="display:flex; gap:8px; width:100%;">
+          <button onclick="openProfileModal(${student.roll})" style="flex:1; background:var(--secondary); color:#fff; border:none; padding:8px 5px; font-size:12px; border-radius:6px; cursor:pointer; font-weight:600;">Edit Info & Photo</button>
+          <button onclick="previewIdCard(${student.roll})" style="flex:1; background:#0ea5e9; color:#fff; border:none; padding:8px 5px; font-size:12px; border-radius:6px; cursor:pointer; font-weight:600;" ${!profile ? 'disabled title="Please add info first"' : ''}>Preview ID</button>
+          <button onclick="printIdCard(${student.roll})" style="flex:1; background:var(--primary); color:#fff; border:none; padding:8px 5px; font-size:12px; border-radius:6px; cursor:pointer; font-weight:600;" ${!profile ? 'disabled title="Please add info first"' : ''}>Print ID</button>
         </div>
       </div>
     `;
@@ -272,6 +300,10 @@ function generateIdCardHTML(student, profile) {
   const academicYearEl = document.getElementById('id-academic-year');
   const academicYear = academicYearEl ? academicYearEl.value : '2082';
 
+  // Read head teacher signature from official signatures database config
+  const sigs = JSON.parse(localStorage.getItem('school_official_signatures') || '{}');
+  const principalSig = sigs.principal || '../images/signature.jpg';
+
   return `
     <div class="id-card-wrapper">
       <img src="../images/logo.png" alt="Logo Watermark" class="id-card-logo-watermark">
@@ -305,8 +337,8 @@ function generateIdCardHTML(student, profile) {
       <div class="id-card-signatures">
         <div class="id-card-barcode"></div>
         <div class="id-card-signature-box">
-          <img src="../images/signature.jpg" alt="Signature" class="id-card-signature-img" onerror="this.style.display='none'">
-          <div class="id-card-signature-line">Head Teacher</div>
+          <img src="${principalSig}" alt="Signature" class="id-card-signature-img" onerror="this.style.display='none'">
+          <div class="id-card-signature-line">Principal</div>
         </div>
       </div>
       

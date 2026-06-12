@@ -1,3 +1,12 @@
+// ============================================================================
+// FILE:    supabase-client.js
+// MODULE:  Core: Database Client
+// PURPOSE: Supabase Client & Shared CRUD - Initializes Supabase DB and Media clients, exports all shared database utility functions used across the application (uploadMediaFile, getMediaFileUrl, teacher/student CRUD, etc.)
+//
+// PROJECT: Shree Saraswati Secondary School — Management System
+// STACK:   Vanilla JS + Supabase (PostgreSQL) + HTML/CSS
+// UPDATED: 2026-06-03
+// ============================================================================
 // ====================================================================
 // SUPABASE CONNECTIONS AND CLIENT WRAPPERS
 // ====================================================================
@@ -35,6 +44,16 @@ try {
   }
 } catch (e) {
   console.error("Error initializing Supabase clients:", e);
+}
+
+// Safe query helper — wraps a single table fetch so 404/PGRST205 errors never
+// propagate and never spam red console.error lines.
+async function _safeFetch(label, fn) {
+  try {
+    await fn();
+  } catch (e) {
+    console.warn(`[sync] ${label} skipped (table may not exist):`, e.message || e);
+  }
 }
 
 // Helper to pull all tables from Supabase into LocalStorage to maintain compatibility
@@ -127,10 +146,12 @@ async function pullAllFromSupabase() {
     }
 
     // 6. Announcements
-    const { data: notices, error: noticeErr } = await supabaseDb.from('school_announcements').select('*');
-    if (!noticeErr && notices) {
-      localStorage.setItem('school_announcements', JSON.stringify(notices));
-    }
+    await _safeFetch('school_announcements', async () => {
+      const { data: notices, error: noticeErr } = await supabaseDb.from('school_announcements').select('*');
+      if (!noticeErr && notices) {
+        localStorage.setItem('school_announcements', JSON.stringify(notices));
+      }
+    });
 
     // 7. Events
     const { data: events, error: eventErr } = await supabaseDb.from('school_events').select('*');
@@ -160,25 +181,27 @@ async function pullAllFromSupabase() {
     }
 
     // 9. Approved Results
-    const { data: approvedRes, error: appResErr } = await supabaseDb.from('approved_results').select('*');
-    if (!appResErr && approvedRes) {
-      const mapped = approvedRes.map(ar => ({
-        subject: ar.subject,
-        class: ar.class,
-        examType: ar.exam_type,
-        exam_type: ar.exam_type,
-        marks: ar.marks,
-        totalMarks: ar.total_marks,
-        total_marks: ar.total_marks,
-        grade: ar.grade,
-        gpa: ar.gpa,
-        percentage: ar.percentage,
-        date: ar.date,
-        studentRoll: ar.student_roll,
-        symbolNumber: ar.student_roll
-      }));
-      localStorage.setItem('approved_results', JSON.stringify(mapped));
-    }
+    await _safeFetch('approved_results', async () => {
+      const { data: approvedRes, error: appResErr } = await supabaseDb.from('approved_results').select('*');
+      if (!appResErr && approvedRes) {
+        const mapped = approvedRes.map(ar => ({
+          subject: ar.subject,
+          class: ar.class,
+          examType: ar.exam_type,
+          exam_type: ar.exam_type,
+          marks: ar.marks,
+          totalMarks: ar.total_marks,
+          total_marks: ar.total_marks,
+          grade: ar.grade,
+          gpa: ar.gpa,
+          percentage: ar.percentage,
+          date: ar.date,
+          studentRoll: ar.student_roll,
+          symbolNumber: ar.student_roll
+        }));
+        localStorage.setItem('approved_results', JSON.stringify(mapped));
+      }
+    });
 
     // 10. Admission Enquiries
     const { data: enquiries, error: enquiryErr } = await supabaseDb.from('admission_enquiries').select('*');
@@ -1044,7 +1067,7 @@ function getGalleryImagesFromCache() {
 async function addSchoolNotice(noticeData) {
   try {
     const { data, error } = await supabaseDb
-      .from('school_notices')
+      .from('school_announcements')
       .insert([noticeData]);
     
     if (error) return { success: false, error: error.message };
@@ -1057,11 +1080,17 @@ async function addSchoolNotice(noticeData) {
 
 async function getSchoolNotices(activeOnly = true) {
   try {
-    let query = supabaseDb.from('school_notices').select('*');
+    let query = supabaseDb.from('school_announcements').select('*');
+    // Try with is_active filter; if the column doesn't exist the query will
+    // still succeed for the simple select('*') path.
     if (activeOnly) {
-      query = query.eq('is_active', true);
+      try {
+        const testQ = supabaseDb.from('school_announcements').select('*').eq('is_active', true).order('display_order', { ascending: true });
+        const { data: testData, error: testErr } = await testQ;
+        if (!testErr) return { success: true, data: testData || [] };
+      } catch (_) { /* fall through to simple query */ }
     }
-    const { data, error } = await query.order('display_order', { ascending: true });
+    const { data, error } = await query;
     if (error) return { success: false, error: error.message };
     return { success: true, data: data || [] };
   } catch (e) {
@@ -1072,7 +1101,7 @@ async function getSchoolNotices(activeOnly = true) {
 async function getSchoolNoticeById(id) {
   try {
     const { data, error } = await supabaseDb
-      .from('school_notices')
+      .from('school_announcements')
       .select('*')
       .eq('id', id)
       .single();
@@ -1087,7 +1116,7 @@ async function getSchoolNoticeById(id) {
 async function updateSchoolNotice(id, updateData) {
   try {
     const { data, error } = await supabaseDb
-      .from('school_notices')
+      .from('school_announcements')
       .update({ ...updateData, updated_at: new Date().toISOString() })
       .eq('id', id);
     
@@ -1102,7 +1131,7 @@ async function updateSchoolNotice(id, updateData) {
 async function deleteSchoolNotice(id) {
   try {
     const { data, error } = await supabaseDb
-      .from('school_notices')
+      .from('school_announcements')
       .delete()
       .eq('id', id);
     
@@ -1118,10 +1147,10 @@ async function syncSchoolNotices() {
   try {
     const result = await getSchoolNotices(false);
     if (result.success) {
-      localStorage.setItem('school_notices', JSON.stringify(result.data || []));
+      localStorage.setItem('school_announcements', JSON.stringify(result.data || []));
       console.log("School notices synced to localStorage");
     } else {
-      console.warn("School notices table may not exist yet. Run setup.sql to create it.");
+      console.warn("School announcements table may not exist yet. Run setup.sql to create it.");
     }
     return true;
   } catch (e) {
@@ -1132,7 +1161,7 @@ async function syncSchoolNotices() {
 
 function getSchoolNoticesFromCache() {
   try {
-    const cached = localStorage.getItem('school_notices');
+    const cached = localStorage.getItem('school_announcements');
     return cached ? JSON.parse(cached) : [];
   } catch (e) {
     console.error("Error parsing school notices from cache:", e);
@@ -1586,6 +1615,111 @@ window.supabaseDb = supabaseDb;
 window.supabaseMedia = supabaseMedia;
 
 // Expose critical functions to window object
+// ── STUDENT CERTIFICATES ──
+async function getStudentCertificates(roll = null) {
+  try {
+    if (!supabaseDb) throw new Error("Database not initialized");
+    let query = supabaseDb.from('student_certificates').select('*').order('created_at', { ascending: false });
+    if (roll) query = query.eq('student_roll', roll);
+    const { data, error } = await query;
+    if (error) throw error;
+    localStorage.setItem('student_certificates', JSON.stringify(data || []));
+    return { success: true, data };
+  } catch(e) {
+    console.warn('Error fetching certificates, using local storage:', e);
+    const cached = JSON.parse(localStorage.getItem('student_certificates') || '[]');
+    let filtered = cached;
+    if (roll) filtered = cached.filter(c => String(c.student_roll) === String(roll));
+    return { success: true, data: filtered };
+  }
+}
+
+async function addStudentCertificate(certData) {
+  try {
+    if (!supabaseDb) throw new Error("Database not initialized");
+    const { data, error } = await supabaseDb.from('student_certificates').insert([certData]).select();
+    if (error) throw error;
+    return { success: true, data: data[0] };
+  } catch(e) {
+    console.warn('Error adding certificate, using local storage:', e);
+    const cached = JSON.parse(localStorage.getItem('student_certificates') || '[]');
+    const newCert = {
+      id: Date.now(),
+      ...certData,
+      created_at: new Date().toISOString()
+    };
+    cached.push(newCert);
+    localStorage.setItem('student_certificates', JSON.stringify(cached));
+    return { success: true, data: newCert };
+  }
+}
+
+async function deleteStudentCertificate(id) {
+  try {
+    if (!supabaseDb) throw new Error("Database not initialized");
+    const { error } = await supabaseDb.from('student_certificates').delete().eq('id', id);
+    if (error) throw error;
+    return { success: true };
+  } catch(e) {
+    console.warn('Error deleting certificate, using local storage:', e);
+    const cached = JSON.parse(localStorage.getItem('student_certificates') || '[]');
+    const filtered = cached.filter(c => String(c.id) !== String(id));
+    localStorage.setItem('student_certificates', JSON.stringify(filtered));
+    return { success: true };
+  }
+}
+
+// ── DYNAMIC REPORTS ──
+async function getDynamicReports() {
+  try {
+    if (!supabaseDb) throw new Error("Database not initialized");
+    const { data, error } = await supabaseDb.from('dynamic_reports').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    localStorage.setItem('dynamic_reports', JSON.stringify(data || []));
+    return { success: true, data };
+  } catch(e) {
+    console.warn('Error fetching reports, using local storage:', e);
+    const cached = JSON.parse(localStorage.getItem('dynamic_reports') || '[]');
+    return { success: true, data: cached };
+  }
+}
+
+async function addDynamicReport(reportData) {
+  try {
+    if (!supabaseDb) throw new Error("Database not initialized");
+    const { data, error } = await supabaseDb.from('dynamic_reports').insert([reportData]).select();
+    if (error) throw error;
+    return { success: true, data: data[0] };
+  } catch(e) {
+    console.warn('Error adding report, using local storage:', e);
+    const cached = JSON.parse(localStorage.getItem('dynamic_reports') || '[]');
+    const newReport = {
+      id: Date.now(),
+      ...reportData,
+      created_at: new Date().toISOString()
+    };
+    cached.push(newReport);
+    localStorage.setItem('dynamic_reports', JSON.stringify(cached));
+    return { success: true, data: newReport };
+  }
+}
+
+async function deleteDynamicReport(id) {
+  try {
+    if (!supabaseDb) throw new Error("Database not initialized");
+    const { error } = await supabaseDb.from('dynamic_reports').delete().eq('id', id);
+    if (error) throw error;
+    return { success: true };
+  } catch(e) {
+    console.warn('Error deleting report, using local storage:', e);
+    const cached = JSON.parse(localStorage.getItem('dynamic_reports') || '[]');
+    const filtered = cached.filter(r => String(r.id) !== String(id));
+    localStorage.setItem('dynamic_reports', JSON.stringify(filtered));
+    return { success: true };
+  }
+}
+
+
 window.pullAllFromSupabase = pullAllFromSupabase;
 window.seedSupabaseIfEmpty = seedSupabaseIfEmpty;
 
@@ -1660,4 +1794,432 @@ window.syncSchoolDocuments = syncSchoolDocuments;
 window.getSchoolDocuments = getSchoolDocuments;
 window.getSchoolDocumentsFromCache = getSchoolDocumentsFromCache;
 
+// ====================================================================
+// ACADEMIC CATEGORIES CRUD OPERATIONS
+// ====================================================================
+async function addAcademicCategory(data) {
+  try {
+    if (!supabaseDb) throw new Error("Database not initialized");
+    const { data: result, error } = await supabaseDb.from('academic_categories').insert([data]).select();
+    if (error) throw error;
+    await syncAcademicCategories();
+    return { success: true, data: result };
+  } catch (e) {
+    console.warn("Database insert for academic_categories failed, using local storage:", e);
+    const cached = JSON.parse(localStorage.getItem('academic_categories') || '[]');
+    const newCat = {
+      id: Date.now(),
+      ...data,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    cached.push(newCat);
+    localStorage.setItem('academic_categories', JSON.stringify(cached));
+    return { success: true, data: [newCat] };
+  }
+}
+
+async function getAcademicCategories(activeOnly = true) {
+  try {
+    if (!supabaseDb) throw new Error("Database not initialized");
+    let query = supabaseDb.from('academic_categories').select('*');
+    if (activeOnly) query = query.eq('is_active', true);
+    const { data, error } = await query.order('display_order', { ascending: true });
+    if (error) throw error;
+    localStorage.setItem('academic_categories', JSON.stringify(data || []));
+    return { success: true, data: data || [] };
+  } catch (e) {
+    console.warn("getAcademicCategories exception, using local storage:", e);
+    const cached = JSON.parse(localStorage.getItem('academic_categories') || '[]');
+    let filtered = cached;
+    if (activeOnly) filtered = cached.filter(c => c.is_active);
+    filtered.sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+    return { success: true, data: filtered };
+  }
+}
+
+async function updateAcademicCategory(id, updates) {
+  try {
+    if (!supabaseDb) throw new Error("Database not initialized");
+    const { data, error } = await supabaseDb.from('academic_categories').update(updates).eq('id', id).select();
+    if (error) throw error;
+    await syncAcademicCategories();
+    return { success: true, data };
+  } catch (e) {
+    console.warn("Database update for academic_categories failed, using local storage:", e);
+    const cached = JSON.parse(localStorage.getItem('academic_categories') || '[]');
+    const idx = cached.findIndex(c => String(c.id) === String(id));
+    if (idx >= 0) {
+      cached[idx] = { ...cached[idx], ...updates, updated_at: new Date().toISOString() };
+      localStorage.setItem('academic_categories', JSON.stringify(cached));
+      return { success: true, data: [cached[idx]] };
+    }
+    return { success: false, error: "Category not found in local storage" };
+  }
+}
+
+async function deleteAcademicCategory(id) {
+  try {
+    if (!supabaseDb) throw new Error("Database not initialized");
+    const { error } = await supabaseDb.from('academic_categories').delete().eq('id', id);
+    if (error) throw error;
+    await syncAcademicCategories();
+    return { success: true };
+  } catch (e) {
+    console.warn("Database delete for academic_categories failed, using local storage:", e);
+    const cached = JSON.parse(localStorage.getItem('academic_categories') || '[]');
+    const filtered = cached.filter(c => String(c.id) !== String(id));
+    localStorage.setItem('academic_categories', JSON.stringify(filtered));
+    return { success: true };
+  }
+}
+
+async function syncAcademicCategories() {
+  try {
+    const { data, error } = await supabaseDb.from('academic_categories').select('*').order('display_order', { ascending: true });
+    if (!error && data) localStorage.setItem('academic_categories', JSON.stringify(data));
+  } catch (e) { console.warn("Sync academic categories failed", e); }
+}
+
+function getAcademicCategoriesFromCache() {
+  try {
+    return JSON.parse(localStorage.getItem('academic_categories') || '[]');
+  } catch(e) { return []; }
+}
+
+window.addAcademicCategory = addAcademicCategory;
+window.getAcademicCategories = getAcademicCategories;
+window.updateAcademicCategory = updateAcademicCategory;
+window.deleteAcademicCategory = deleteAcademicCategory;
+window.syncAcademicCategories = syncAcademicCategories;
+window.getAcademicCategoriesFromCache = getAcademicCategoriesFromCache;
+
+// ====================================================================
+// STUDENT REMARKS CRUD OPERATIONS
+// ====================================================================
+async function addStudentRemark(data) {
+  try {
+    const { data: result, error } = await supabaseDb.from('student_remarks').insert([data]).select();
+    if (error) {
+      console.warn("Database insert for student_remarks failed, using local storage:", error);
+      const cached = JSON.parse(localStorage.getItem('student_remarks') || '[]');
+      const newRmk = { id: Date.now(), ...data, created_at: new Date().toISOString() };
+      cached.unshift(newRmk);
+      localStorage.setItem('student_remarks', JSON.stringify(cached));
+      return { success: true, data: [newRmk] };
+    }
+    await syncStudentRemarks();
+    return { success: true, data: result };
+  } catch (e) { return { success: false, error: e.message }; }
+}
+
+async function getStudentRemarks(roll) {
+  try {
+    let query = supabaseDb.from('student_remarks').select('*').eq('is_active', true);
+    if (roll) query = query.eq('student_roll', roll);
+    const { data, error } = await query.order('created_at', { ascending: false });
+    if (error) {
+      console.warn("Database query for student_remarks failed, using local storage:", error);
+      let cached = JSON.parse(localStorage.getItem('student_remarks') || '[]');
+      cached = cached.filter(r => r.is_active !== false);
+      if (roll) cached = cached.filter(r => String(r.student_roll) === String(roll));
+      return { success: true, data: cached };
+    }
+    return { success: true, data: data || [] };
+  } catch (e) {
+    console.warn("getStudentRemarks exception, using local storage:", e);
+    let cached = JSON.parse(localStorage.getItem('student_remarks') || '[]');
+    return { success: true, data: cached };
+  }
+}
+
+async function updateStudentRemark(id, updates) {
+  try {
+    const { data, error } = await supabaseDb.from('student_remarks').update(updates).eq('id', id).select();
+    if (error) {
+      console.warn("Database update for student_remarks failed, using local storage:", error);
+      const cached = JSON.parse(localStorage.getItem('student_remarks') || '[]');
+      const idx = cached.findIndex(r => String(r.id) === String(id));
+      if (idx >= 0) {
+        cached[idx] = { ...cached[idx], ...updates };
+        localStorage.setItem('student_remarks', JSON.stringify(cached));
+        return { success: true, data: [cached[idx]] };
+      }
+      return { success: false, error: "Remark not found in local storage" };
+    }
+    await syncStudentRemarks();
+    return { success: true, data };
+  } catch (e) { return { success: false, error: e.message }; }
+}
+
+async function deleteStudentRemark(id) {
+  try {
+    const { error } = await supabaseDb.from('student_remarks').delete().eq('id', id);
+    if (error) {
+      console.warn("Database delete for student_remarks failed, using local storage:", error);
+      const cached = JSON.parse(localStorage.getItem('student_remarks') || '[]');
+      const filtered = cached.filter(r => String(r.id) !== String(id));
+      localStorage.setItem('student_remarks', JSON.stringify(filtered));
+      return { success: true };
+    }
+    await syncStudentRemarks();
+    return { success: true };
+  } catch (e) { return { success: false, error: e.message }; }
+}
+
+async function syncStudentRemarks() {
+  try {
+    const { data, error } = await supabaseDb.from('student_remarks').select('*').order('created_at', { ascending: false });
+    if (!error && data) localStorage.setItem('student_remarks', JSON.stringify(data));
+  } catch (e) { console.warn("Sync student remarks failed", e); }
+}
+
+function getStudentRemarksFromCache() {
+  try {
+    return JSON.parse(localStorage.getItem('student_remarks') || '[]');
+  } catch(e) { return []; }
+}
+
+window.addStudentRemark = addStudentRemark;
+window.getStudentRemarks = getStudentRemarks;
+window.updateStudentRemark = updateStudentRemark;
+window.deleteStudentRemark = deleteStudentRemark;
+
+window.getStudentCertificates = getStudentCertificates;
+window.addStudentCertificate = addStudentCertificate;
+window.deleteStudentCertificate = deleteStudentCertificate;
+
+window.getDynamicReports = getDynamicReports;
+window.addDynamicReport = addDynamicReport;
+window.deleteDynamicReport = deleteDynamicReport;
+window.syncStudentRemarks = syncStudentRemarks;
+window.getStudentRemarksFromCache = getStudentRemarksFromCache;
+
+// ====================================================================
+// LESSON PLANS CRUD OPERATIONS
+// ====================================================================
+async function getLessonPlans(filters = {}) {
+  try {
+    let query = supabaseDb.from('lesson_plans').select('*');
+    if (filters.teacher_code) query = query.eq('teacher_code', filters.teacher_code);
+    if (filters.class_name) query = query.eq('class_name', filters.class_name);
+    if (filters.status) query = query.eq('status', filters.status);
+    const { data, error } = await query.order('created_at', { ascending: false });
+    if (error) {
+      console.warn("Database query for lesson_plans failed, using local storage:", error);
+      let cached = JSON.parse(localStorage.getItem('lesson_plans') || '[]');
+      if (filters.teacher_code) cached = cached.filter(l => l.teacher_code === filters.teacher_code);
+      if (filters.class_name) cached = cached.filter(l => l.class_name === filters.class_name);
+      if (filters.status) cached = cached.filter(l => l.status === filters.status);
+      return { success: true, data: cached };
+    }
+    localStorage.setItem('lesson_plans', JSON.stringify(data || []));
+    return { success: true, data: data || [] };
+  } catch (e) {
+    console.warn("getLessonPlans exception, using local storage:", e);
+    return { success: true, data: JSON.parse(localStorage.getItem('lesson_plans') || '[]') };
+  }
+}
+
+async function addLessonPlan(data) {
+  try {
+    const { data: result, error } = await supabaseDb.from('lesson_plans').insert([data]).select();
+    if (error) {
+      console.warn("Database insert for lesson_plans failed, using local storage:", error);
+      const cached = JSON.parse(localStorage.getItem('lesson_plans') || '[]');
+      const newPlan = { id: Date.now(), ...data, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+      cached.unshift(newPlan);
+      localStorage.setItem('lesson_plans', JSON.stringify(cached));
+      return { success: true, data: [newPlan] };
+    }
+    return { success: true, data: result };
+  } catch (e) { return { success: false, error: e.message }; }
+}
+
+async function updateLessonPlan(id, updates) {
+  try {
+    updates.updated_at = new Date().toISOString();
+    const { data, error } = await supabaseDb.from('lesson_plans').update(updates).eq('id', id).select();
+    if (error) {
+      console.warn("Database update for lesson_plans failed, using local storage:", error);
+      const cached = JSON.parse(localStorage.getItem('lesson_plans') || '[]');
+      const idx = cached.findIndex(l => String(l.id) === String(id));
+      if (idx >= 0) {
+        cached[idx] = { ...cached[idx], ...updates };
+        localStorage.setItem('lesson_plans', JSON.stringify(cached));
+        return { success: true, data: [cached[idx]] };
+      }
+      return { success: false, error: "Lesson plan not found in local storage" };
+    }
+    return { success: true, data };
+  } catch (e) { return { success: false, error: e.message }; }
+}
+
+async function deleteLessonPlan(id) {
+  try {
+    const { error } = await supabaseDb.from('lesson_plans').delete().eq('id', id);
+    if (error) {
+      console.warn("Database delete for lesson_plans failed, using local storage:", error);
+      const cached = JSON.parse(localStorage.getItem('lesson_plans') || '[]');
+      const filtered = cached.filter(l => String(l.id) !== String(id));
+      localStorage.setItem('lesson_plans', JSON.stringify(filtered));
+      return { success: true };
+    }
+    return { success: true };
+  } catch (e) { return { success: false, error: e.message }; }
+}
+
+window.getLessonPlans = getLessonPlans;
+window.addLessonPlan = addLessonPlan;
+window.updateLessonPlan = updateLessonPlan;
+window.deleteLessonPlan = deleteLessonPlan;
+
+// ====================================================================
+// ACADEMIC DIVISIONS CRUD OPERATIONS
+// ====================================================================
+async function getAcademicDivisions(activeOnly = true) {
+  try {
+    let query = supabaseDb.from('academic_divisions').select('*');
+    if (activeOnly) query = query.eq('is_active', true);
+    const { data, error } = await query.order('display_order', { ascending: true });
+    
+    if (error) {
+      console.warn("Database query for academic_divisions failed, trying local storage:", error);
+      const cached = JSON.parse(localStorage.getItem('academic_divisions') || '[]');
+      let filtered = cached;
+      if (activeOnly) filtered = cached.filter(d => d.is_active);
+      filtered.sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+      return { success: true, data: filtered };
+    }
+    
+    localStorage.setItem('academic_divisions', JSON.stringify(data || []));
+    return { success: true, data: data || [] };
+  } catch (e) {
+    console.warn("getAcademicDivisions exception, using local storage:", e);
+    const cached = JSON.parse(localStorage.getItem('academic_divisions') || '[]');
+    let filtered = cached;
+    if (activeOnly) filtered = cached.filter(d => d.is_active);
+    return { success: true, data: filtered };
+  }
+}
+
+async function addAcademicDivision(data) {
+  try {
+    if (!supabaseDb) throw new Error("Database not initialized");
+    const { data: result, error } = await supabaseDb.from('academic_divisions').insert([data]).select();
+    if (error) throw error;
+    await syncAcademicDivisions();
+    return { success: true, data: result };
+  } catch (e) { 
+    console.warn("Database insert for academic_divisions failed, using local storage:", e);
+    const cached = JSON.parse(localStorage.getItem('academic_divisions') || '[]');
+    const newDiv = { 
+      id: Date.now(), 
+      ...data, 
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    cached.push(newDiv);
+    localStorage.setItem('academic_divisions', JSON.stringify(cached));
+    return { success: true, data: [newDiv] };
+  }
+}
+
+async function updateAcademicDivision(id, updates) {
+  try {
+    if (!supabaseDb) throw new Error("Database not initialized");
+    updates.updated_at = new Date().toISOString();
+    const { data, error } = await supabaseDb.from('academic_divisions').update(updates).eq('id', id).select();
+    if (error) throw error;
+    await syncAcademicDivisions();
+    return { success: true, data };
+  } catch (e) {
+    console.warn("Database update for academic_divisions failed, using local storage:", e);
+    const cached = JSON.parse(localStorage.getItem('academic_divisions') || '[]');
+    const idx = cached.findIndex(d => String(d.id) === String(id));
+    if (idx >= 0) {
+      cached[idx] = { ...cached[idx], ...updates };
+      localStorage.setItem('academic_divisions', JSON.stringify(cached));
+      return { success: true, data: [cached[idx]] };
+    }
+    return { success: false, error: "Division not found in local storage" };
+  }
+}
+
+async function deleteAcademicDivision(id) {
+  try {
+    if (!supabaseDb) throw new Error("Database not initialized");
+    const { error } = await supabaseDb.from('academic_divisions').delete().eq('id', id);
+    if (error) throw error;
+    await syncAcademicDivisions();
+    return { success: true };
+  } catch (e) {
+    console.warn("Database delete for academic_divisions failed, using local storage:", e);
+    const cached = JSON.parse(localStorage.getItem('academic_divisions') || '[]');
+    const filtered = cached.filter(d => String(d.id) !== String(id));
+    localStorage.setItem('academic_divisions', JSON.stringify(filtered));
+    return { success: true };
+  }
+}
+
+async function syncAcademicDivisions() {
+  try {
+    const { data, error } = await supabaseDb.from('academic_divisions').select('*').order('display_order', { ascending: true });
+    if (!error && data) {
+      localStorage.setItem('academic_divisions', JSON.stringify(data));
+    }
+  } catch (e) { console.warn("Sync academic divisions failed", e); }
+}
+
+window.getAcademicDivisions = getAcademicDivisions;
+window.addAcademicDivision = addAcademicDivision;
+window.updateAcademicDivision = updateAcademicDivision;
+window.deleteAcademicDivision = deleteAcademicDivision;
+window.syncAcademicDivisions = syncAcademicDivisions;
+
 console.log('✓ Supabase-client.js functions exported to window object');
+
+
+// ====================================================================
+// LOCALSTORAGE-TO-SUPABASE SYNC BRIDGE
+// ====================================================================
+
+// Override setItem to sync to database
+const originalSetItem = Storage.prototype.setItem;
+Storage.prototype.setItem = function(key, value) {
+    originalSetItem.apply(this, [key, value]);
+    if (window.supabaseDb && this === window.localStorage) {
+        window.supabaseDb.from('generic_modules')
+           .upsert({ module_name: key, json_data: value }, { onConflict: 'module_name' })
+           .then(({error}) => { if(error) console.error("LocalStorage Sync Error (SET):", error); });
+    }
+};
+
+// Override removeItem to sync to database
+const originalRemoveItem = Storage.prototype.removeItem;
+Storage.prototype.removeItem = function(key) {
+    originalRemoveItem.apply(this, [key]);
+    if (window.supabaseDb && this === window.localStorage) {
+        window.supabaseDb.from('generic_modules')
+           .delete().eq('module_name', key)
+           .then(({error}) => { if(error) console.error("LocalStorage Sync Error (REMOVE):", error); });
+    }
+};
+
+// Initial Sync from DB to LocalStorage
+window.syncSupabaseToLocal = async function() {
+    if (!window.supabaseDb) return;
+    const { data, error } = await window.supabaseDb.from('generic_modules').select('*');
+    if (!error && data) {
+        data.forEach(row => {
+            // Use originalSetItem to prevent triggering infinite loop of upserts
+            originalSetItem.apply(window.localStorage, [row.module_name, row.json_data]);
+        });
+        console.log('✓ Successfully synced ' + data.length + ' modules from Supabase to LocalStorage');
+    } else {
+        console.error('Failed to sync Supabase to LocalStorage:', error);
+    }
+};
+
+// Trigger sync immediately on script load
+window.syncSupabaseToLocal();

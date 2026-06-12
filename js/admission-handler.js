@@ -1,3 +1,12 @@
+﻿// ============================================================================
+// FILE:    admission-handler.js
+// MODULE:  Admissions
+// PURPOSE: Admissions Handler - Student admission form processing, validation, and Supabase CRUD for new student enrolments
+//
+// PROJECT: Shree Saraswati Secondary School — Management System
+// STACK:   Vanilla JS + Supabase (PostgreSQL) + HTML/CSS
+// UPDATED: 2026-06-03
+// ============================================================================
 // ====================================================================
 // ADMISSION FORM HANDLER - Supabase Integration
 // ====================================================================

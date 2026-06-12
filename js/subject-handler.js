@@ -1,3 +1,12 @@
+﻿// ============================================================================
+// FILE:    subject-handler.js
+// MODULE:  Subjects
+// PURPOSE: Subject Handler - Academic subject CRUD: create subjects, assign to classes, and manage subject-teacher mappings
+//
+// PROJECT: Shree Saraswati Secondary School — Management System
+// STACK:   Vanilla JS + Supabase (PostgreSQL) + HTML/CSS
+// UPDATED: 2026-06-03
+// ============================================================================
 // ====================================================================
 // SUBJECT MANAGEMENT HANDLER - Dynamic Subject Setup & Population
 // ====================================================================

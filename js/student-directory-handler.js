@@ -1,3 +1,12 @@
+﻿// ============================================================================
+// FILE:    student-directory-handler.js
+// MODULE:  Student Directory
+// PURPOSE: Student Directory Handler - Public-facing student directory with search, filter, and profile display
+//
+// PROJECT: Shree Saraswati Secondary School — Management System
+// STACK:   Vanilla JS + Supabase (PostgreSQL) + HTML/CSS
+// UPDATED: 2026-06-03
+// ============================================================================
 // ====================================================================
 // STUDENT DIRECTORY HANDLER
 // ====================================================================

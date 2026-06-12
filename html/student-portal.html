@@ -1026,6 +1026,29 @@
             </div>
           </div>
 
+          <!-- Performance Remarks -->
+          <div class="panel">
+            <div class="panel-header">
+              <h3>📝 Performance & Behavioral Remarks</h3>
+            </div>
+            <div class="custom-table-wrapper">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Remark</th>
+                    <th>Given By</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody id="student-remarks-tbody">
+                  <!-- Remarks populated by JavaScript -->
+                  <tr><td colspan="4" style="text-align:center;">Loading...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           <!-- Download Report Card -->
           <div class="panel">
             <div class="panel-header">
@@ -1309,9 +1332,24 @@
       </div>
 
       <div class="marksheet-footer">
-        <div class="signature-line">CLASS TEACHER</div>
-        <div class="signature-line">EXAM CO-ORDINATOR</div>
-        <div class="signature-line">HEAD TEACHER</div>
+        <div class="signature-line" id="ms-sig-incharge-container">
+          <div style="height: 45px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 2px;">
+            <img id="ms-sig-incharge" src="" style="max-height: 45px; max-width: 150px; display: none;" alt="Signature">
+          </div>
+          TECHNICAL INCHARGE
+        </div>
+        <div class="signature-line" id="ms-sig-coordinator-container">
+          <div style="height: 45px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 2px;">
+            <img id="ms-sig-coordinator" src="" style="max-height: 45px; max-width: 150px; display: none;" alt="Signature">
+          </div>
+          EXAM CO-ORDINATOR
+        </div>
+        <div class="signature-line" id="ms-sig-principal-container">
+          <div style="height: 45px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 2px;">
+            <img id="ms-sig-principal" src="" style="max-height: 45px; max-width: 150px; display: none;" alt="Signature">
+          </div>
+          PRINCIPAL
+        </div>
       </div>
     </div>
   </div>
@@ -2857,7 +2895,23 @@
     }
 
     // ── VIEW STUDENT MARKSHEET ──
-    function downloadStudentResultCard() {
+    async function downloadStudentResultCard() {
+      // Fetch latest official signatures from Supabase if online
+      if (typeof supabaseDb !== 'undefined' && supabaseDb) {
+        try {
+          const { data, error } = await supabaseDb
+            .from('school_settings')
+            .select('setting_value')
+            .eq('setting_key', 'official_signatures')
+            .single();
+          if (!error && data && data.setting_value) {
+            localStorage.setItem('school_official_signatures', JSON.stringify(data.setting_value));
+          }
+        } catch(e) {
+          console.warn('Supabase fetch failed for official signatures', e);
+        }
+      }
+
       const publishedResults = JSON.parse(localStorage.getItem('published_results') || '[]');
       const studentRoll = window.studentData?.roll || 12;
       const studentName = window.studentData?.name || 'Student';
@@ -3011,6 +3065,47 @@
       overallGpaData.gpa = totalCreditHours > 0 ? (weightedGpaSum / totalCreditHours) : 0;
       
       document.getElementById('ms-overall-gpa').innerText = overallGpaData.gpa.toFixed(2);
+
+      // Apply official signatures if available
+      const sigs = JSON.parse(localStorage.getItem('school_official_signatures') || '{}');
+      
+      // Principal
+      const msSigPrincipal = document.getElementById('ms-sig-principal');
+      if (msSigPrincipal) {
+        if (sigs.principal) {
+          msSigPrincipal.src = sigs.principal;
+          msSigPrincipal.style.display = 'block';
+        } else {
+          msSigPrincipal.src = '';
+          msSigPrincipal.style.display = 'none';
+        }
+      }
+      
+      // Coordinator
+      const msSigCoordinator = document.getElementById('ms-sig-coordinator');
+      if (msSigCoordinator) {
+        if (sigs.coordinator) {
+          msSigCoordinator.src = sigs.coordinator;
+          msSigCoordinator.style.display = 'block';
+        } else {
+          msSigCoordinator.src = '';
+          msSigCoordinator.style.display = 'none';
+        }
+      }
+      
+      // Technical Incharge
+      const msSigIncharge = document.getElementById('ms-sig-incharge');
+      if (msSigIncharge) {
+        const techSig = sigs.tech_incharge;
+        if (techSig) {
+          msSigIncharge.src = techSig;
+          msSigIncharge.style.display = 'block';
+        } else {
+          msSigIncharge.src = '';
+          msSigIncharge.style.display = 'none';
+        }
+      }
+
       document.getElementById('marksheet-preview-modal').style.display = 'block';
     }
 
@@ -3183,6 +3278,45 @@
       });
     }
 
+    async function renderStudentRemarks() {
+      const tbody = document.getElementById('student-remarks-tbody');
+      if (!tbody) return;
+      const roll = window.studentData?.roll || null;
+      if (!roll) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">User roll not found</td></tr>';
+        return;
+      }
+      
+      try {
+        const result = await getStudentRemarks(roll);
+        if (result.success && result.data.length > 0) {
+          const typeColors = {
+            'Positive': { bg: '#dcfce7', color: '#166534' },
+            'Neutral':  { bg: '#e0e7ff', color: '#3730a3' },
+            'Warning':  { bg: '#fee2e2', color: '#991b1b' }
+          };
+          tbody.innerHTML = result.data.map(r => {
+            const tc = typeColors[r.remark_type] || typeColors['Neutral'];
+            return `
+            <tr>
+              <td>
+                <span style="padding:0.3rem 0.6rem; border-radius:12px; font-size:0.8rem; background:${tc.bg}; color:${tc.color};">
+                  ${r.remark_type}
+                </span>
+              </td>
+              <td style="max-width:250px; white-space:normal;">${r.remark_text}</td>
+              <td>${r.given_by || '-'}</td>
+              <td>${r.given_date || '-'}</td>
+            </tr>`;
+          }).join('');
+        } else {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No remarks found</td></tr>';
+        }
+      } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:red;">Failed to load remarks</td></tr>';
+      }
+    }
+
     // ── RUN INIT ON MOUNT ──
     document.addEventListener('DOMContentLoaded', async () => {
       // Pull all data from Supabase first
@@ -3207,6 +3341,7 @@
       renderDynamicTimetable();
       syncGPAAndRemarks();
       syncLeavesFromRegistry();
+      renderStudentRemarks();
       
       // Render fee states
       renderPortalStates();
@@ -3293,7 +3428,8 @@
         </head>
         <body>
           <div class="toolbar no-print">
-            <button onclick="window.print()">🖨️ Print / Download PDF</button>
+            <button onclick="window.print()" style="margin-right: 10px; background:var(--accent); color:var(--dark); border:none; padding:0.5rem 1rem; border-radius:6px; font-weight:bold; cursor:pointer;">🖨️ Print</button>
+      <button onclick="downloadPDF()" style="background:var(--primary); color:white; border:none; padding:0.5rem 1rem; border-radius:6px; font-weight:bold; cursor:pointer;">📄 Download PDF</button>
             <p style="font-size:12px; color:#64748b; margin-top:8px;">(To download as PDF, click the button above and select "Save as PDF" as the printer)</p>
           </div>
           <div class="receipt-container">
@@ -3301,7 +3437,7 @@
               <div style="font-size: 30px;">✡️</div>
               <div class="school-header">
                 <h1>Shree Saraswati Secondary School</h1>
-                <p>Waling-1, Chhahare, Syangja</p>
+                <p>Satyawati Rural Municipality-6 Johang, Gulmi</p>
                 <p class="font-bold">Fee Receipt</p>
               </div>
               <div style="width: 30px;"></div>
@@ -3389,5 +3525,67 @@
       printWindow.document.close();
     }
   </script>
+
+  <!-- Notification System -->
+  <script src="../js/notification-handler.js"></script>
+  <script>
+    function toggleNotificationDropdown(event) {
+      if(event) event.stopPropagation();
+      const dropdown = document.getElementById('notification-dropdown');
+      if (dropdown.classList.contains('active')) {
+        dropdown.classList.remove('active');
+      } else {
+        dropdown.classList.add('active');
+        const studentRoll = localStorage.getItem('student_roll') || null;
+        if(window.NotificationService) {
+          window.NotificationService.fetchNotifications('student', studentRoll).then(notifications => {
+            window.NotificationService.renderToContainer('notification-list', 'noti-badge', notifications);
+          });
+        }
+      }
+    }
+
+    function clearNotifications() {
+      // Bulk mark as read logic could go here
+      document.getElementById('notification-list').innerHTML = '<div style="padding:1.5rem; text-align:center; color:#9ca3af; font-size:0.9rem;">Cleared</div>';
+      const badge = document.getElementById('noti-badge');
+      if(badge) badge.style.display = 'none';
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+      const container = document.querySelector('.notification');
+      const dropdown = document.getElementById('notification-dropdown');
+      if (container && dropdown && !container.contains(event.target)) {
+        dropdown.classList.remove('active');
+      }
+    });
+
+    // Initial fetch on load
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        if(window.NotificationService) {
+          const studentRoll = localStorage.getItem('student_roll') || null;
+          window.NotificationService.fetchNotifications('student', studentRoll).then(notifications => {
+            window.NotificationService.renderToContainer('notification-list', 'noti-badge', notifications);
+          });
+        }
+      }, 2000); // 2 second delay to wait for Supabase
+    });
+  
+function downloadPDF() {
+  const element = document.getElementById('receipt-container');
+  if(!element) { alert('Receipt not found'); return; }
+  const opt = {
+    margin:       0.5,
+    filename:     'fee_receipt.pdf',
+    image:        { type: 'jpeg', quality: 0.98 },
+    html2canvas:  { scale: 2 },
+    jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+  };
+  html2pdf().set(opt).from(element).save();
+}
+
+</script>
 </body>
 </html>

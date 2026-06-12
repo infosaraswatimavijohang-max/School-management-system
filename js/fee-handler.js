@@ -1,3 +1,12 @@
+﻿// ============================================================================
+// FILE:    fee-handler.js
+// MODULE:  Fee Management
+// PURPOSE: Fee Management Handler - Full fee lifecycle: fee structures, student fee records, payment tracking, receipts, and reports
+//
+// PROJECT: Shree Saraswati Secondary School — Management System
+// STACK:   Vanilla JS + Supabase (PostgreSQL) + HTML/CSS
+// UPDATED: 2026-06-03
+// ============================================================================
 /**
  * ADVANCED FEE MANAGEMENT HANDLER
  * Handles all fee-related operations for admin portal

@@ -462,6 +462,7 @@
         </a>
         <div class="nav-submenu" id="sub-routine">
           <a class="nav-submenu-item" data-page="routine" onclick="switchPage('routine', this)">Daily Schedule</a>
+          <a class="nav-submenu-item" data-page="lesson-plan" onclick="switchPage('lesson-plan', this)">Lesson Plan</a>
           <a class="nav-submenu-item" data-page="syllabus" onclick="switchPage('syllabus', this)">Syllabus Tracking</a>
         </div>
       </div>
@@ -2256,6 +2257,77 @@
         </div>
       </div>
 
+      <!-- ================= PAGE: LESSON PLAN (TEACHER) ================= -->
+      <div class="page-view" id="page-lesson-plan">
+        <h2 style="font-family:'Playfair Display', serif; margin-bottom: 0.5rem; color: var(--primary);">Lesson Plan Submitter</h2>
+        <p style="color:var(--text-muted); margin-bottom:2rem;">Create and submit your weekly/daily lesson plans to the administration.</p>
+
+        <div style="display:grid; grid-template-columns: 1.2fr 1.8fr; gap: 2rem;">
+          <!-- Submit Form -->
+          <div class="panel">
+            <div class="panel-header"><h3>📝 Create Lesson Plan</h3></div>
+            <form onsubmit="submitLessonPlan(event)">
+              <div class="form-group">
+                <label>Class & Section</label>
+                <input type="text" id="lp-class" class="form-control" placeholder="e.g. Grade 10 Science (Sec A)" required>
+              </div>
+              <div class="form-group">
+                <label>Subject</label>
+                <input type="text" id="lp-subject" class="form-control" placeholder="e.g. Mathematics" required>
+              </div>
+              <div class="form-group">
+                <label>Topic / Chapter</label>
+                <input type="text" id="lp-topic" class="form-control" placeholder="e.g. Limits & Calculus" required>
+              </div>
+              <div class="form-group">
+                <label>Planned Date</label>
+                <input type="date" id="lp-date" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label>Learning Objectives</label>
+                <textarea id="lp-objectives" class="form-control" rows="2" placeholder="What will students learn?"></textarea>
+              </div>
+              <div class="form-group">
+                <label>Materials Required</label>
+                <input type="text" id="lp-materials" class="form-control" placeholder="e.g. Projector, Graph Paper">
+              </div>
+              <div class="form-group">
+                <label>Activities</label>
+                <textarea id="lp-activities" class="form-control" rows="2" placeholder="Description of class activities"></textarea>
+              </div>
+              <div class="form-group">
+                <label>Assessment Strategy</label>
+                <input type="text" id="lp-assessment" class="form-control" placeholder="e.g. Oral quiz, worksheet">
+              </div>
+              <button type="submit" class="submit-btn" style="width:100%; background:var(--accent);">Submit Lesson Plan</button>
+            </form>
+          </div>
+
+          <!-- Submitted List -->
+          <div class="panel">
+            <div class="panel-header">
+              <h3>📋 My Submitted Lesson Plans</h3>
+              <button class="submit-btn" style="padding:0.4rem 0.8rem; font-size:0.8rem;" onclick="loadTeacherLessonPlans()">Refresh</button>
+            </div>
+            <div class="custom-table-wrapper">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Class</th>
+                    <th>Topic</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="my-lesson-plans-tbody">
+                  <tr><td colspan="4" style="text-align:center;">Loading...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- ================= PAGE: SYLLABUS TRACKING ================= -->
       <div class="page-view" id="page-syllabus">
         <h2 style="font-family:'Playfair Display', serif; margin-bottom: 0.5rem; color: var(--primary);">Syllabus & Lecture Tracking</h2>
@@ -3981,6 +4053,150 @@
     // Load assigned subjects when page loads
     window.addEventListener('load', () => {
       setTimeout(() => loadAssignedSubjects(), 500);
+    });
+    // ── LESSON PLAN (TEACHER CRUD) ──
+    let teacherLessonPlans = [];
+    
+    async function loadTeacherLessonPlans() {
+      const tbody = document.getElementById('my-lesson-plans-tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Loading...</td></tr>';
+      
+      const teacherCode = localStorage.getItem('teacher_code') || 'TCH-2080-04'; // fallback for demo
+      
+      if (!window.getLessonPlans) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--danger);">Supabase functions missing</td></tr>';
+        return;
+      }
+      
+      const res = await window.getLessonPlans({ teacher_code: teacherCode });
+      if (!res.success) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--danger);">${res.error}</td></tr>`;
+        return;
+      }
+      
+      teacherLessonPlans = res.data;
+      renderTeacherLessonPlans();
+    }
+    
+    function renderTeacherLessonPlans() {
+      const tbody = document.getElementById('my-lesson-plans-tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      
+      if (teacherLessonPlans.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);">No lesson plans submitted yet.</td></tr>';
+        return;
+      }
+      
+      teacherLessonPlans.forEach(plan => {
+        let statusClass = 'pending';
+        if (plan.status === 'Completed') statusClass = 'approved';
+        
+        const statusBadge = `<span class="status-badge ${statusClass}">${plan.status}</span>`;
+        
+        tbody.innerHTML += `
+          <tr>
+            <td>${plan.planned_date || '-'}</td>
+            <td>${plan.class_name}</td>
+            <td>${plan.topic}</td>
+            <td>${statusBadge}</td>
+          </tr>
+        `;
+      });
+    }
+    
+    async function submitLessonPlan(e) {
+      e.preventDefault();
+      const btn = e.submitter;
+      const originalText = btn.textContent;
+      btn.textContent = "Submitting...";
+      btn.disabled = true;
+      
+      const teacherCode = localStorage.getItem('teacher_code') || 'TCH-2080-04';
+      const teacherName = localStorage.getItem('teacher_name') || 'Demo Teacher';
+      
+      const data = {
+        teacher_code: teacherCode,
+        teacher_name: teacherName,
+        class_name: document.getElementById('lp-class').value,
+        subject_name: document.getElementById('lp-subject').value,
+        topic: document.getElementById('lp-topic').value,
+        planned_date: document.getElementById('lp-date').value,
+        objectives: document.getElementById('lp-objectives').value,
+        materials: document.getElementById('lp-materials').value,
+        activities: document.getElementById('lp-activities').value,
+        assessment: document.getElementById('lp-assessment').value,
+        status: 'Submitted'
+      };
+      
+      const res = await window.addLessonPlan(data);
+      if (res.success) {
+        alert("Lesson plan submitted successfully!");
+        e.target.reset();
+        loadTeacherLessonPlans();
+      } else {
+        alert("Error submitting lesson plan: " + res.error);
+      }
+      
+      btn.textContent = originalText;
+      btn.disabled = false;
+    }
+    
+    // Auto-load on script execution
+    document.addEventListener('DOMContentLoaded', () => {
+      // Small timeout to let supabase client initialize
+      setTimeout(() => {
+        if(document.getElementById('page-lesson-plan')) loadTeacherLessonPlans();
+      }, 500);
+    });
+  </script>
+
+  <!-- Notification System -->
+  <script src="../js/notification-handler.js"></script>
+  <script>
+    function toggleNotificationDropdown(event) {
+      if(event) event.stopPropagation();
+      const dropdown = document.getElementById('notification-dropdown');
+      if (dropdown.classList.contains('active')) {
+        dropdown.classList.remove('active');
+      } else {
+        dropdown.classList.add('active');
+        const teacherEmail = localStorage.getItem('teacher_email') || null;
+        if(window.NotificationService) {
+          window.NotificationService.fetchNotifications('teacher', teacherEmail).then(notifications => {
+            window.NotificationService.renderToContainer('notification-list', 'noti-badge', notifications);
+          });
+        }
+      }
+    }
+
+    function clearNotifications() {
+      // Bulk mark as read could be added here later
+      document.getElementById('notification-list').innerHTML = '<div style="padding:1.5rem; text-align:center; color:#9ca3af; font-size:0.9rem;">Cleared</div>';
+      const badge = document.getElementById('noti-badge');
+      if(badge) badge.style.display = 'none';
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+      const container = document.querySelector('.notification');
+      const dropdown = document.getElementById('notification-dropdown');
+      if (container && dropdown && !container.contains(event.target)) {
+        dropdown.classList.remove('active');
+      }
+    });
+
+    // Initial fetch on load
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        if(window.NotificationService) {
+          const teacherEmail = localStorage.getItem('teacher_email') || null;
+          window.NotificationService.fetchNotifications('teacher', teacherEmail).then(notifications => {
+            window.NotificationService.renderToContainer('notification-list', 'noti-badge', notifications);
+          });
+        }
+      }, 2000); // 2 second delay to wait for Supabase
     });
   </script>
 </body>

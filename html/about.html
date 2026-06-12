@@ -1160,6 +1160,35 @@
       color: rgba(255, 255, 255, 0.7);
       line-height: 1.6;
     }
+    .footer-contact-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+    .footer-contact-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.85rem;
+      font-size: 0.88rem;
+      color: rgba(255, 255, 255, 0.7);
+      line-height: 1.55;
+    }
+    .footer-contact-row strong {
+      display: block;
+      color: rgba(255, 255, 255, 0.9);
+      font-weight: 700;
+      margin-bottom: 0.1rem;
+    }
+    .footer-contact-row a:hover {
+      color: var(--accent);
+    }
+    .footer-contact-icon {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      margin-top: 0.2rem;
+      stroke: var(--accent);
+    }
     .footer-bottom {
       max-width: 1200px;
       margin: 0 auto;
@@ -1466,7 +1495,10 @@
     </span>
   </div>
   <div class="topbar-right">
-    <a href="#" class="topbar-login" onclick="openLoginModal(event)">🔑 Portal Login</a>
+    <a href="#" class="topbar-login" onclick="openLoginModal(event)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;margin-right:4px;vertical-align:middle;"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+      Portal Login
+    </a>
     <span style="color: rgba(255, 255, 255, 0.25); margin: 0 0.2rem;">|</span>
     <a href="#">Nepali</a>
     <a href="#">English</a>
@@ -1475,18 +1507,18 @@
 
 <!-- TICKER BAR -->
 <div class="ticker-wrap">
-  <div class="ticker-title">Highlights</div>
+  <div class="ticker-title">Latest News</div>
   <div class="ticker-content">
     <div class="ticker-text">
       <div class="ticker-group">
-        <span>🎓 <strong>Technical Education:</strong> Admissions open for Computer Engineering (Classes 9 to 12) for academic session 2083!</span>
-        <span>💻 <strong>Modern Infrastructure:</strong> Join Shree Saraswati Secondary School for hands-on practical learning, fully equipped computer labs, and expert faculty!</span>
-        <span>🚀 <strong>Empowering Gulmi:</strong> Providing quality tech-driven vocational education to shape the future of our students. Apply today!</span>
+        <span><strong>Admissions Open 2083:</strong> Computer Engineering stream (Classes 9&ndash;12) &mdash; Limited seats available. Apply now.</span>
+        <span><strong>Modern Infrastructure:</strong> Shree Saraswati Secondary School offers hands-on ICT labs, smart classrooms, and expert faculty.</span>
+        <span><strong>Empowering Gulmi:</strong> Quality technical and vocational education for students of Satyawati Municipality and surrounding areas.</span>
       </div>
       <div class="ticker-group">
-        <span>🎓 <strong>Technical Education:</strong> Admissions open for Computer Engineering (Classes 9 to 12) for academic session 2083!</span>
-        <span>💻 <strong>Modern Infrastructure:</strong> Join Shree Saraswati Secondary School for hands-on practical learning, fully equipped computer labs, and expert faculty!</span>
-        <span>🚀 <strong>Empowering Gulmi:</strong> Providing quality tech-driven vocational education to shape the future of our students. Apply today!</span>
+        <span><strong>Admissions Open 2083:</strong> Computer Engineering stream (Classes 9&ndash;12) &mdash; Limited seats available. Apply now.</span>
+        <span><strong>Modern Infrastructure:</strong> Shree Saraswati Secondary School offers hands-on ICT labs, smart classrooms, and expert faculty.</span>
+        <span><strong>Empowering Gulmi:</strong> Quality technical and vocational education for students of Satyawati Municipality and surrounding areas.</span>
       </div>
     </div>
   </div>
@@ -1550,9 +1582,9 @@
 <!-- ABOUT HERO BANNER -->
 <section class="about-hero">
   <div class="about-hero-inner">
-    <h2>About Our School</h2>
+    <h2 id="aboutHeroTitle">About Our School</h2>
     <div class="hero-divider"></div>
-    <p>Shaping Lives, Nurturing Potential, and Building Educational Legacies in Satyawati, Gulmi since 2016 B.S.</p>
+    <p id="aboutHeroSubtitle">Shaping Lives, Nurturing Potential, and Building Educational Legacies in Satyawati, Gulmi since 2016 B.S.</p>
   </div>
   <div class="hero-angle-bottom"></div>
 </section>
@@ -1561,68 +1593,13 @@
 <div class="legacy-stats-container">
   <div class="legacy-stats-grid" id="statsContainer">
     <!-- Stats will be loaded dynamically here -->
-    <div class="stat-badge-card">
-      <div class="icon-circle">🏛️</div>
-      <h4>65+ Years</h4>
-      <span>Academic Legacy</span>
-    </div>
-    <div class="stat-badge-card">
-      <div class="icon-circle">🎓</div>
-      <h4>1,200+</h4>
-      <span>Meritorious Alumni</span>
-    </div>
-    <div class="stat-badge-card">
-      <div class="icon-circle">👨‍🏫</div>
-      <h4>45+</h4>
-      <span>Expert Educators</span>
-    </div>
-    <div class="stat-badge-card">
-      <div class="icon-circle">💻</div>
-      <h4>100%</h4>
-      <span>Tech-Enabled Labs</span>
-    </div>
   </div>
 </div>
 
 <!-- SECTION 1: INTRODUCTION & STORY -->
 <section class="section-padding" id="history" style="background:#f0f6ff;">
-  <div class="container">
-    <div class="story-grid">
-      <!-- Framed Campus Visual -->
-      <div class="story-visual">
-        <div class="story-visual-frame">
-          <img src="../images/img.jpg" alt="Shree Saraswati Secondary School Building" />
-        </div>
-      </div>
-      
-      <!-- Story Content -->
-      <div class="story-text">
-        <span class="about-subtitle">— OUR LEGACY</span>
-        <h3 class="about-title">A Heritage of Academic Excellence</h3>
-        <p>Shree Saraswati Secondary School stands proud as a pioneer of quality public education in the Satyawati Municipality of Gulmi. Founded in the year 2016 B.S. (1959 A.D.), our institution was born out of a collective communal desire to liberate children from the shackles of illiteracy and bring the light of learning to Satyawati-6 Johang.</p>
-        <p>Over the course of six decades, the school has undergone massive structural transformations. From a humble primary setup under thatched roofs, we have blossomed into a fully equipped secondary school, boasting a technical Computer Engineering stream, state-of-the-art information communication technology laboratories, smart digital boards, and robust library reserves.</p>
-        <p>We believe in education that is inclusive, practical, and highly integrated with vocational skillsets, preparing children to conquer regional and global opportunities alike.</p>
-        
-        <ul class="story-values-list">
-          <li>
-            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            Character First Principles
-          </li>
-          <li>
-            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            Inclusive & Public Focused
-          </li>
-          <li>
-            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            Modern Tech-Infused Curriculum
-          </li>
-          <li>
-            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            Dynamic Vocational Streams
-          </li>
-        </ul>
-      </div>
-    </div>
+  <div class="container" id="storyContainer">
+    <!-- Story will be loaded dynamically here -->
   </div>
 </section>
 
@@ -1631,29 +1608,6 @@
   <div class="container">
     <div class="vision-mission-grid" id="visionMissionContainer">
       <!-- Vision and Mission cards will be loaded dynamically here -->
-      <!-- Card 1: Our Vision -->
-      <div class="glass-card">
-        <div class="badge-icon">👁️‍🗨️</div>
-        <h3>Our Vision</h3>
-        <p>To stand as a leading center of educational excellence in Nepal, cultivating technically competent, morally responsible, and socially dedicated citizens who are prepared to steer developmental actions locally and globally.</p>
-        <ul>
-          <li>Achieving 100% digital literacy throughout the municipal zone.</li>
-          <li>Eliminating social disparity by providing free educational aids to all sectors.</li>
-          <li>Developing innovative research ecosystems in intermediate levels.</li>
-        </ul>
-      </div>
-
-      <!-- Card 2: Our Mission -->
-      <div class="glass-card">
-        <div class="badge-icon">🎯</div>
-        <h3>Our Mission</h3>
-        <p>To impart holistic, modern, and value-guided education that blends scientific investigation, practical technical skills, and deep character foundations, supported by progressive instructional aids and highly trained faculty.</p>
-        <ul>
-          <li>Fostering hands-on practical coding, computing, and electronic workflows.</li>
-          <li>Providing extensive scholarships, stipends, and supportive books to candidates.</li>
-          <li>Collaborating with municipal offices to build vocational training avenues.</li>
-        </ul>
-      </div>
     </div>
   </div>
 </section>
@@ -1669,29 +1623,7 @@
     </div>
 
     <div class="history-era-grid">
-      <!-- Era 1 -->
-      <div class="era-card">
-        <div class="era-icon">🌱</div>
-        <span class="era-badge">Phase I: The Genesis</span>
-        <h4>Seeds of Literacy</h4>
-        <p style="margin-bottom:0px;">Starting in 2016 B.S., our journey began under humble mud-and-thatch roofs. With zero resources but a resolute municipal drive, local volunteers gathered in Satyawati-6 Johang to combat child illiteracy, creating the first basic primary classrooms in the region.</p>
-      </div>
-
-      <!-- Era 2 -->
-      <div class="era-card">
-        <div class="era-icon">🧱</div>
-        <span class="era-badge">Phase II: Structural Rise</span>
-        <h4>Building Brick by Brick</h4>
-        <p style="margin-bottom:0px;">Across the mid-2030s to 2050s B.S., the institution expanded to Lower Secondary and full High School tiers. Local villagers manually transported building materials across steep hills, constructing permanent brick halls and welcoming students from all surrounding wards.</p>
-      </div>
-
-      <!-- Era 3 -->
-      <div class="era-card">
-        <div class="era-icon">⚡</div>
-        <span class="era-badge">Phase III: Digital Pioneer</span>
-        <h4>Technological Model</h4>
-        <p style="margin-bottom:0px;">Launched in 2076 B.S., the prestigious Computer Engineering stream (CTEVT track) marked our rise as a modern technical hub. By 2082 B.S., the school implemented complete digital pedagogy, high-speed labs, and interactive smart classroom networks.</p>
-      </div>
+      <!-- Eras will be loaded dynamically here -->
     </div>
 
     <!-- Interactive Chronology Milestones -->
@@ -1703,68 +1635,7 @@
 
     <!-- Timeline Wrapper -->
     <div class="timeline-wrapper">
-      <div class="timeline-line"></div>
-      
-      <!-- Milestone 1 -->
-      <div class="timeline-item left">
-        <div class="timeline-badge">🚩</div>
-        <div class="timeline-card">
-          <div class="timeline-date">2016 B.S. (1959 A.D.)</div>
-          <h4>Foundation Inception</h4>
-          <p>Established as a basic primary class on Saraswati Puja. Driven by rural community leaders, the school set out to serve Satyawati-6 Bedauri children under minimal thatch structures.</p>
-        </div>
-      </div>
-
-      <!-- Milestone 2 -->
-      <div class="timeline-item right">
-        <div class="timeline-badge">📈</div>
-        <div class="timeline-card">
-          <div class="timeline-date">2035 B.S. (1978 A.D.)</div>
-          <h4>Lower Secondary Expansion</h4>
-          <p>Officially upgraded to a Lower Secondary Tier (up to Class 7). Local families contributed building resources and manual labor to assemble permanent stone and timber classrooms.</p>
-        </div>
-      </div>
-
-      <!-- Milestone 3 -->
-      <div class="timeline-item left">
-        <div class="timeline-badge">🏛️</div>
-        <div class="timeline-card">
-          <div class="timeline-date">2045 B.S. (1988 A.D.)</div>
-          <h4>High School Tier Upgrade</h4>
-          <p>Reached Secondary School status. Initiated the first batch of Class 9 and 10 students, raising permanent brick campus chambers and preparing candidates for early SLC board exams.</p>
-        </div>
-      </div>
-
-      <!-- Milestone 4 -->
-      <div class="timeline-item right">
-        <div class="timeline-badge">🎉</div>
-        <div class="timeline-card">
-          <div class="timeline-date">2065 B.S. (2008 A.D.)</div>
-          <h4>Golden Jubilee & Expansion</h4>
-          <p>Celebrated 50 years of educational service! Constructed a spacious library wing, raised the multi-story administrative block, and established the primary science cabinet facilities.</p>
-        </div>
-      </div>
-
-      <!-- Milestone 5 -->
-      <div class="timeline-item left">
-        <div class="timeline-badge">💻</div>
-        <div class="timeline-card">
-          <div class="timeline-date">2076 B.S. (2019 A.D.)</div>
-          <h4>Computer Engineering Stream</h4>
-          <p>Introduced the CTEVT technical Computer Engineering stream (Classes 9 to 12). Set up a premium ICT testing lab, complete with networking systems and servers.</p>
-        </div>
-      </div>
-
-      <!-- Milestone 6 -->
-      <div class="timeline-item right">
-        <div class="timeline-badge">🚀</div>
-        <div class="timeline-card">
-          <div class="timeline-date">2082 B.S. (2025 A.D.)</div>
-          <h4>Smart Classrooms Upgrade</h4>
-          <p>Crowned as a Model Technical School. Installed high-tech interactive touch displays in all secondary classrooms, integrated digital libraries, and updated hardware testing arrays.</p>
-        </div>
-      </div>
-
+      <!-- Timeline milestones will be loaded dynamically here -->
     </div>
   </div>
 </section>
@@ -1779,69 +1650,7 @@
     </div>
 
     <div class="admin-team-grid">
-      <!-- Member 1 -->
-      <div class="admin-member-card">
-        <div class="admin-photo-container">
-          <div class="admin-photo-inner">
-            <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=50" alt="Deepak Bhandari Portrait" />
-          </div>
-        </div>
-        <h4>Deepak Bhandari</h4>
-        <span class="role">Vice Principal</span>
-        <div class="dept">Senior Academic Operations & Coordination</div>
-        <div class="admin-socials">
-          <a href="mailto:deepak.bhandari@gmail.com" class="admin-social-btn" title="Email">✉️</a>
-          <a href="#" class="admin-social-btn" title="LinkedIn">🔗</a>
-        </div>
-      </div>
-
-      <!-- Member 2 -->
-      <div class="admin-member-card">
-        <div class="admin-photo-container">
-          <div class="admin-photo-inner">
-            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=50" alt="Yam Bahadur Khatri Portrait" />
-          </div>
-        </div>
-        <h4>Yam Bahadur Khatri</h4>
-        <span class="role">Chief Accountant</span>
-        <div class="dept">Finance, Admissions & Operations Lead</div>
-        <div class="admin-socials">
-          <a href="mailto:yam.khatri@gmail.com" class="admin-social-btn" title="Email">✉️</a>
-          <a href="#" class="admin-social-btn" title="LinkedIn">🔗</a>
-        </div>
-      </div>
-
-      <!-- Member 3 -->
-      <div class="admin-member-card">
-        <div class="admin-photo-container">
-          <div class="admin-photo-inner">
-            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=50" alt="Er. Sandesh Bhandari Portrait" />
-          </div>
-        </div>
-        <h4>Er. Sandesh Bhandari</h4>
-        <span class="role">CTEVT Coordinator</span>
-        <div class="dept">Computer Engineering Technical Stream Incharge</div>
-        <div class="admin-socials">
-          <a href="mailto:sandesh.ctevt@gmail.com" class="admin-social-btn" title="Email">✉️</a>
-          <a href="#" class="admin-social-btn" title="LinkedIn">🔗</a>
-        </div>
-      </div>
-
-      <!-- Member 4 -->
-      <div class="admin-member-card">
-        <div class="admin-photo-container">
-          <div class="admin-photo-inner">
-            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=300&q=50" alt="Saraswati Sen Portrait" />
-          </div>
-        </div>
-        <h4>Saraswati Sen</h4>
-        <span class="role">Primary Lead</span>
-        <div class="dept">Early Childhood Education & Primary Coordinator</div>
-        <div class="admin-socials">
-          <a href="mailto:saraswati.sen@gmail.com" class="admin-social-btn" title="Email">✉️</a>
-          <a href="#" class="admin-social-btn" title="LinkedIn">🔗</a>
-        </div>
-      </div>
+      <!-- Admin team members will be loaded dynamically here -->
     </div>
   </div>
 </section>
@@ -1855,69 +1664,8 @@
       <p style="color:#64748b; font-size:0.95rem;">Honoring the visionary headmasters who have steered Shree Saraswati Secondary School since its inception in 2016 B.S.</p>
     </div>
 
-    <div class="tree-wrapper">
-      <div class="tree-trunk"></div>
-      
-      <!-- Principal 1 -->
-      <div class="tree-node left">
-        <div class="tree-photo">
-          <img src="https://images.unsplash.com/photo-1555952517-2e8e729e0b44?auto=format&fit=crop&w=150&q=80" alt="Late Ram Prasad Sharma Portrait" />
-        </div>
-        <div class="tree-card">
-          <span class="tree-date">2016 B.S. – 2030 B.S.</span>
-          <h4>Late Ram Prasad Sharma</h4>
-          <p>The founding headmaster who laid the very first stone of literacy in Satyawati-6 Johang. He led the school through its most crucial early years with profound dedication.</p>
-        </div>
-      </div>
-
-      <!-- Principal 2 -->
-      <div class="tree-node right">
-        <div class="tree-photo">
-          <img src="https://images.unsplash.com/photo-1544717302-de2939b7ef71?auto=format&fit=crop&w=150&q=80" alt="Hari Bahadur Thapa Portrait" />
-        </div>
-        <div class="tree-card">
-          <span class="tree-date">2031 B.S. – 2045 B.S.</span>
-          <h4>Hari Bahadur Thapa</h4>
-          <p>Under his leadership, the school successfully expanded to Lower Secondary and Secondary tiers, actively rallying community support for structural growth.</p>
-        </div>
-      </div>
-
-      <!-- Principal 3 -->
-      <div class="tree-node left">
-        <div class="tree-photo">
-          <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80" alt="Gopal Krishna Gautam Portrait" />
-        </div>
-        <div class="tree-card">
-          <span class="tree-date">2046 B.S. – 2060 B.S.</span>
-          <h4>Gopal Krishna Gautam</h4>
-          <p>Guided the first batches of SLC candidates to outstanding results and oversaw the critical transition into a permanent, multi-building campus structure.</p>
-        </div>
-      </div>
-
-      <!-- Principal 4 -->
-      <div class="tree-node right">
-        <div class="tree-photo">
-          <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80" alt="Narayan Prasad Poudel Portrait" />
-        </div>
-        <div class="tree-card">
-          <span class="tree-date">2061 B.S. – 2075 B.S.</span>
-          <h4>Narayan Prasad Poudel</h4>
-          <p>Initiated the school's digital era during the Golden Jubilee phase, introducing modern administrative practices and initial computer education concepts.</p>
-        </div>
-      </div>
-
-      <!-- Principal 5 (Current) -->
-      <div class="tree-node left">
-        <div class="tree-photo">
-          <img src="https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=150&q=80" alt="Til Bahadur Sen Portrait" />
-        </div>
-        <div class="tree-card">
-          <span class="tree-date">2076 B.S. – Present</span>
-          <h4>Til Bahadur Sen</h4>
-          <p>The current Principal driving the prestigious CTEVT Computer Engineering stream and smart classroom transformations, establishing Saraswati as a Model Tech School.</p>
-        </div>
-      </div>
-
+    <div class="tree-wrapper" id="principals-legacy-tree-wrapper">
+      <!-- Principals legacy tree will be loaded dynamically here -->
     </div>
   </div>
 </section>
@@ -1931,33 +1679,8 @@
       <p style="color:#64748b; font-size:0.95rem;">Recognizing the brilliant engineering minds who have spearheaded our CTEVT Computer Engineering stream since its launch in 2076 B.S.</p>
     </div>
 
-    <div class="tree-wrapper">
-      <div class="tree-trunk" style="background: linear-gradient(to bottom, var(--accent) 0%, var(--primary) 100%);"></div>
-      
-      <!-- Tech Incharge 1 -->
-      <div class="tree-node left">
-        <div class="tree-photo" style="border-color: var(--accent);">
-          <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=150&q=80" alt="Er. Ramesh Thapa Portrait" />
-        </div>
-        <div class="tree-card" style="background: var(--white);">
-          <span class="tree-date" style="background: var(--accent);">2076 B.S. – 2079 B.S.</span>
-          <h4>Er. Ramesh Thapa</h4>
-          <p>The pioneer Technical Incharge who established the very first networking lab and set up the foundational CTEVT Computer Engineering curriculum for the school.</p>
-        </div>
-      </div>
-
-      <!-- Tech Incharge 2 (Current) -->
-      <div class="tree-node right">
-        <div class="tree-photo" style="border-color: var(--accent);">
-          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" alt="Er. Sandesh Bhandari Portrait" />
-        </div>
-        <div class="tree-card" style="background: var(--white);">
-          <span class="tree-date" style="background: var(--accent);">2080 B.S. – Present</span>
-          <h4>Er. Sandesh Bhandari</h4>
-          <p>The current Incharge leading the transition into modern smart classrooms, advanced server hosting, and bringing high-speed fiber internet integrations for practical labs.</p>
-        </div>
-      </div>
-
+    <div class="tree-wrapper" id="technical-legacy-tree-wrapper">
+      <!-- Technical incharge legacy tree will be loaded dynamically here -->
     </div>
   </div>
 </section>
@@ -1971,45 +1694,8 @@
       <p style="color:#64748b; font-size:0.95rem;">Honoring the dedicated educators who have shaped the foundational early childhood and primary education at Shree Saraswati.</p>
     </div>
 
-    <div class="tree-wrapper">
-      <div class="tree-trunk" style="background: linear-gradient(to bottom, #2ecc71 0%, var(--primary) 100%);"></div>
-      
-      <!-- Primary Incharge 1 -->
-      <div class="tree-node left">
-        <div class="tree-photo" style="border-color: #2ecc71;">
-          <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&q=80" alt="Shanta Devi Acharya Portrait" />
-        </div>
-        <div class="tree-card" style="background: #f8fafc;">
-          <span class="tree-date" style="background: #2ecc71;">2035 B.S. – 2055 B.S.</span>
-          <h4>Shanta Devi Acharya</h4>
-          <p>A compassionate pioneer in early childhood education who structured the fundamental primary curriculum, ensuring inclusive literacy for all surrounding villages.</p>
-        </div>
-      </div>
-
-      <!-- Primary Incharge 2 -->
-      <div class="tree-node right">
-        <div class="tree-photo" style="border-color: #2ecc71;">
-          <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=150&q=80" alt="Kamala Thapa Portrait" />
-        </div>
-        <div class="tree-card" style="background: #f8fafc;">
-          <span class="tree-date" style="background: #2ecc71;">2056 B.S. – 2075 B.S.</span>
-          <h4>Kamala Thapa</h4>
-          <p>Modernized the primary wing by introducing engaging play-based learning pedagogies and championing the integration of English medium instruction in junior classes.</p>
-        </div>
-      </div>
-
-      <!-- Primary Incharge 3 (Current) -->
-      <div class="tree-node left">
-        <div class="tree-photo" style="border-color: #2ecc71;">
-          <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80" alt="Saraswati Sen Portrait" />
-        </div>
-        <div class="tree-card" style="background: #f8fafc;">
-          <span class="tree-date" style="background: #2ecc71;">2076 B.S. – Present</span>
-          <h4>Saraswati Sen</h4>
-          <p>The current Primary Lead dynamically advancing foundational education through interactive smartboards, digital phonics, and holistic character-building programs.</p>
-        </div>
-      </div>
-
+    <div class="tree-wrapper" id="primary-legacy-tree-wrapper">
+      <!-- Primary incharge legacy tree will be loaded dynamically here -->
     </div>
   </div>
 </section>
@@ -2024,47 +1710,7 @@
     </div>
 
     <div class="leadership-grid">
-      <!-- Card 1: Principal -->
-      <div class="leader-desk-card">
-        <div class="leader-profile">
-          <div class="leader-photo-wrap">
-            <img src="https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=300&q=50" alt="Headmaster Portrait" />
-          </div>
-          <div class="leader-info">
-            <h5>Til Bahadur Sen</h5>
-            <span>Headmaster / Principal</span>
-          </div>
-        </div>
-        <div class="leader-quote">
-          Education is not the learning of facts, but the training of the mind to think critically. We strive to empower every child from Johang with functional technical skillsets and character discipline.
-        </div>
-        <p class="leader-desc">Shree Saraswati has always remained a second home to our children. By integrating high-end Computer Engineering streams with classic primary values, we ensure that students emerge as complete, confident professionals who remain deeply connected to their native community roots.</p>
-        <div class="leader-sign">
-          <span>T. B. Sen</span>
-          <small style="color:#94a3b8; font-weight:700;">Principal signature</small>
-        </div>
-      </div>
-
-      <!-- Card 2: SMC Chairman -->
-      <div class="leader-desk-card">
-        <div class="leader-profile">
-          <div class="leader-photo-wrap">
-            <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=300&q=50" alt="SMC Chairman Portrait" />
-          </div>
-          <div class="leader-info">
-            <h5>Jagat Bahadur Khatri</h5>
-            <span>SMC Chairman</span>
-          </div>
-        </div>
-        <div class="leader-quote">
-          Our community is our strength. By bringing local guardians, municipalities, and tech facilities together, we create a secure, encouraging space for educational growth.
-        </div>
-        <p class="leader-desc">The School Management Committee works day and night to upgrade physical infrastructures, maintain complete transparency in administrative allocations, secure technical resources, and expand free scholarship provisions for underprivileged sectors.</p>
-        <div class="leader-sign">
-          <span>J. B. Khatri</span>
-          <small style="color:#94a3b8; font-weight:700;">Chairman signature</small>
-        </div>
-      </div>
+      <!-- Leadership desk cards will be loaded dynamically here -->
     </div>
   </div>
 </section><!-- SECTION 6: ALUMNI EXCELLENCE -->
@@ -2149,46 +1795,7 @@
       }
     </style>
     <div class="alumni-grid">
-      <!-- Alumni 1 -->
-      <div class="alumni-card">
-        <img src="https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?auto=format&fit=crop&w=150&q=80" alt="Kiran Thapa Portrait" class="alumni-photo" />
-        <h4 class="alumni-name">Kiran Thapa</h4>
-        <div class="alumni-batch">SEE Batch 2080</div>
-        <div class="alumni-gpa-wrap">
-          <span class="alumni-gpa-label">Secured</span>
-          <span class="alumni-gpa">3.95 GPA</span>
-        </div>
-      </div>
-      <!-- Alumni 2 -->
-      <div class="alumni-card">
-        <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80" alt="Sita Sharma Portrait" class="alumni-photo" />
-        <h4 class="alumni-name">Sita Sharma</h4>
-        <div class="alumni-batch">SEE Batch 2080</div>
-        <div class="alumni-gpa-wrap">
-          <span class="alumni-gpa-label">Secured</span>
-          <span class="alumni-gpa">3.90 GPA</span>
-        </div>
-      </div>
-      <!-- Alumni 3 -->
-      <div class="alumni-card">
-        <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=150&q=80" alt="Rabin Gurung Portrait" class="alumni-photo" />
-        <h4 class="alumni-name">Rabin Gurung</h4>
-        <div class="alumni-batch">CTEVT Batch 2080</div>
-        <div class="alumni-gpa-wrap">
-          <span class="alumni-gpa-label">Secured</span>
-          <span class="alumni-gpa">3.88 GPA</span>
-        </div>
-      </div>
-      <!-- Alumni 4 -->
-      <div class="alumni-card">
-        <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=150&q=80" alt="Pooja Karki Portrait" class="alumni-photo" />
-        <h4 class="alumni-name">Pooja Karki</h4>
-        <div class="alumni-batch">CTEVT Batch 2079</div>
-        <div class="alumni-gpa-wrap">
-          <span class="alumni-gpa-label">Secured</span>
-          <span class="alumni-gpa">3.85 GPA</span>
-        </div>
-      </div>
+      <!-- Alumni cards will be loaded dynamically here -->
     </div>
   </div>
 </section>
@@ -2304,48 +1911,8 @@
         transform: translateX(5px);
       }
     </style>
-    <div class="premium-blog-grid">
-      <!-- Blog Block 1 -->
-      <div class="premium-blog-card">
-        <div class="premium-blog-img-wrap">
-          <span class="blog-badge">Events</span>
-          <img src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=600&q=80" alt="Golden Jubilee" />
-        </div>
-        <div class="premium-blog-content">
-          <div class="premium-blog-meta">📅 Baisakh 15, 2083 • ⏱️ 5 min read</div>
-          <h4 class="premium-blog-title">Celebrating Our Golden Jubilee</h4>
-          <p class="premium-blog-excerpt">A retrospective look at 50 years of educational excellence, community empowerment, and our ambitious vision for the future of rural education.</p>
-          <a href="blog.html?post=golden-jubilee" class="premium-read-more">Read Full Article</a>
-        </div>
-      </div>
-
-      <!-- Blog Block 2 -->
-      <div class="premium-blog-card">
-        <div class="premium-blog-img-wrap">
-          <span class="blog-badge" style="background:var(--primary);">Technology</span>
-          <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80" alt="Tech Innovations" />
-        </div>
-        <div class="premium-blog-content">
-          <div class="premium-blog-meta">📅 Chaitra 10, 2082 • ⏱️ 4 min read</div>
-          <h4 class="premium-blog-title">Smart Classrooms Integration</h4>
-          <p class="premium-blog-excerpt">Discover how the latest interactive displays and digital libraries are fundamentally transforming the daily learning experience for our secondary students.</p>
-          <a href="blog.html?post=tech-innovations" class="premium-read-more">Read Full Article</a>
-        </div>
-      </div>
-
-      <!-- Blog Block 3 -->
-      <div class="premium-blog-card">
-        <div class="premium-blog-img-wrap">
-          <span class="blog-badge" style="background:#2ecc71;">Academics</span>
-          <img src="https://images.unsplash.com/photo-1496307042754-b4aa456c4a2d?auto=format&fit=crop&w=600&q=80" alt="Scholarship Programs" />
-        </div>
-        <div class="premium-blog-content">
-          <div class="premium-blog-meta">📅 Falgun 02, 2082 • ⏱️ 3 min read</div>
-          <h4 class="premium-blog-title">Scholarship Programs Expanded</h4>
-          <p class="premium-blog-excerpt">We are thrilled to announce new comprehensive scholarship initiatives designed to support brilliant, underprivileged minds from surrounding municipalities.</p>
-          <a href="blog.html?post=scholarships-2025" class="premium-read-more">Read Full Article</a>
-        </div>
-      </div>
+    <div class="blogs-grid premium-blog-grid">
+      <!-- Blog posts will be loaded dynamically here -->
     </div>
   </div>
 </section>
@@ -2390,20 +1957,35 @@
     </div>
     <div class="footer-col">
       <h5>Contact Us</h5>
-      <address>
-        <strong>📍 Address:</strong><br/>
-        Satyawati-6 Johang, Gulmi<br/>
-        Gandaki Province, Nepal<br/><br/>
-        <strong>📞 Phone:</strong><br/>
-        +977-9857062876<br/><br/>
-        <strong>✉ Email:</strong><br/>
-        infosaraswatimavijohang@gmail.com
-      </address>
+      <div class="footer-contact-list">
+        <div class="footer-contact-row">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="footer-contact-icon"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+          <div>
+            <strong>Address</strong><br/>
+            Satyawati-6 Johang, Gulmi<br/>
+            Gandaki Province, Nepal
+          </div>
+        </div>
+        <div class="footer-contact-row">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="footer-contact-icon"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.14 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.05 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16.92z"></path></svg>
+          <div>
+            <strong>Phone</strong><br/>
+            <a href="tel:+9779857062876" style="color:inherit;">+977-9857062876</a>
+          </div>
+        </div>
+        <div class="footer-contact-row">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="footer-contact-icon"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+          <div>
+            <strong>Email</strong><br/>
+            <a href="mailto:infosaraswatimavijohang@gmail.com" style="color:inherit;">infosaraswatimavijohang@gmail.com</a>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
   <div class="footer-bottom">
-    <span>© 2083 B.S. Shree Saraswati Secondary School, Gulmi. All rights reserved.</span>
-    <span>Designed with ❤️ for quality education in Nepal</span>
+    <span>&copy; 2083 B.S. Shree Saraswati Secondary School, Gulmi. All rights reserved.</span>
+    <span>Satyawati Municipality &mdash; Gulmi, Gandaki Province, Nepal</span>
   </div>
 </footer>
 
@@ -2591,117 +2173,41 @@
       }
     }, 2200);
   }
-  }
 
-  // ═══════════════════════════════════════════════════════════════════
-  // DYNAMIC ABOUT PAGE DATA LOADING
-  // ═══════════════════════════════════════════════════════════════════
-  document.addEventListener('DOMContentLoaded', async () => {
-    if (typeof readAllAboutStats === 'function') {
-      try {
-        // Load Stats
-        const stats = await readAllAboutStats();
-        if (stats && stats.length > 0) {
-          const statsContainer = document.getElementById('statsContainer');
-          if (statsContainer) {
-            statsContainer.innerHTML = stats.map(s => `
-              <div class="stat-badge-card">
-                <div class="icon-circle">${s.icon_emoji}</div>
-                <h4>${s.stat_number}</h4>
-                <span>${s.stat_label}</span>
-              </div>
-            `).join('');
-          }
-        }
-
-        // Load Vision/Mission
-        const vms = await readAllAboutVisionMission();
-        if (vms && vms.length > 0) {
-          const vmContainer = document.getElementById('visionMissionContainer');
-          if (vmContainer) {
-            vmContainer.innerHTML = vms.map(vm => `
-              <div class="glass-card">
-                <div class="badge-icon">${vm.icon_emoji}</div>
-                <h3>${vm.section_title}</h3>
-                <p>${vm.section_description}</p>
-                <ul>
-                  ${(vm.key_points || []).map(kp => `<li>${kp}</li>`).join('')}
-                </ul>
-              </div>
-            `).join('');
-          }
-        }
-
-        // Load Era Cards
-        const eras = await readAllAboutEraCards();
-        if (eras && eras.length > 0) {
-          const eraGrid = document.querySelector('.history-era-grid');
-          if (eraGrid) {
-            eraGrid.innerHTML = eras.map(era => `
-              <div class="era-card">
-                <div class="era-icon">${era.icon_emoji}</div>
-                <span class="era-badge">${era.era_badge}</span>
-                <h4>${era.era_title}</h4>
-                <p style="margin-bottom:0px;">${era.era_description}</p>
-              </div>
-            `).join('');
-          }
-        }
-
-        // Load Timeline
-        const timelines = await readAllAboutTimeline();
-        if (timelines && timelines.length > 0) {
-          const tlContainer = document.querySelector('.timeline-wrapper');
-          if (tlContainer) {
-            let html = '<div class="timeline-line"></div>';
-            timelines.forEach(tl => {
-              html += `
-                <div class="timeline-item ${tl.timeline_position}">
-                  <div class="timeline-badge">${tl.icon_emoji}</div>
-                  <div class="timeline-card">
-                    <div class="timeline-date">${tl.timeline_date}</div>
-                    <h4>${tl.timeline_title}</h4>
-                    <p>${tl.timeline_description}</p>
-                  </div>
-                </div>
-              `;
-            });
-            tlContainer.innerHTML = html;
-          }
-        }
-
-        // Load Admin Team
-        const adminTeam = await readAllAdminTeam();
-        if (adminTeam && adminTeam.length > 0) {
-          const teamGrid = document.querySelector('.admin-team-grid');
-          if (teamGrid) {
-            teamGrid.innerHTML = adminTeam.map(member => `
-              <div class="admin-member-card">
-                <div class="admin-photo-container">
-                  <div class="admin-photo-inner">
-                    <img src="${member.member_photo_url || '../images/logo.png'}" alt="${member.member_name} Portrait" />
-                  </div>
-                </div>
-                <h4>${member.member_name}</h4>
-                <span class="role">${member.member_role}</span>
-                <div class="dept">${member.member_department}</div>
-                <div class="admin-socials">
-                  ${member.member_email ? `<a href="mailto:${member.member_email}" class="admin-social-btn" title="Email">✉️</a>` : ''}
-                </div>
-              </div>
-            `).join('');
-          }
-        }
-
-      } catch (err) {
-        console.error("Error loading dynamic about page data:", err);
-      }
-    }
-  });
 
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../js/supabase-client.js"></script>
 <script src="../js/about-data.js"></script>
+<script>
+  // ═══════════════════════════════════════════════════════════════════
+  // DYNAMIC ABOUT PAGE DATA LOADING (runs after all scripts are loaded)
+  // ═══════════════════════════════════════════════════════════════════
+  (async function initAboutPage() {
+    if (typeof loadAllAboutData === 'function') {
+      try {
+        await loadAllAboutData();
+        if (typeof renderAboutHero       === 'function') await renderAboutHero();
+        if (typeof renderStory           === 'function') await renderStory();
+        if (typeof renderAboutStats      === 'function') await renderAboutStats();
+        if (typeof renderVisionMission   === 'function') await renderVisionMission();
+        if (typeof renderEraCards        === 'function') await renderEraCards();
+        if (typeof renderTimeline        === 'function') await renderTimeline();
+        if (typeof renderAdminTeam       === 'function') await renderAdminTeam();
+        if (typeof renderLeadershipDesks === 'function') await renderLeadershipDesks();
+        if (typeof renderAlumniHighlights=== 'function') await renderAlumniHighlights();
+        if (typeof renderAboutBlogs      === 'function') await renderAboutBlogs();
+        if (typeof renderPrincipalsTree  === 'function') await renderPrincipalsTree();
+        if (typeof renderTechnicalTree   === 'function') await renderTechnicalTree();
+        if (typeof renderPrimaryTree     === 'function') await renderPrimaryTree();
+        console.log('✅ All About page sections rendered successfully');
+      } catch (err) {
+        console.error('Error loading dynamic about page data:', err);
+      }
+    } else {
+      console.warn('⚠ loadAllAboutData not available — about-data.js may not have loaded');
+    }
+  })();
+</script>
 </body>
 </html>

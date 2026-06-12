@@ -1,3 +1,12 @@
+﻿// ============================================================================
+// FILE:    document-handler.js
+// MODULE:  Documents
+// PURPOSE: Document Handler - Upload, manage, and retrieve school documents (circulars, certificates, notices)
+//
+// PROJECT: Shree Saraswati Secondary School — Management System
+// STACK:   Vanilla JS + Supabase (PostgreSQL) + HTML/CSS
+// UPDATED: 2026-06-03
+// ============================================================================
 // ════════════════════════════════════════════════════════════════════════════
 // DOCUMENT HANDLER - Document Management System
 // ════════════════════════════════════════════════════════════════════════════

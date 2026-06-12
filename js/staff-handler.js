@@ -1,3 +1,12 @@
+﻿// ============================================================================
+// FILE:    staff-handler.js
+// MODULE:  Staff Management
+// PURPOSE: Staff Handler - Teacher and staff profile CRUD, department management, staff directory, and hierarchy assignments
+//
+// PROJECT: Shree Saraswati Secondary School — Management System
+// STACK:   Vanilla JS + Supabase (PostgreSQL) + HTML/CSS
+// UPDATED: 2026-06-03
+// ============================================================================
 // ============================================================================
 // STAFF HIERARCHY HANDLER - CRUD & IMAGE MANAGEMENT
 // ============================================================================
@@ -12,6 +21,35 @@ class StaffHierarchyHandler {
         this.BUCKET_NAME = 'media';
         this.MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
         this.ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+        
+        // Verify initialization
+        console.log('[StaffHandler] Initializing...');
+        if (!this.supabaseDb) {
+            console.error('[StaffHandler] ERROR: supabaseDb is not initialized!');
+        } else {
+            console.log('[StaffHandler] ✓ supabaseDb initialized');
+        }
+    }
+
+    /**
+     * Check database connection
+     */
+    async checkConnection() {
+        try {
+            if (!this.supabaseDb) {
+                return { success: false, error: 'supabaseDb not initialized' };
+            }
+            const { data, error } = await this.supabaseDb.from('staff_hierarchy').select('count()', { count: 'exact', head: true });
+            if (error) {
+                console.warn('[StaffHandler] Database check - Table may not exist:', error.message);
+                return { success: false, error: error.message, tableExists: false };
+            }
+            console.log('[StaffHandler] ✓ Database connection OK');
+            return { success: true, tableExists: true };
+        } catch (err) {
+            console.error('[StaffHandler] Connection check failed:', err);
+            return { success: false, error: err.message };
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -76,6 +114,18 @@ class StaffHierarchyHandler {
      */
     async getAllStaff(filters = {}) {
         try {
+            console.log('[StaffHandler] getAllStaff called with filters:', filters);
+            
+            // Check connection first
+            const connCheck = await this.checkConnection();
+            if (!connCheck.success) {
+                console.warn('[StaffHandler] Database connection issue:', connCheck.error);
+            }
+            
+            if (!this.supabaseDb) {
+                throw new Error('Database client not initialized');
+            }
+            
             let query = this.supabaseDb
                 .from('staff_hierarchy')
                 .select('*');
@@ -97,14 +147,17 @@ class StaffHierarchyHandler {
 
             const { data, error } = await query;
 
-            if (error) throw new Error(`Database error: ${error.message}`);
+            if (error) {
+                console.error('[StaffHandler] Query error:', error);
+                throw new Error(`Database error: ${error.message}`);
+            }
 
-            console.log(`✓ Retrieved ${data.length} staff members`);
-            return { success: true, data };
+            console.log(`[StaffHandler] ✓ Retrieved ${data ? data.length : 0} staff members`);
+            return { success: true, data: data || [] };
 
         } catch (error) {
-            console.error('✗ Error fetching staff:', error);
-            return { success: false, error: error.message };
+            console.error('[StaffHandler] Error fetching staff:', error.message);
+            return { success: false, error: error.message, data: [] };
         }
     }
 
@@ -528,29 +581,41 @@ class StaffHierarchyHandler {
      */
     async getStatistics() {
         try {
-            const { data: totalStaff } = await this.supabaseDb
+            console.log('[StaffHandler] getStatistics called');
+            
+            const { data: totalStaff, error: err1 } = await this.supabaseDb
                 .from('staff_hierarchy')
                 .select('id', { count: 'exact' })
                 .eq('is_active', true);
 
-            const { data: byLevel } = await this.supabaseDb
+            if (err1) {
+                console.warn('[StaffHandler] Error getting total staff count:', err1);
+            }
+
+            const { data: byLevel, error: err2 } = await this.supabaseDb
                 .from('staff_hierarchy')
                 .select('hierarchy_level')
                 .eq('is_active', true);
 
-            const { data: departments } = await this.getDepartments();
+            if (err2) {
+                console.warn('[StaffHandler] Error getting staff by level:', err2);
+            }
+
+            const deptResult = await this.getDepartments();
+            const departments = deptResult.data || [];
 
             const stats = {
                 totalStaff: totalStaff ? totalStaff.length : 0,
-                byLevel: this.groupBy(byLevel, 'hierarchy_level'),
+                byLevel: byLevel ? this.groupBy(byLevel, 'hierarchy_level') : {},
                 departmentCount: departments.length,
                 departments
             };
 
+            console.log('[StaffHandler] Statistics:', stats);
             return { success: true, data: stats };
 
         } catch (error) {
-            console.error('✗ Error fetching statistics:', error);
+            console.error('[StaffHandler] Error fetching statistics:', error);
             return { success: false, error: error.message };
         }
     }

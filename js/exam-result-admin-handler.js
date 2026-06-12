@@ -1,3 +1,12 @@
+﻿// ============================================================================
+// FILE:    exam-result-admin-handler.js
+// MODULE:  Exam Results Admin
+// PURPOSE: Exam Results Admin Handler - Admin interface for entering, editing, and publishing student exam results
+//
+// PROJECT: Shree Saraswati Secondary School — Management System
+// STACK:   Vanilla JS + Supabase (PostgreSQL) + HTML/CSS
+// UPDATED: 2026-06-03
+// ============================================================================
 // ====================================================================
 // EXAM RESULTS HANDLER - Admin Portal
 // ====================================================================

@@ -3279,7 +3279,7 @@
 <!-- PRINCIPAL'S MESSAGE -->
 <section class="principal-section" id="message">
   <div class="container">
-    <div class="principal-grid">
+    <div class="principal-grid" id="principal-message-container">
       <div class="principal-img-wrap">
         <img class="principal-img" src="https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=600&q=50" alt="Principal Chhabilal Bhandari" />
         <div class="principal-badge">✦ Head Teacher ✦</div>
@@ -4205,9 +4205,24 @@
             <div style="font-weight: bold; font-size: 14px; margin-bottom: 30px;">DATE OF ISSUE: <span id="ms-issue-date"></span></div>
 
             <div class="ms-signatures">
-              <div class="ms-sig-block"><div class="ms-sig-line">CLASS TEACHER</div></div>
-              <div class="ms-sig-block"><div class="ms-sig-line">EXAM CO-ORDINATOR</div></div>
-              <div class="ms-sig-block"><div class="ms-sig-line">HEAD TEACHER</div></div>
+              <div class="ms-sig-block">
+                <div style="height: 45px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 2px;">
+                  <img id="ms-sig-incharge" src="" style="max-height: 45px; max-width: 150px; display: none;" alt="Signature">
+                </div>
+                <div class="ms-sig-line">TECHNICAL INCHARGE</div>
+              </div>
+              <div class="ms-sig-block">
+                <div style="height: 45px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 2px;">
+                  <img id="ms-sig-coordinator" src="" style="max-height: 45px; max-width: 150px; display: none;" alt="Signature">
+                </div>
+                <div class="ms-sig-line">EXAM CO-ORDINATOR</div>
+              </div>
+              <div class="ms-sig-block">
+                <div style="height: 45px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 2px;">
+                  <img id="ms-sig-principal" src="" style="max-height: 45px; max-width: 150px; display: none;" alt="Signature">
+                </div>
+                <div class="ms-sig-line">PRINCIPAL</div>
+              </div>
             </div>
 
           </div>
@@ -6101,7 +6116,7 @@
     return { gpa: 0, grade: 'NG' };
   }
 
-  function checkStudentResult() {
+  async function checkStudentResult() {
     const symbolNumber = document.getElementById('result-symbol')?.value.trim();
     const studentClass = document.getElementById('result-class')?.value;
     const resultDisplay = document.getElementById('result-display');
@@ -6201,6 +6216,61 @@
     const sortedStudents = Object.keys(studentTotals).sort((a, b) => studentTotals[b] - studentTotals[a]);
     const rank = sortedStudents.indexOf(symbolNumber) + 1;
     document.getElementById('ms-rank-val').innerText = rank;
+
+     // Pull latest official signatures from Supabase and apply to layout
+     if (window.supabaseDb) {
+       try {
+         const { data: sigData, error: sigErr } = await window.supabaseDb
+           .from('school_settings')
+           .select('setting_value')
+           .eq('setting_key', 'official_signatures')
+           .single();
+         if (!sigErr && sigData && sigData.setting_value) {
+           localStorage.setItem('school_official_signatures', JSON.stringify(sigData.setting_value));
+         }
+       } catch(e) {
+         console.warn('Failed to load official signatures:', e);
+       }
+     }
+
+     const sigs = JSON.parse(localStorage.getItem('school_official_signatures') || '{}');
+     
+     // Principal signature
+     const msSigPrincipal = document.getElementById('ms-sig-principal');
+     if (msSigPrincipal) {
+       if (sigs.principal) {
+         msSigPrincipal.src = sigs.principal;
+         msSigPrincipal.style.display = 'block';
+       } else {
+         msSigPrincipal.src = '';
+         msSigPrincipal.style.display = 'none';
+       }
+     }
+     
+     // Coordinator signature
+     const msSigCoordinator = document.getElementById('ms-sig-coordinator');
+     if (msSigCoordinator) {
+       if (sigs.coordinator) {
+         msSigCoordinator.src = sigs.coordinator;
+         msSigCoordinator.style.display = 'block';
+       } else {
+         msSigCoordinator.src = '';
+         msSigCoordinator.style.display = 'none';
+       }
+     }
+     
+     // Technical Incharge signature
+     const msSigIncharge = document.getElementById('ms-sig-incharge');
+     if (msSigIncharge) {
+       const techSig = sigs.tech_incharge;
+       if (techSig) {
+         msSigIncharge.src = techSig;
+         msSigIncharge.style.display = 'block';
+       } else {
+         msSigIncharge.src = '';
+         msSigIncharge.style.display = 'none';
+       }
+     }
   }
 
   function switchAdminCalTab(event, tabId) {
@@ -6372,13 +6442,17 @@
     const colorIndex = (teacher.id || 0) % avatarColors.length;
     const avatarGradient = avatarColors[colorIndex];
 
+    const avatarHTML = teacher.teacher_image_url 
+      ? `<img src="${teacher.teacher_image_url}" alt="${teacher.teacher_name}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`
+      : `${initials}`;
+
     return `
       <div class="teacher-card">
         <div class="teacher-cover"></div>
         
         <div class="teacher-avatar-wrap">
-          <div class="teacher-avatar" style="background: ${avatarGradient};">
-            ${initials}
+          <div class="teacher-avatar" style="background: ${teacher.teacher_image_url ? '#fff' : avatarGradient};">
+            ${avatarHTML}
           </div>
         </div>
         
@@ -6435,11 +6509,15 @@
       const colorIndex = teacherId % avatarColors.length;
       const avatarGradient = avatarColors[colorIndex];
 
+      const avatarHTML = teacher.teacher_image_url 
+        ? `<img src="${teacher.teacher_image_url}" alt="${teacher.teacher_name}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`
+        : `${initials}`;
+
       const modalContent = document.getElementById('teacher-modal-content');
       modalContent.innerHTML = `
         <div style="text-align: center;">
-          <div style="width: 120px; height: 120px; border-radius: 50%; background: ${avatarGradient}; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; color: white; font-size: 3rem; font-weight: 700; font-family: 'Playfair Display', serif; box-shadow: 0 8px 20px rgba(0,0,0,0.1);">
-            ${initials}
+          <div style="width: 120px; height: 120px; border-radius: 50%; background: ${teacher.teacher_image_url ? '#fff' : avatarGradient}; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; color: white; font-size: 3rem; font-weight: 700; font-family: 'Playfair Display', serif; box-shadow: 0 8px 20px rgba(0,0,0,0.1);">
+            ${avatarHTML}
           </div>
           
           <h3 style="font-family: 'Playfair Display', serif; font-size: 1.8rem; color: #1a3a6b; margin-bottom: 0.5rem;">${teacher.teacher_name || 'Teacher'}</h3>
@@ -6510,7 +6588,7 @@
         <div class="notice-card">
           <div class="date">${notice.date}</div>
           <h4>${notice.icon_emoji ? notice.icon_emoji + ' ' : ''}${notice.title}</h4>
-          <p>${notice.description}</p>
+          <p>${notice.desc || notice.description}</p>
         </div>
       `).join('');
     } catch(e) {
