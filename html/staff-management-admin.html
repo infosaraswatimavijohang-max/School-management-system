@@ -1162,6 +1162,18 @@
     </style>
 </head>
 <body>
+    <!-- SITE NAV BAR (consistency fix) -->
+    <div style="background:var(--primary,#0f172a); color:#fff; padding:0.7rem 1.5rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.5rem; font-family:'Inter',sans-serif;">
+        <a href="admin-portal.html" style="display:flex; align-items:center; gap:0.6rem; text-decoration:none; color:#fff;">
+            <img src="../images/logo.png" alt="School Logo" style="height:28px; width:28px; object-fit:contain; border-radius:4px;">
+            <span style="font-weight:700; font-size:0.9rem;">Shree Saraswati Secondary School — Admin</span>
+        </a>
+        <div style="display:flex; gap:1.2rem; font-size:0.85rem;">
+            <a href="admin-portal.html" style="color:#fff; text-decoration:none; opacity:0.85;">🛠 Admin Portal</a>
+            <a href="organizational-tree.html" style="color:#fff; text-decoration:none; opacity:0.85;">🌳 Public View</a>
+        </div>
+    </div>
+
     <div class="container">
         <!-- Page Header -->
         <div class="page-header">
@@ -1968,5 +1980,14 @@
             setTimeout(initializeStaffUI, 100);
         }
     </script>
+
+    <!-- SITE FOOTER (consistency fix) -->
+    <footer style="background:var(--primary,#0f172a); color:#e5e7eb; padding:1.5rem; text-align:center; font-family:'Inter',sans-serif; font-size:0.85rem; margin-top:2rem;">
+        <p style="margin:0 0 0.5rem;">© 2026 Shree Saraswati Secondary School — Admin Panel</p>
+        <p style="margin:0;">
+            <a href="admin-portal.html" style="color:#d4af37; text-decoration:none;">Back to Admin Portal</a> &nbsp;·&nbsp;
+            <a href="organizational-tree.html" style="color:#d4af37; text-decoration:none;">View Public Org Chart</a>
+        </p>
+    </footer>
 </body>
 </html>
